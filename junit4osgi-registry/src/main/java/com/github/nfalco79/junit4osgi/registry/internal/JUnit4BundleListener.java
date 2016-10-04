@@ -1,4 +1,4 @@
-package com.github.nfalco79.junit4osgi.registry;
+package com.github.nfalco79.junit4osgi.registry.internal;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -11,12 +11,14 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleListener;
 
+import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
+
 public class JUnit4BundleListener implements BundleListener {
 	private static final String TEST_ENTRY = "Test-Suite";
 
-	private TestSuiteRegistry registry;
+	private TestRegistry registry;
 
-	public JUnit4BundleListener(TestSuiteRegistry registry) {
+	public JUnit4BundleListener(TestRegistry registry) {
 		this.registry = registry;
 	}
 

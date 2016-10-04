@@ -5,6 +5,10 @@
 	<artifactId>junit4osgi-parent</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
+	<properties>
+		<maven.compiler.source>1.6</maven.compiler.source>
+		<maven.compiler.target>1.6</maven.compiler.target>
+	</properties>
 	<modules>
 		<module>junit4osgi-registry</module>
 		<module>junit4osgi-runner</module>
@@ -15,7 +19,6 @@
 			<groupId>org.osgi</groupId>
 			<artifactId>org.eclipse.osgi</artifactId>
 			<version>3.10.100.v20150529-1857</version>
-			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 </project>

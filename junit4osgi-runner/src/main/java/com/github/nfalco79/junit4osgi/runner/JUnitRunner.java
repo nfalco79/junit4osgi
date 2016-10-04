@@ -8,18 +8,19 @@ import org.junit.runner.Result;
 import org.junit.runner.notification.RunListener;
 import org.osgi.service.log.LogService;
 
-import com.github.nfalco79.junit4osgi.registry.TestBean;
-import com.github.nfalco79.junit4osgi.registry.TestRegistryListener;
-import com.github.nfalco79.junit4osgi.registry.TestSuiteRegistry;
+import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
+import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
+import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
+import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
 
 public class JUnitRunner {
-	private TestSuiteRegistry registry;
+	private TestRegistry registry;
 	private boolean stop;
 	private boolean running;
 	private LogService logger;
 	private RunListener listener;
 
-	public void setRegistry(TestSuiteRegistry registry) {
+	public void setRegistry(TestRegistry registry) {
 		this.registry = registry;
 	}
 
@@ -40,17 +41,27 @@ public class JUnitRunner {
 		running = true;
 
 		final Queue<TestBean> tests = new ConcurrentLinkedQueue<TestBean>(registry.getTests());
-		registry.addTestListener(new TestRegistryListener() {
+		registry.addTestRegistryListener(new TestRegistryChangeListener() {
 
 			@Override
-			public void removed(TestBean testBean) {
-				tests.remove(testBean);
+			public void registryChanged(TestRegistryEvent event) {
+				TestBean testBean = event.getTest();
+				if (testBean == null) {
+					throw new IllegalArgumentException("event has a null test bean");
+				}
+				switch (event.getType()) {
+				case ADD:
+					tests.add(testBean);
+					break;
+				case REMOVE:
+					tests.remove(testBean);
+					break;
+				default:
+					logger.log(LogService.LOG_WARNING, "Test registry event type " + event.getType() + " not supported");
+					break;
+				}
 			}
 
-			@Override
-			public void added(TestBean testBean) {
-				tests.add(testBean);
-			}
 		});
 
 		TestBean testBean = tests.poll();

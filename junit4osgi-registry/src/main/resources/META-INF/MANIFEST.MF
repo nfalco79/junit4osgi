@@ -1,20 +1,20 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: JUnit4 Registry
+Bundle-Name: JUnit4OSGi Registry
 Bundle-SymbolicName: com.github.nfalco79.junit4osgi.registry;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: com.github.nfalco79.osgi.junit4.registry.internal.Activator
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: org.osgi.framework;version="1.3.0",
  org.osgi.util.tracker;version="1.5.1"
-Bundle-Vendor: TheDigitalStack.com
+Bundle-Vendor: Nikolas Falco
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: lib/junit-4.12.jar,
  lib/hamcrest-core-1.3.jar,
  .
 Test-Suite: com.thedigitalstack.junit4.test.SimpleJUnit4Test,
  com.thedigitalstack.junit4.test.SimpleJUnit3TestCase
-Export-Package: com.github.nfalco79.junit4osgi.registry;version="1.0.0",
+Export-Package: com.github.nfalco79.junit4osgi.registry.spi;version="1.0.0",
  junit.extensions;version="4.12.0",
  junit.framework;version="4.12.0",
  junit.runner;version="4.12.0",

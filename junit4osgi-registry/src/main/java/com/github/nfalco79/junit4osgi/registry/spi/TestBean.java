@@ -1,4 +1,4 @@
-package com.github.nfalco79.junit4osgi.registry;
+package com.github.nfalco79.junit4osgi.registry.spi;
 
 import java.net.URL;
 
@@ -9,7 +9,7 @@ public class TestBean {
 	private String className;
 	private Bundle bundle;
 
-	/* package */TestBean(Bundle bundle, String className) {
+	public TestBean(Bundle bundle, String className) {
 		if (bundle == null) {
 			throw new NullPointerException("context is null");
 		}
