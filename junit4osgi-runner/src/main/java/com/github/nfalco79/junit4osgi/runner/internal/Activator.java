@@ -8,16 +8,14 @@ import org.osgi.service.log.LogService;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
-import com.github.nfalco79.junit4osgi.registry.internal.ManifestRegistry;
-import com.github.nfalco79.junit4osgi.runner.JUnitRunner;
+import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
 
 public class Activator implements BundleActivator {
 
-	private ServiceTracker<ManifestRegistry, ManifestRegistry> registryTracker;
+	private ServiceTracker<TestRegistry, TestRegistry> registryTracker;
 	private ServiceTracker<LogService, LogService> logTracker;
 	private JUnitRunner runner;
-	private ManifestRegistry registry;
-	private RunListener listener;
+	private TestRegistry registry;
 	private LogService logger;
 	private ServiceTracker<RunListener, RunListener> listenerTracker;
 
@@ -37,32 +35,33 @@ public class Activator implements BundleActivator {
 
 		runner.setLogger(logger);
 		runner.setRegistry(registry);
-		runner.setListener(listener);
 		runner.startup();
 	}
 
 	private void unbind() {
-		if (logger  == null || registry == null) {
+		if (logger == null || registry == null) {
 			return;
 		}
 
 		runner.shutdown();
 		logger = null;
 		registry = null;
-		listener = null;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.osgi.framework.BundleActivator#start(org.osgi.framework.BundleContext)
+	 *
+	 * @see org.osgi.framework.BundleActivator#start(org.osgi.framework.
+	 * BundleContext)
 	 */
 	@Override
 	public void start(BundleContext bundleContext) throws Exception {
 		runner = new JUnitRunner();
 
-		registryTracker = new ServiceTracker<ManifestRegistry, ManifestRegistry>(bundleContext, ManifestRegistry.class, createRegistryCustomizer(bundleContext));
-		logTracker = new ServiceTracker<LogService, LogService>(bundleContext, LogService.class, createLogCustomizer(bundleContext));
-		listenerTracker = new ServiceTracker<RunListener, RunListener>(bundleContext, RunListener.class, createListenerCustomizer(bundleContext));
+		registryTracker = new ServiceTracker<TestRegistry, TestRegistry>(bundleContext, TestRegistry.class,
+				createRegistryCustomizer(bundleContext));
+		logTracker = new ServiceTracker<LogService, LogService>(bundleContext, LogService.class,
+				createLogCustomizer(bundleContext));
 
 		registryTracker.open();
 		logTracker.open();
@@ -71,45 +70,15 @@ public class Activator implements BundleActivator {
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.osgi.framework.BundleActivator#stop(org.osgi.framework.BundleContext)
+	 *
+	 * @see
+	 * org.osgi.framework.BundleActivator#stop(org.osgi.framework.BundleContext)
 	 */
 	@Override
 	public void stop(BundleContext bundleContext) throws Exception {
 		registryTracker.close();
 		logTracker.close();
 		listenerTracker.close();
-	}
-
-	private ServiceTrackerCustomizer<RunListener, RunListener> createListenerCustomizer(final BundleContext bundleContext) {
-		return new ServiceTrackerCustomizer<RunListener, RunListener>() {
-			@Override
-			public RunListener addingService(ServiceReference<RunListener> reference) {
-				RunListener listenerService = bundleContext.getService(reference);
-				synchronized (Activator.this) {
-					if (listener == null) {
-						listener = listenerService;
-						bind();
-					}
-				}
-				return listener;
-			}
-
-			@Override
-			public void modifiedService(ServiceReference<RunListener> reference, RunListener service) {
-				// No service property modifications to handle
-			}
-
-			@Override
-			public void removedService(ServiceReference<RunListener> reference, RunListener service) {
-				synchronized (Activator.this) {
-					if (service != listener) {
-						return;
-					}
-					unbind();
-					bind();
-				}
-			}
-		};
 	}
 
 	private ServiceTrackerCustomizer<LogService, LogService> createLogCustomizer(final BundleContext bundleContext) {
@@ -144,11 +113,12 @@ public class Activator implements BundleActivator {
 		};
 	}
 
-	private ServiceTrackerCustomizer<ManifestRegistry, ManifestRegistry> createRegistryCustomizer(final BundleContext bundleContext) {
-		return new ServiceTrackerCustomizer<ManifestRegistry, ManifestRegistry>() {
+	private ServiceTrackerCustomizer<TestRegistry, TestRegistry> createRegistryCustomizer(
+			final BundleContext bundleContext) {
+		return new ServiceTrackerCustomizer<TestRegistry, TestRegistry>() {
 			@Override
-			public ManifestRegistry addingService(ServiceReference<ManifestRegistry> reference) {
-				ManifestRegistry registryService = bundleContext.getService(reference);
+			public TestRegistry addingService(ServiceReference<TestRegistry> reference) {
+				TestRegistry registryService = bundleContext.getService(reference);
 				synchronized (Activator.this) {
 					if (registry == null) {
 						registry = registryService;
@@ -159,12 +129,12 @@ public class Activator implements BundleActivator {
 			}
 
 			@Override
-			public void modifiedService(ServiceReference<ManifestRegistry> arg0, ManifestRegistry arg1) {
+			public void modifiedService(ServiceReference<TestRegistry> arg0, TestRegistry arg1) {
 				// No service property modifications to handle
 			}
 
 			@Override
-			public void removedService(ServiceReference<ManifestRegistry> reference, ManifestRegistry service) {
+			public void removedService(ServiceReference<TestRegistry> reference, TestRegistry service) {
 				synchronized (Activator.this) {
 					if (service != registry) {
 						return;

@@ -7,11 +7,50 @@
 		<artifactId>junit4osgi-parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
+	<properties>
+		<bundle.namespace>com.github.nfalco79.junit4osgi.runner</bundle.namespace>
+	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>com.github.nfalco79</groupId>
 			<artifactId>junit4osgi-registry</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.codehaus.plexus</groupId>
+			<artifactId>plexus-utils</artifactId>
+			<version>3.0.24</version>
+		</dependency>
 	</dependencies>
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.outputDirectory}/lib</outputDirectory>
+							<includeArtifactIds>plexus-utils</includeArtifactIds>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<configuration>
+					<instructions>
+						<Bundle-Activator>${bundle.namespace}.internal.Activator</Bundle-Activator>
+						<Embed-Dependency>plexus-utils</Embed-Dependency>
+						<Embed-Directory>lib</Embed-Directory>
+					</instructions>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 </project>

@@ -8,7 +8,7 @@ public interface TestRegistry {
 
 	void registerTest(Bundle contributor, String testClass);
 
-	void removeBundleTests(Bundle contributor);
+	void removeTests(Bundle contributor);
 
 	Set<TestBean> getTests();
 

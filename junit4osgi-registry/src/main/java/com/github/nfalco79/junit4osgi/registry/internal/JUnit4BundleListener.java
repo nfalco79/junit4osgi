@@ -42,11 +42,9 @@ public class JUnit4BundleListener implements BundleListener {
 		Bundle bundle = event.getBundle();
 		switch (event.getType())  {
 			case Bundle.ACTIVE:
-			case Bundle.INSTALLED:
 				registerTestCase(bundle);
 				break;
 			case Bundle.STOPPING:
-			case Bundle.UNINSTALLED:
 				unregisterTestCase(bundle);
 				break;
 			default:
@@ -55,30 +53,7 @@ public class JUnit4BundleListener implements BundleListener {
 	}
 
 	private void unregisterTestCase(Bundle bundle) {
-		URL resource = bundle.getEntry("META-INF/MANIFEST.MF");
-		if (resource == null) {
-			System.out.println("Skip bundle " + bundle.getSymbolicName() + "[id:" + bundle.getVersion() + "]");
-			return;
-		}
-		InputStream is = null;
-		try {
-			is = resource.openStream();
-			closeSilently(is);
-
-			Manifest mf = new Manifest(is);
-			String value = mf.getMainAttributes().getValue(TEST_ENTRY);
-			if (value != null && !"".equals(value)) {
-				StringTokenizer st = new StringTokenizer(value, ",");
-				while (st.hasMoreTokens()) {
-					String testClass = st.nextToken().trim();
-					registry.registerTest(bundle, testClass);
-				}
-			}
-		} catch (IOException e) {
-			System.out.println("Could not read MANIFEST of bunble " + bundle.getSymbolicName());
-		} finally {
-			closeSilently(is);
-		}
+		registry.removeTests(bundle);
 	}
 
 	private void registerTestCase(Bundle bundle) {

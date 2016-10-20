@@ -45,7 +45,7 @@ public final class ManifestRegistry implements TestRegistry {
 	 * @see com.github.nfalco79.junit4osgi.registry.TestRegistry#removeBundleTests(org.osgi.framework.Bundle)
 	 */
 	@Override
-	public void removeBundleTests(Bundle contributor) {
+	public void removeTests(Bundle contributor) {
 		Set<TestBean> bundleTests = tests.remove(contributor);
 		for (TestBean test : bundleTests) {
 			fireEvent(new TestRegistryEvent(TestRegistryEventType.REMOVE, test));

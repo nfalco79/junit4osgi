@@ -8,17 +8,69 @@
 	<properties>
 		<maven.compiler.source>1.6</maven.compiler.source>
 		<maven.compiler.target>1.6</maven.compiler.target>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	<modules>
 		<module>junit4osgi-registry</module>
 		<module>junit4osgi-runner</module>
 	</modules>
-
 	<dependencies>
 		<dependency>
-			<groupId>org.osgi</groupId>
+			<groupId>org.eclipse</groupId>
 			<artifactId>org.eclipse.osgi</artifactId>
-			<version>3.10.100.v20150529-1857</version>
+			<version>3.8.0.v20120529-1548</version>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
+	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.5.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-dependency-plugin</artifactId>
+					<version>2.10</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.felix</groupId>
+					<artifactId>maven-bundle-plugin</artifactId>
+					<version>3.0.1</version>
+					<executions>
+						<execution>
+							<id>bundle-manifest</id>
+							<phase>process-classes</phase>
+							<goals>
+								<goal>manifest</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>3.0.2</version>
+					<extensions>true</extensions>
+					<configuration>
+						<archive>
+							<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+						</archive>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
 </project>
