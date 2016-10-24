@@ -65,7 +65,7 @@ public class Activator implements BundleActivator {
 
 		registryTracker.open();
 		logTracker.open();
-		listenerTracker.open();
+//		listenerTracker.open();
 	}
 
 	/*
@@ -78,7 +78,7 @@ public class Activator implements BundleActivator {
 	public void stop(BundleContext bundleContext) throws Exception {
 		registryTracker.close();
 		logTracker.close();
-		listenerTracker.close();
+//		listenerTracker.close();
 	}
 
 	private ServiceTrackerCustomizer<LogService, LogService> createLogCustomizer(final BundleContext bundleContext) {
