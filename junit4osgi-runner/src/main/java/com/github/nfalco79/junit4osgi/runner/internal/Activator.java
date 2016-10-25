@@ -1,6 +1,5 @@
 package com.github.nfalco79.junit4osgi.runner.internal;
 
-import org.junit.runner.notification.RunListener;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -17,7 +16,7 @@ public class Activator implements BundleActivator {
 	private JUnitRunner runner;
 	private TestRegistry registry;
 	private LogService logger;
-	private ServiceTracker<RunListener, RunListener> listenerTracker;
+//	private ServiceTracker<RunListener, RunListener> listenerTracker;
 
 	private void bind() {
 		if (registry == null) {
@@ -50,17 +49,17 @@ public class Activator implements BundleActivator {
 
 	/*
 	 * (non-Javadoc)
-	 *
-	 * @see org.osgi.framework.BundleActivator#start(org.osgi.framework.
-	 * BundleContext)
+	 * @see org.osgi.framework.BundleActivator#start(org.osgi.framework.BundleContext)
 	 */
 	@Override
 	public void start(BundleContext bundleContext) throws Exception {
 		runner = new JUnitRunner();
 
-		registryTracker = new ServiceTracker<TestRegistry, TestRegistry>(bundleContext, TestRegistry.class,
+		registryTracker = new ServiceTracker<TestRegistry, TestRegistry>(bundleContext,
+				bundleContext.createFilter("(discovery=auto)"),
 				createRegistryCustomizer(bundleContext));
-		logTracker = new ServiceTracker<LogService, LogService>(bundleContext, LogService.class,
+		logTracker = new ServiceTracker<LogService, LogService>(bundleContext,
+				LogService.class,
 				createLogCustomizer(bundleContext));
 
 		registryTracker.open();
@@ -70,9 +69,7 @@ public class Activator implements BundleActivator {
 
 	/*
 	 * (non-Javadoc)
-	 *
-	 * @see
-	 * org.osgi.framework.BundleActivator#stop(org.osgi.framework.BundleContext)
+	 * @see org.osgi.framework.BundleActivator#stop(org.osgi.framework.BundleContext)
 	 */
 	@Override
 	public void stop(BundleContext bundleContext) throws Exception {

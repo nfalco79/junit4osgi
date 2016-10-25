@@ -6,7 +6,7 @@ import org.osgi.framework.Bundle;
 
 public interface TestRegistry {
 
-	void registerTest(Bundle contributor, String testClass);
+	void registerTests(Bundle contributor);
 
 	void removeTests(Bundle contributor);
 
@@ -15,5 +15,7 @@ public interface TestRegistry {
 	void addTestRegistryListener(TestRegistryChangeListener listener);
 
 	void removeTestRegistryListener(TestRegistryChangeListener listener);
+
+	void dispose();
 
 }
