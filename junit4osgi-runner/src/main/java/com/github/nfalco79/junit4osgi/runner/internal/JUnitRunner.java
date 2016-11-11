@@ -1,14 +1,12 @@
 package com.github.nfalco79.junit4osgi.runner.internal;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.runner.JUnitCore;
-import org.junit.runner.Result;
 import org.osgi.service.log.LogService;
 
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
@@ -45,6 +43,7 @@ public class JUnitRunner {
 	}
 
 	public static final String REPORT_PATH = "org.osgi.junit.reportsPath";
+	public static final String RERUN_COUNT = "org.osgi.junit.rerunFailingTestsCount";
 
 	private TestRegistry registry;
 	private boolean stop;
@@ -84,9 +83,12 @@ public class JUnitRunner {
 			executor.scheduleAtFixedRate(new Runnable() {
 				@Override
 				public void run() {
-					running = true;
-					runTests(tests);
-					running = false;
+					try {
+						running = true;
+						runTests(tests);
+					} finally {
+						running = false;
+					}
 				}
 			}, 0l, 5, TimeUnit.SECONDS);
 		}
@@ -105,14 +107,17 @@ public class JUnitRunner {
 					XMLReport report = new XMLReport();
 					core.addListener(new ReportListener(report));
 
-					Result result = core.run(testClass);
+					core.run(testClass);
+
 					// write test result
-					report.generateReport(testBean, result, reportsDirectory);
+					report.generateReport(testBean, reportsDirectory);
 				} catch (ClassNotFoundException e) {
-					logger.log(LogService.LOG_ERROR, "Impossible to load class " + testBean.getId(), e);
+					logger.log(LogService.LOG_ERROR, "Impossible load class " + testBean.getId(), e);
+				} catch (NoClassDefFoundError e) {
+					logger.log(LogService.LOG_ERROR, "Impossible load class " + testBean.getId(), e);
 				}
 			}
-		} catch (FileNotFoundException e) {
+		} catch (Exception e) {
 			logger.log(LogService.LOG_ERROR, null, e);
 		}
 	}

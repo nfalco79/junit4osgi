@@ -25,9 +25,10 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.text.NumberFormat;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 
 import org.codehaus.plexus.util.IOUtil;
@@ -51,18 +52,8 @@ public class XMLReport {
 	 */
 	private static final String NL = System.getProperty("line.separator", "\n");
 
-	private Xpp3Dom root = null;
-	private int failuresCount;
-	private int errorsCount;
-	/**
-	 * Time at the beginning of the test execution.
-	 */
-	private long startTime;
-
-	/**
-	 * Time at the end of the test execution.
-	 */
-	private long endTime;
+	private Map<Integer, ReportInfo> map = new HashMap<Integer, XMLReport.ReportInfo>();
+	private long totalTime;
 
 	/**
 	 * A test ends successfully.
@@ -71,12 +62,8 @@ public class XMLReport {
 	 *            the test executed successfully.
 	 */
 	public void testCompleted(Description description) {
-		endTime = System.currentTimeMillis();
-
-		double runTime = (this.endTime - this.startTime) / 1000d;
-		root.setAttribute("time", formatNumber(runTime));
-
-		root = root.getParent();
+		ReportInfo info = map.get(description);
+		info.endTime = System.currentTimeMillis();
 	}
 
 	/**
@@ -86,30 +73,16 @@ public class XMLReport {
 	 *            the test descriptor
 	 */
 	public void testIgnored(Description description) {
-		Xpp3Dom testCase = createElementByDescription(root, description);
-		testCase.setAttribute("time", formatNumber(0d));
-
-		createElement(testCase, "skipped");
-
-		root = root.getParent();
+		ReportInfo info = new ReportInfo();
+		info.startTime = 0l;
+		info.endTime = 0l;
+		info.testDescription = description;
+		map.put(description.hashCode(), info);
+		info.type = FailureType.IGNORE;
 	}
 
 	private String formatNumber(double time) {
-		return NumberFormat.getInstance(Locale.US).format(Double.toString(time));
-	}
-
-	private Xpp3Dom createElementByDescription(Xpp3Dom parent, Description description) {
-		Xpp3Dom element = null;
-		if (description.isSuite()) {
-			element = createTestSuiteElement(parent, description);
-			showProperties(element);
-		} else if (description.isTest()) {
-			element = createTestElement(parent, description);
-		} else {
-			throw new IllegalStateException("Unexpected element description " + description);
-		}
-		root = element;
-		return element;
+		return String.format(Locale.US, "%.3f", time);
 	}
 
 	/**
@@ -125,10 +98,14 @@ public class XMLReport {
 	 *            the messages logged during the test execution
 	 */
 	public void testError(Failure failure, String out, String err, String log) {
-		endTime = System.currentTimeMillis();
-		++errorsCount;
-
-		writeTestProblems(failure, "error", out, err, log);
+		Description description = failure.getDescription();
+		testCompleted(description);
+		ReportInfo info = map.get(description);
+		info.failure = failure;
+		info.type = FailureType.ERROR;
+		info.out = out;
+		info.err = err;
+		info.log = log;
 	}
 
 	/**
@@ -144,10 +121,14 @@ public class XMLReport {
 	 *            the messages logged during the test execution
 	 */
 	public void testFailed(Failure failure, String out, String err, String log) {
-		endTime = System.currentTimeMillis();
-		++failuresCount;
-
-		writeTestProblems(failure, "failure", out, err, log);
+		Description description = failure.getDescription();
+		testCompleted(description);
+		ReportInfo info = map.get(description);
+		info.failure = failure;
+		info.type = FailureType.FAILURE;
+		info.out = out;
+		info.err = err;
+		info.log = log;
 	}
 
 	/**
@@ -164,9 +145,7 @@ public class XMLReport {
 	 * @param log
 	 *            the messages logged during the test execution
 	 */
-	private void writeTestProblems(Failure failure, String name, String out, String err, String log) {
-		Xpp3Dom element = createElement(root, name);
-
+	private void writeTestProblems(Xpp3Dom element, Failure failure, String out, String err, String log) {
 		Throwable exception = failure.getException();
 		if (exception != null) {
 			String message = failure.getMessage();
@@ -181,9 +160,9 @@ public class XMLReport {
 			element.setValue(stackTrace);
 		}
 
-		addOutputStreamElement(out, "system-out");
-		addOutputStreamElement(err, "system-err");
-		addOutputStreamElement(log, "log-service");
+		addOutputStreamElement(element, out, "system-out");
+		addOutputStreamElement(element, err, "system-err");
+		addOutputStreamElement(element, log, "log-service");
 	}
 
 	/**
@@ -198,7 +177,7 @@ public class XMLReport {
 	 * @throws FileNotFoundException
 	 *             if reportsDirectory does not exists
 	 */
-	public void generateReport(TestBean test, Result result, File reportsDirectory) throws FileNotFoundException {
+	public void generateReport(TestBean test, File reportsDirectory) throws FileNotFoundException {
 		File reportFile = new File(reportsDirectory, "TEST-" + test.getName().replace(' ', '_') + ".xml");
 
 		File reportDir = reportFile.getParentFile();
@@ -211,11 +190,60 @@ public class XMLReport {
 			OutputStreamWriter osw = null;
 			try {
 				osw = new OutputStreamWriter(new FileOutputStream(reportFile), "UTF-8");
-			} catch (UnsupportedEncodingException e) {
+			} catch (UnsupportedEncodingException e) { // NOSONAR
 				osw = new OutputStreamWriter(new FileOutputStream(reportFile));
 			}
 			writer = new PrintWriter(new BufferedWriter(osw));
 			writer.write("<?xml version=\"1.0\" encoding=\"" + osw.getEncoding() + "\" ?>" + NL);
+
+			int errorsCount = 0;
+			int failuresCount = 0;
+			int ignoredCount = 0;
+			int runCount = 0;
+			
+			Xpp3Dom root = null;
+			for (ReportInfo report : map.values()) {
+				Description description = report.testDescription;
+
+				if (description.isSuite()) {
+					root = createTestSuiteElement(null, description);
+					showProperties(root);
+				} else if (description.isEmpty()) {
+					root = createTestSuiteElement(null, description);
+				} else if (description.isTest()) {
+					runCount++;
+					Xpp3Dom element = createTestElement(root, description);
+
+					switch(report.type) {
+					case ERROR:
+						errorsCount++;
+						element = createElement(element, "failure");
+						writeTestProblems(element, report.failure, report.out, report.err, report.log);
+						break;
+					case FAILURE:
+						failuresCount++;
+						element = createElement(element, "error");
+						writeTestProblems(element, report.failure, report.out, report.err, report.log);
+						break;
+					case IGNORE:
+						ignoredCount++;
+						element = createElement(element, "skipped");
+						break;
+					default:
+						// it's a normal success test
+						break;
+					}
+				} else {
+					throw new IllegalStateException("Unexpected element description " + description);
+				}
+			}
+			
+			if (root != null) {
+				root.setAttribute("tests", String.valueOf(runCount));
+				root.setAttribute("failures", String.valueOf(failuresCount));
+				root.setAttribute("errors", String.valueOf(errorsCount));
+				root.setAttribute("ignored", String.valueOf(ignoredCount));
+			}
 
 			Xpp3DomWriter.write(new PrettyPrintXMLWriter(writer), root);
 		} finally {
@@ -235,8 +263,14 @@ public class XMLReport {
 
 		testCase.setAttribute("name", getReportName(description));
 		testCase.setAttribute("classname", description.getClassName());
+		testCase.setAttribute("time", formatNumber(getTime(description)));
 
 		return testCase;
+	}
+
+	private double getTime(Description description) {
+		ReportInfo reportInfo = map.get(description.hashCode());
+		return (reportInfo.endTime - reportInfo.startTime) / 1000d;
 	}
 
 	private String getReportName(Description description) {
@@ -261,8 +295,13 @@ public class XMLReport {
 		Xpp3Dom testSuite = createElement(parent, "testsuite");
 
 		testSuite.setAttribute("name", getReportName(description));
+		testSuite.setAttribute("time", formatNumber(getTotalTime()));
 
 		return testSuite;
+	}
+
+	private double getTotalTime() {
+		return totalTime / 1000d;
 	}
 
 	/**
@@ -276,9 +315,7 @@ public class XMLReport {
 	 */
 	private Xpp3Dom createElement(Xpp3Dom element, String name) {
 		Xpp3Dom component = new Xpp3Dom(name);
-		if (element == null) {
-			element = component;
-		} else {
+		if (element != null) {
 			element.addChild(component);
 		}
 		return component;
@@ -292,7 +329,7 @@ public class XMLReport {
 	 *            the XML element.
 	 */
 	private void showProperties(Xpp3Dom parent) {
-		Xpp3Dom properties = createElement(root, "properties");
+		Xpp3Dom properties = createElement(parent, "properties");
 
 		Properties systemProperties = System.getProperties();
 
@@ -324,9 +361,9 @@ public class XMLReport {
 	 * @param testCase
 	 *            the XML tree
 	 */
-	private void addOutputStreamElement(String stdOut, String name) {
+	private void addOutputStreamElement(Xpp3Dom parent, String stdOut, String name) {
 		if (stdOut != null && stdOut.trim().length() > 0) {
-			createElement(root, name).setValue(stdOut);
+			createElement(parent, name).setValue(stdOut);
 		}
 	}
 
@@ -337,16 +374,28 @@ public class XMLReport {
 	 *            the test description.
 	 */
 	public void testStarted(Description description) {
-		startTime = System.currentTimeMillis();
-		createElementByDescription(root, description);
+		ReportInfo info = new ReportInfo();
+		info.startTime = System.currentTimeMillis();
+		info.testDescription = description;
+		map.put(description.hashCode(), info);
 	}
 
 	public void testCompleted(Result result) {
-		root.setAttribute("tests", String.valueOf(result.getRunCount() + result.getIgnoreCount()));
-		root.setAttribute("failures", String.valueOf(failuresCount));
-		root.setAttribute("errors", String.valueOf(errorsCount));
-		root.setAttribute("ignored", String.valueOf(result.getIgnoreCount()));
-		root.setAttribute("time", Double.toString(result.getRunTime() / 1000d));
+		totalTime = result.getRunTime();
 	}
 
+	private enum FailureType {
+		IGNORE, FAILURE, ERROR, NONE
+	}
+
+	private class ReportInfo {
+		private String log;
+		private String err;
+		private String out;
+		private Description testDescription;
+		private long startTime;
+		private long endTime;
+		private Failure failure;
+		private FailureType type = FailureType.NONE;
+	}
 }
