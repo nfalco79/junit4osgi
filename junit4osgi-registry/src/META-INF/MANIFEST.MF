@@ -1,6 +1,0 @@
-Manifest-Version: 1.0
-Bundle-SymbolicName: junit4osgi-registry
-Bundle-Version: 1.0.0
-Bundle-Name: Junit4osgi-registry
-Bundle-ManifestVersion: 2
-

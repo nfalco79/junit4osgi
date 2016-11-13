@@ -14,3 +14,4 @@ Import-Package: com.github.nfalco79.junit4osgi.registry.spi,
  org.osgi.service.log;version="1.3.0",
  org.osgi.util.tracker;version="1.5.1"
 Bundle-Activator: com.github.nfalco79.junit4osgi.runner.internal.Activator
+Require-Bundle: junit4osgi-registry

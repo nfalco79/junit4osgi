@@ -18,6 +18,8 @@
  */
 package com.github.nfalco79.junit4osgi.runner.internal;
 
+import static com.github.nfalco79.junit4osgi.runner.internal.SurefireConstants.*;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -25,6 +27,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.text.MessageFormat;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
@@ -43,8 +46,6 @@ import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 
 /**
  * This class generates test result as XML files compatible with Surefire.
- *
- * @author <a href="mailto:dev@felix.apache.org">Felix Project Team</a>
  */
 public class XMLReport {
 	/**
@@ -160,8 +161,8 @@ public class XMLReport {
 			element.setValue(stackTrace);
 		}
 
-		addOutputStreamElement(element, out, "system-out");
-		addOutputStreamElement(element, err, "system-err");
+		addOutputStreamElement(element, out, SurefireConstants.TEST_STDOUT_ELEMENT);
+		addOutputStreamElement(element, err, SurefireConstants.TEST_STDERR_ELEMENT);
 		addOutputStreamElement(element, log, "log-service");
 	}
 
@@ -178,7 +179,7 @@ public class XMLReport {
 	 *             if reportsDirectory does not exists
 	 */
 	public void generateReport(TestBean test, File reportsDirectory) throws FileNotFoundException {
-		File reportFile = new File(reportsDirectory, "TEST-" + test.getName().replace(' ', '_') + ".xml");
+		File reportFile = new File(reportsDirectory, MessageFormat.format(DEFAULT_NAME, test.getName().replace(' ', '_')));
 
 		File reportDir = reportFile.getParentFile();
 
@@ -189,18 +190,18 @@ public class XMLReport {
 		try {
 			OutputStreamWriter osw = null;
 			try {
-				osw = new OutputStreamWriter(new FileOutputStream(reportFile), "UTF-8");
-			} catch (UnsupportedEncodingException e) { // NOSONAR
-				osw = new OutputStreamWriter(new FileOutputStream(reportFile));
+				osw = new OutputStreamWriter(new FileOutputStream(reportFile), "UTF-8"); // NOSONAR close by writer
+			} catch (UnsupportedEncodingException e) { // NOSONAR fallback
+				osw = new OutputStreamWriter(new FileOutputStream(reportFile)); // NOSONAR close by writer
 			}
 			writer = new PrintWriter(new BufferedWriter(osw));
-			writer.write("<?xml version=\"1.0\" encoding=\"" + osw.getEncoding() + "\" ?>" + NL);
+			writer.write(MessageFormat.format(XML_HEADER, osw.getEncoding()) + NL);
 
 			int errorsCount = 0;
 			int failuresCount = 0;
 			int ignoredCount = 0;
 			int runCount = 0;
-			
+
 			Xpp3Dom root = null;
 			for (ReportInfo report : map.values()) {
 				Description description = report.testDescription;
@@ -217,17 +218,17 @@ public class XMLReport {
 					switch(report.type) {
 					case ERROR:
 						errorsCount++;
-						element = createElement(element, "failure");
+						element = createElement(element, TEST_FAILURE_ELEMENT);
 						writeTestProblems(element, report.failure, report.out, report.err, report.log);
 						break;
 					case FAILURE:
 						failuresCount++;
-						element = createElement(element, "error");
+						element = createElement(element, TEST_ERROR_ELEMENT);
 						writeTestProblems(element, report.failure, report.out, report.err, report.log);
 						break;
 					case IGNORE:
 						ignoredCount++;
-						element = createElement(element, "skipped");
+						element = createElement(element, TEST_SKIPED_ELEMENT);
 						break;
 					default:
 						// it's a normal success test
@@ -237,12 +238,12 @@ public class XMLReport {
 					throw new IllegalStateException("Unexpected element description " + description);
 				}
 			}
-			
+
 			if (root != null) {
-				root.setAttribute("tests", String.valueOf(runCount));
-				root.setAttribute("failures", String.valueOf(failuresCount));
-				root.setAttribute("errors", String.valueOf(errorsCount));
-				root.setAttribute("ignored", String.valueOf(ignoredCount));
+				root.setAttribute(SUITE_TESTS_ATTRIBUTE, String.valueOf(runCount));
+				root.setAttribute(SUITE_FAILURES_ATTRIBUTE, String.valueOf(failuresCount));
+				root.setAttribute(SUITE_ERRORS_ATTRIBUTE, String.valueOf(errorsCount));
+				root.setAttribute(SUITE_IGNORED_ATTRIBUTE, String.valueOf(ignoredCount));
 			}
 
 			Xpp3DomWriter.write(new PrettyPrintXMLWriter(writer), root);
@@ -261,9 +262,9 @@ public class XMLReport {
 	private Xpp3Dom createTestElement(Xpp3Dom parent, Description description) {
 		Xpp3Dom testCase = createElement(parent, "testcase");
 
-		testCase.setAttribute("name", getReportName(description));
-		testCase.setAttribute("classname", description.getClassName());
-		testCase.setAttribute("time", formatNumber(getTime(description)));
+		testCase.setAttribute(TEST_NAME_ATTRIBUTE, getReportName(description));
+		testCase.setAttribute(TEST_CLASSNAME_ATTRIBUTE, description.getClassName());
+		testCase.setAttribute(TEST_TIME_ATTRIBUTE, formatNumber(getTime(description)));
 
 		return testCase;
 	}
@@ -292,10 +293,10 @@ public class XMLReport {
 	 * @return the XML element describing the given test suite.
 	 */
 	private Xpp3Dom createTestSuiteElement(Xpp3Dom parent, Description description) {
-		Xpp3Dom testSuite = createElement(parent, "testsuite");
+		Xpp3Dom testSuite = createElement(parent, SUITE_ELEMENT);
 
-		testSuite.setAttribute("name", getReportName(description));
-		testSuite.setAttribute("time", formatNumber(getTotalTime()));
+		testSuite.setAttribute(SUITE_NAME_ATTRIBUTE, getReportName(description));
+		testSuite.setAttribute(SUITE_TIME_ATTRIBUTE, formatNumber(getTotalTime()));
 
 		return testSuite;
 	}
