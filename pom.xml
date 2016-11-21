@@ -10,6 +10,11 @@
 		<maven.compiler.target>1.6</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
+	<scm>
+		<url>https://github.com/nfalco79/junit4osgi</url>
+		<connection>scm:git:git://github.com/nfalco79/junit4osgi.git</connection>
+		<developerConnection>scm:git:git://github.com/nfalco79/junit4osgi.git</developerConnection>
+	</scm>
 	<modules>
 		<module>junit4osgi-registry</module>
 		<module>junit4osgi-runner</module>
