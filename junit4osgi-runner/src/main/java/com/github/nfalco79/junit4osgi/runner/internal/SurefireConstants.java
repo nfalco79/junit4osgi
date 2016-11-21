@@ -30,7 +30,7 @@ public final class SurefireConstants {
 	public static final String TEST_STDOUT_ELEMENT = "system-out";
 	public static final String TEST_ERROR_ELEMENT = "error";
 	public static final String TEST_FAILURE_ELEMENT = "failure";
-	public static final String TEST_SKIPED_ELEMENT = "skiped";
+	public static final String TEST_SKIPPED_ELEMENT = "skipped";
 	public static final String TEST_NAME_ATTRIBUTE = "name";
 	public static final String TEST_CLASSNAME_ATTRIBUTE = "classname";
 	public static final String TEST_TIME_ATTRIBUTE = "time";

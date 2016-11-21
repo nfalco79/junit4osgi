@@ -25,7 +25,7 @@ public class Activator implements BundleActivator {
 		// manifest registry
 		Dictionary<String, String> properties = new Hashtable<String, String>(1); // NOSONAR
 		properties.put("discovery", "manifest");
-		registerRegistry(bundleContext, new AutoDiscoveryRegistry(), properties);
+		registerRegistry(bundleContext, new ManifestRegistry(), properties);
 
 		// auto discovery registry
 		properties = new Hashtable<String, String>(1); // NOSONAR

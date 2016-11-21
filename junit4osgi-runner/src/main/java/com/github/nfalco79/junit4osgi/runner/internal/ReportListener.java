@@ -113,7 +113,7 @@ public class ReportListener extends RunListener {
 	 */
 	@Override
 	public void testRunStarted(Description description) throws Exception {
-		report.testStarted(description);
+		report.newTest(description);
 	}
 
 	/*
@@ -122,6 +122,6 @@ public class ReportListener extends RunListener {
 	 */
 	@Override
 	public void testRunFinished(Result result) throws Exception {
-		report.testCompleted(result);
+		report.setResult(result);
 	}
 }

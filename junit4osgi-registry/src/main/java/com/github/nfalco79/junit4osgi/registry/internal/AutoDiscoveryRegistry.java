@@ -35,11 +35,8 @@ public final class AutoDiscoveryRegistry implements TestRegistry {
 	 */
 	@Override
 	public void registerTests(Bundle contributor) {
-		Set<TestBean> bundleTest = tests.get(contributor);
-		if (bundleTest == null) {
-			bundleTest = new LinkedHashSet<TestBean>();
-			tests.put(contributor, bundleTest);
-		}
+		Set<TestBean> bundleTest = new LinkedHashSet<TestBean>();
+		tests.put(contributor, bundleTest);
 
 		Enumeration<URL> entries = contributor.findEntries("/", "*.class", true);
 		while (entries != null && entries.hasMoreElements()) {
@@ -77,8 +74,10 @@ public final class AutoDiscoveryRegistry implements TestRegistry {
 	@Override
 	public void removeTests(Bundle contributor) {
 		Set<TestBean> bundleTests = tests.remove(contributor);
-		for (TestBean test : bundleTests) {
-			fireEvent(new TestRegistryEvent(TestRegistryEventType.REMOVE, test));
+		if (bundleTests != null) {
+			for (TestBean test : bundleTests) {
+				fireEvent(new TestRegistryEvent(TestRegistryEventType.REMOVE, test));
+			}
 		}
 	}
 

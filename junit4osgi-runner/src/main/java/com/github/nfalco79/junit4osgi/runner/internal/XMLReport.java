@@ -42,8 +42,6 @@ import org.junit.runner.Description;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 
-import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
-
 /**
  * This class generates test result as XML files compatible with Surefire.
  */
@@ -53,8 +51,13 @@ public class XMLReport {
 	 */
 	private static final String NL = System.getProperty("line.separator", "\n");
 
-	private Map<Integer, ReportInfo> map = new HashMap<Integer, XMLReport.ReportInfo>();
+	private Description root;
+	private Map<Description, ReportInfo> map = new HashMap<Description, ReportInfo>();
 	private long totalTime;
+	private int errorsCount;
+	private int failuresCount;
+	private int ignoredCount;
+	private int runCount;
 
 	/**
 	 * A test ends successfully.
@@ -77,8 +80,7 @@ public class XMLReport {
 		ReportInfo info = new ReportInfo();
 		info.startTime = 0l;
 		info.endTime = 0l;
-		info.testDescription = description;
-		map.put(description.hashCode(), info);
+		map.put(description, info);
 		info.type = FailureType.IGNORE;
 	}
 
@@ -171,22 +173,29 @@ public class XMLReport {
 	 *
 	 * @param test
 	 *            the test
-	 * @param result
+	 * @param failures
 	 *            the test result
 	 * @param reportsDirectory
 	 *            the directory in which reports are created.
 	 * @throws FileNotFoundException
 	 *             if reportsDirectory does not exists
 	 */
-	public void generateReport(TestBean test, File reportsDirectory) throws FileNotFoundException {
-		File reportFile = new File(reportsDirectory, MessageFormat.format(DEFAULT_NAME, test.getName().replace(' ', '_')));
+	public void generateReport(File reportsDirectory) throws FileNotFoundException {
+		if (root == null || runCount == 0) {
+			return;
+		}
 
+		Xpp3Dom dom = createDOM(null, root);
+		dom.setAttribute(SUITE_TESTS_ATTRIBUTE, String.valueOf(runCount));
+		dom.setAttribute(SUITE_FAILURES_ATTRIBUTE, String.valueOf(failuresCount));
+		dom.setAttribute(SUITE_ERRORS_ATTRIBUTE, String.valueOf(errorsCount));
+		dom.setAttribute(SUITE_IGNORED_ATTRIBUTE, String.valueOf(ignoredCount));
+
+		File reportFile = new File(reportsDirectory, MessageFormat.format(DEFAULT_NAME, dom.getAttribute(SUITE_NAME_ATTRIBUTE).replace(' ', '_')));
 		File reportDir = reportFile.getParentFile();
-
 		reportDir.mkdirs();
 
 		PrintWriter writer = null;
-
 		try {
 			OutputStreamWriter osw = null;
 			try {
@@ -197,59 +206,54 @@ public class XMLReport {
 			writer = new PrintWriter(new BufferedWriter(osw));
 			writer.write(MessageFormat.format(XML_HEADER, osw.getEncoding()) + NL);
 
-			int errorsCount = 0;
-			int failuresCount = 0;
-			int ignoredCount = 0;
-			int runCount = 0;
-
-			Xpp3Dom root = null;
-			for (ReportInfo report : map.values()) {
-				Description description = report.testDescription;
-
-				if (description.isSuite()) {
-					root = createTestSuiteElement(null, description);
-					showProperties(root);
-				} else if (description.isEmpty()) {
-					root = createTestSuiteElement(null, description);
-				} else if (description.isTest()) {
-					runCount++;
-					Xpp3Dom element = createTestElement(root, description);
-
-					switch(report.type) {
-					case ERROR:
-						errorsCount++;
-						element = createElement(element, TEST_FAILURE_ELEMENT);
-						writeTestProblems(element, report.failure, report.out, report.err, report.log);
-						break;
-					case FAILURE:
-						failuresCount++;
-						element = createElement(element, TEST_ERROR_ELEMENT);
-						writeTestProblems(element, report.failure, report.out, report.err, report.log);
-						break;
-					case IGNORE:
-						ignoredCount++;
-						element = createElement(element, TEST_SKIPED_ELEMENT);
-						break;
-					default:
-						// it's a normal success test
-						break;
-					}
-				} else {
-					throw new IllegalStateException("Unexpected element description " + description);
-				}
-			}
-
-			if (root != null) {
-				root.setAttribute(SUITE_TESTS_ATTRIBUTE, String.valueOf(runCount));
-				root.setAttribute(SUITE_FAILURES_ATTRIBUTE, String.valueOf(failuresCount));
-				root.setAttribute(SUITE_ERRORS_ATTRIBUTE, String.valueOf(errorsCount));
-				root.setAttribute(SUITE_IGNORED_ATTRIBUTE, String.valueOf(ignoredCount));
-			}
-
-			Xpp3DomWriter.write(new PrettyPrintXMLWriter(writer), root);
+			Xpp3DomWriter.write(new PrettyPrintXMLWriter(writer), dom);
+			writer.flush();
 		} finally {
 			IOUtil.close(writer);
 		}
+	}
+
+	private Xpp3Dom createDOM(Xpp3Dom dom, Description description) {
+		if ("null".equals(description.getClassName())) {
+			// for unknown reason the root description it's void
+			return createDOM(dom, description.getChildren().get(0));
+		} else if (dom == null && description.isSuite()) {
+			// suite test aggregate all test methods and ignore its class container
+			dom = createTestSuiteElement(dom, description);
+			showProperties(dom);
+		} else if (description.isEmpty()) {
+			dom = createTestSuiteElement(dom, description);
+		} else if (description.isTest()) {
+			Xpp3Dom element = createTestElement(dom, description);
+
+			ReportInfo report = map.get(description);
+			if (report != null) {
+				switch (report.type) {
+				case ERROR:
+					errorsCount++;
+					element = createElement(element, TEST_FAILURE_ELEMENT);
+					writeTestProblems(element, report.failure, report.out, report.err, report.log);
+					break;
+				case FAILURE:
+					failuresCount++;
+					element = createElement(element, TEST_ERROR_ELEMENT);
+					writeTestProblems(element, report.failure, report.out, report.err, report.log);
+					break;
+				case IGNORE:
+					element = createElement(element, TEST_SKIPPED_ELEMENT);
+					break;
+				default:
+					// it's a normal success test
+					break;
+				}
+			}
+		}
+
+		for (Description child : description.getChildren()) {
+			createDOM(dom, child);
+		}
+
+		return dom;
 	}
 
 	/**
@@ -270,7 +274,7 @@ public class XMLReport {
 	}
 
 	private double getTime(Description description) {
-		ReportInfo reportInfo = map.get(description.hashCode());
+		ReportInfo reportInfo = map.get(description);
 		return (reportInfo.endTime - reportInfo.startTime) / 1000d;
 	}
 
@@ -375,14 +379,33 @@ public class XMLReport {
 	 *            the test description.
 	 */
 	public void testStarted(Description description) {
+		if (root == null) {
+			root = description;
+		}
 		ReportInfo info = new ReportInfo();
 		info.startTime = System.currentTimeMillis();
-		info.testDescription = description;
-		map.put(description.hashCode(), info);
+		map.put(description, info);
 	}
 
-	public void testCompleted(Result result) {
+	/**
+	 * Callback called when a test starts.
+	 *
+	 * @param description
+	 *            the test description.
+	 */
+	public void newTest(Description description) {
+		map.clear();
+		runCount = 0;
+		totalTime = 0;
+		failuresCount = 0;
+		errorsCount = 0;
+		root = description;
+	}
+
+	public void setResult(Result result) {
 		totalTime = result.getRunTime();
+		ignoredCount = result.getIgnoreCount();
+		runCount = result.getRunCount() + ignoredCount;
 	}
 
 	private enum FailureType {
@@ -393,10 +416,10 @@ public class XMLReport {
 		private String log;
 		private String err;
 		private String out;
-		private Description testDescription;
 		private long startTime;
 		private long endTime;
 		private Failure failure;
 		private FailureType type = FailureType.NONE;
 	}
+
 }

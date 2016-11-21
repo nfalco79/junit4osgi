@@ -15,12 +15,10 @@ public class JUnit4BundleListener implements BundleListener {
 
 	public void addBundle(Bundle bundle) {
 		switch (bundle.getState())  {
-		case Bundle.ACTIVE:
 		case Bundle.INSTALLED:
 			registerTestCase(bundle);
 			break;
 		case Bundle.STOPPING:
-		case Bundle.UNINSTALLED:
 			unregisterTestCase(bundle);
 			break;
 		default:
@@ -31,11 +29,13 @@ public class JUnit4BundleListener implements BundleListener {
 	@Override
 	public void bundleChanged(BundleEvent event) {
 		Bundle bundle = event.getBundle();
-		switch (event.getType())  {
-			case Bundle.ACTIVE:
+		switch (event.getType()) {
+			case BundleEvent.INSTALLED:
+			case BundleEvent.STARTED:
 				registerTestCase(bundle);
 				break;
-			case Bundle.STOPPING:
+			case BundleEvent.STOPPED:
+			case BundleEvent.UNINSTALLED:
 				unregisterTestCase(bundle);
 				break;
 			default:

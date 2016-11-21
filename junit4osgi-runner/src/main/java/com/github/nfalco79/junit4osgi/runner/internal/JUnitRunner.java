@@ -101,16 +101,19 @@ public class JUnitRunner {
 			while (!isStopped() && (testBean = tests.poll()) != null) {
 				try {
 					Class<?> testClass = testBean.getTestClass();
+					if (!JUnitUtils.hasTests(testClass)) {
+						continue;
+					}
 					JUnitCore core = new JUnitCore();
 
-					// inititialise the report listener
+					// initialise the report listener
 					XMLReport report = new XMLReport();
 					core.addListener(new ReportListener(report));
 
 					core.run(testClass);
 
 					// write test result
-					report.generateReport(testBean, reportsDirectory);
+					report.generateReport(reportsDirectory);
 				} catch (ClassNotFoundException e) {
 					logger.log(LogService.LOG_ERROR, "Impossible load class " + testBean.getId(), e);
 				} catch (NoClassDefFoundError e) {

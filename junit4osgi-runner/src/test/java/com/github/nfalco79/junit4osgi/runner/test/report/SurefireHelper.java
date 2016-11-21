@@ -1,7 +1,7 @@
 package com.github.nfalco79.junit4osgi.runner.test.report;
 
 import static com.github.nfalco79.junit4osgi.runner.internal.SurefireConstants.*;
-import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
 import java.io.File;
@@ -51,7 +51,7 @@ public class SurefireHelper {
 		assertNotNull("Testcase " + name + "not found", testcase);
 		assertEquals("Unexpected name value", name, testcase.getAttribute(TEST_NAME_ATTRIBUTE));
 		assertEquals("Unexpected classname value", className, testcase.getAttribute(TEST_CLASSNAME_ATTRIBUTE));
-		assertThat("Unexpected time value", getDouble(testcase, TEST_TIME_ATTRIBUTE), greaterThan(time));
+		assertThat("Unexpected time value", getDouble(testcase, TEST_TIME_ATTRIBUTE), greaterThanOrEqualTo(time));
 	}
 
 	private Xpp3Dom getTestCase(String name) {

@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: junit4osgi-registry
-Bundle-SymbolicName: junit4osgi-registry
+Bundle-SymbolicName: junit4osgi-registry;singleton:=true
 Bundle-Version: 0.0.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: org.osgi.framework;version="1.5.0"

@@ -17,9 +17,9 @@ import java.util.jar.Manifest;
 import org.osgi.framework.Bundle;
 
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
-import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
+import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent.TestRegistryEventType;
 
 public final class ManifestRegistry implements TestRegistry {
@@ -48,8 +48,10 @@ public final class ManifestRegistry implements TestRegistry {
 	@Override
 	public void removeTests(Bundle contributor) {
 		Set<TestBean> bundleTests = tests.remove(contributor);
-		for (TestBean test : bundleTests) {
-			fireEvent(new TestRegistryEvent(TestRegistryEventType.REMOVE, test));
+		if (bundleTests != null) {
+			for (TestBean test : bundleTests) {
+				fireEvent(new TestRegistryEvent(TestRegistryEventType.REMOVE, test));
+			}
 		}
 	}
 
@@ -88,11 +90,8 @@ public final class ManifestRegistry implements TestRegistry {
 	}
 
 	private void parseManifest(Bundle bundle) {
-		Set<TestBean> bundleTest = tests.get(bundle);
-		if (bundleTest == null) {
-			bundleTest = new LinkedHashSet<TestBean>();
-			tests.put(bundle, bundleTest);
-		}
+		Set<TestBean> bundleTest = new LinkedHashSet<TestBean>();
+		tests.put(bundle, bundleTest);
 
 		final String symbolicName = bundle.getSymbolicName();
 
