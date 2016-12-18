@@ -1,4 +1,4 @@
-/* 
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -24,7 +24,7 @@ import java.io.PrintStream;
 /**
  * Print stream dispatching on a given one and storing written data in a output
  * stream.
- * 
+ *
  * @author <a href="mailto:dev@felix.apache.org">Felix Project Team</a>
  */
 public class ReportPrintStream extends PrintStream {
@@ -33,13 +33,13 @@ public class ReportPrintStream extends PrintStream {
 
 	private boolean duplicate;
 
-	public ReportPrintStream(OutputStream out, PrintStream def,
-			boolean hideOutput) {
+	public ReportPrintStream(OutputStream out, PrintStream def, boolean hideOutput) {
 		super(out);
 		stream = def;
 		duplicate = !hideOutput;
 	}
 
+	@Override
 	public void println() {
 		if (duplicate) {
 			stream.println();
@@ -47,6 +47,7 @@ public class ReportPrintStream extends PrintStream {
 		super.println();
 	}
 
+	@Override
 	public void println(boolean x) {
 		if (duplicate) {
 			stream.println(x);
@@ -54,6 +55,7 @@ public class ReportPrintStream extends PrintStream {
 		super.println(x);
 	}
 
+	@Override
 	public void println(char x) {
 		if (duplicate) {
 			stream.println(x);
@@ -61,6 +63,7 @@ public class ReportPrintStream extends PrintStream {
 		super.println(x);
 	}
 
+	@Override
 	public void println(char[] x) {
 		if (duplicate) {
 			stream.println(x);
@@ -68,6 +71,7 @@ public class ReportPrintStream extends PrintStream {
 		super.println(x);
 	}
 
+	@Override
 	public void println(double x) {
 		if (duplicate) {
 			stream.println(x);
@@ -75,6 +79,7 @@ public class ReportPrintStream extends PrintStream {
 		super.println(x);
 	}
 
+	@Override
 	public void println(float x) {
 		if (duplicate) {
 			stream.println(x);
@@ -82,6 +87,7 @@ public class ReportPrintStream extends PrintStream {
 		super.println(x);
 	}
 
+	@Override
 	public void println(int x) {
 		if (duplicate) {
 			stream.println(x);
@@ -89,6 +95,7 @@ public class ReportPrintStream extends PrintStream {
 		super.println(x);
 	}
 
+	@Override
 	public void println(long x) {
 		if (duplicate) {
 			stream.println(x);
@@ -96,6 +103,7 @@ public class ReportPrintStream extends PrintStream {
 		super.println(x);
 	}
 
+	@Override
 	public void println(Object x) {
 		if (duplicate) {
 			stream.println(x);
@@ -103,6 +111,7 @@ public class ReportPrintStream extends PrintStream {
 		super.println(x);
 	}
 
+	@Override
 	public void println(String s) {
 		if (duplicate) {
 			stream.println(s);

@@ -5,11 +5,26 @@
 	<artifactId>junit4osgi-parent</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
+	<name>JUnit 4 for OSGi</name>
+	<description>This bundles enable to run JUnit 4 into a OSGi running system.</description>
+	<inceptionYear>2016</inceptionYear>
 	<properties>
 		<maven.compiler.source>1.6</maven.compiler.source>
 		<maven.compiler.target>1.6</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
+	<licenses>
+		<license>
+			<name>Apache License 2.0</name>
+			<url>http://www.spdx.org/licenses/Apache-2.0</url>
+		</license>
+	</licenses>
+	<developers>
+		<developer>
+			<id>nfalco79</id>
+			<name>Nikolas Falco</name>
+		</developer>
+	</developers>
 	<scm>
 		<url>https://github.com/nfalco79/junit4osgi</url>
 		<connection>scm:git:git://github.com/nfalco79/junit4osgi.git</connection>

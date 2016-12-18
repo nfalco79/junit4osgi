@@ -62,4 +62,6 @@
 			</plugin>
 		</plugins>
 	</build>
+	<name>JUnit4 for OSGi Registry</name>
+	<description>This bundle registers different test registry as OSGi service.</description>
 </project>

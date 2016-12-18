@@ -8,23 +8,23 @@ public class ErrorTest {
 
 	@Test
 	public void errorTest() {
-		System.out.println("test sysout errorTest");
-		System.err.println("test syserr errorTest");
+		System.out.print("test sysout errorTest");
+		System.err.print("test syserr errorTest");
 		throw new IllegalStateException("message");
 	}
 
 	@Test
 	public void failureTest() {
-		System.out.println("test sysout failureTest");
-		System.err.println("test syserr failureTest");
+		System.out.print("test sysout failureTest");
+		System.err.print("test syserr failureTest");
 		Assert.assertTrue("expected true", false);
 	}
 
 	@Test
 	@Ignore
 	public void ignoreTest() {
-		System.out.println("test sysout ignoreTest");
-		System.err.println("test syserr ignoreTest");
+		System.out.print("test sysout ignoreTest");
+		System.err.print("test syserr ignoreTest");
 		// do nothing
 	}
 

@@ -15,4 +15,10 @@ public class SimpleTestCase {
 		System.err.println(MESSAGE);
 	}
 
+	@Test
+	public void test_time() throws InterruptedException {
+		Thread.sleep(500l);
+		System.err.println(MESSAGE);
+	}
+
 }

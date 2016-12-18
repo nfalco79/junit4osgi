@@ -44,6 +44,8 @@ import org.junit.runner.notification.Failure;
 
 /**
  * This class generates test result as XML files compatible with Surefire.
+ *
+ * @author Nikolas Falco
  */
 public class XMLReport {
 	/**
@@ -85,6 +87,9 @@ public class XMLReport {
 	}
 
 	private String formatNumber(double time) {
+		if (time == 0) {
+			return "0";
+		}
 		return String.format(Locale.US, "%.3f", time);
 	}
 
@@ -108,7 +113,6 @@ public class XMLReport {
 		info.type = FailureType.ERROR;
 		info.out = out;
 		info.err = err;
-		info.log = log;
 	}
 
 	/**
@@ -123,7 +127,7 @@ public class XMLReport {
 	 * @param log
 	 *            the messages logged during the test execution
 	 */
-	public void testFailed(Failure failure, String out, String err, String log) {
+	public void testFailure(Failure failure, String out, String err, String log) {
 		Description description = failure.getDescription();
 		testCompleted(description);
 		ReportInfo info = map.get(description);
@@ -131,7 +135,6 @@ public class XMLReport {
 		info.type = FailureType.FAILURE;
 		info.out = out;
 		info.err = err;
-		info.log = log;
 	}
 
 	/**
@@ -141,31 +144,21 @@ public class XMLReport {
 	 *            the cause
 	 * @param name
 	 *            type of failure ("error" or "failure")
-	 * @param out
-	 *            the output messages printed during the test execution
-	 * @param err
-	 *            the error messages printed during the test execution
-	 * @param log
-	 *            the messages logged during the test execution
 	 */
-	private void writeTestProblems(Xpp3Dom element, Failure failure, String out, String err, String log) {
+	private void writeTestProblems(Xpp3Dom element, Failure failure) {
 		Throwable exception = failure.getException();
 		if (exception != null) {
 			String message = failure.getMessage();
 			if (message != null) {
-				element.setAttribute("message", message);
+				element.setAttribute(TEST_FAILURE_MESSAGE_ATTRIBUTE, message);
 			}
 
-			element.setAttribute("type", exception.getClass().getName());
+			element.setAttribute(TEST_FAILURE_TYPE_ATTRIBUTE, exception.getClass().getName());
 		}
 		String stackTrace = failure.getTrace();
 		if (stackTrace != null) {
 			element.setValue(stackTrace);
 		}
-
-		addOutputStreamElement(element, out, SurefireConstants.TEST_STDOUT_ELEMENT);
-		addOutputStreamElement(element, err, SurefireConstants.TEST_STDERR_ELEMENT);
-		addOutputStreamElement(element, log, "log-service");
 	}
 
 	/**
@@ -220,7 +213,7 @@ public class XMLReport {
 		} else if (dom == null && description.isSuite()) {
 			// suite test aggregate all test methods and ignore its class container
 			dom = createTestSuiteElement(dom, description);
-			showProperties(dom);
+			addProperties(dom);
 		} else if (description.isEmpty()) {
 			dom = createTestSuiteElement(dom, description);
 		} else if (description.isTest()) {
@@ -231,16 +224,20 @@ public class XMLReport {
 				switch (report.type) {
 				case ERROR:
 					errorsCount++;
-					element = createElement(element, TEST_FAILURE_ELEMENT);
-					writeTestProblems(element, report.failure, report.out, report.err, report.log);
+					addOutputStreamElement(element, report.out, SurefireConstants.TEST_STDOUT_ELEMENT);
+					addOutputStreamElement(element, report.err, SurefireConstants.TEST_STDERR_ELEMENT);
+					Xpp3Dom error = createElement(element, TEST_ERROR_ELEMENT);
+					writeTestProblems(error, report.failure);
 					break;
 				case FAILURE:
 					failuresCount++;
-					element = createElement(element, TEST_ERROR_ELEMENT);
-					writeTestProblems(element, report.failure, report.out, report.err, report.log);
+					addOutputStreamElement(element, report.out, SurefireConstants.TEST_STDOUT_ELEMENT);
+					addOutputStreamElement(element, report.err, SurefireConstants.TEST_STDERR_ELEMENT);
+					Xpp3Dom failure  = createElement(element, TEST_FAILURE_ELEMENT);
+					writeTestProblems(failure, report.failure);
 					break;
 				case IGNORE:
-					element = createElement(element, TEST_SKIPPED_ELEMENT);
+					createElement(element, TEST_SKIPPED_ELEMENT);
 					break;
 				default:
 					// it's a normal success test
@@ -264,7 +261,7 @@ public class XMLReport {
 	 * @return the XML element describing the given test.
 	 */
 	private Xpp3Dom createTestElement(Xpp3Dom parent, Description description) {
-		Xpp3Dom testCase = createElement(parent, "testcase");
+		Xpp3Dom testCase = createElement(parent, TEST_ELEMENT);
 
 		testCase.setAttribute(TEST_NAME_ATTRIBUTE, getReportName(description));
 		testCase.setAttribute(TEST_CLASSNAME_ATTRIBUTE, description.getClassName());
@@ -333,8 +330,8 @@ public class XMLReport {
 	 * @param testSuite
 	 *            the XML element.
 	 */
-	private void showProperties(Xpp3Dom parent) {
-		Xpp3Dom properties = createElement(parent, "properties");
+	private void addProperties(Xpp3Dom parent) {
+		Xpp3Dom properties = createElement(parent, PROPERTIES_ELEMENT);
 
 		Properties systemProperties = System.getProperties();
 
@@ -349,9 +346,9 @@ public class XMLReport {
 					value = "null";
 				}
 
-				Xpp3Dom property = createElement(properties, "property");
-				property.setAttribute("name", key);
-				property.setAttribute("value", value);
+				Xpp3Dom property = createElement(properties, PROPERTY_ELEMENT);
+				property.setAttribute(PROPERTY_NAME_ATTRIBUTE, key);
+				property.setAttribute(PROPERTY_VALUE_ATTRIBUTE, value);
 			}
 		}
 	}
@@ -368,7 +365,7 @@ public class XMLReport {
 	 */
 	private void addOutputStreamElement(Xpp3Dom parent, String stdOut, String name) {
 		if (stdOut != null && stdOut.trim().length() > 0) {
-			createElement(parent, name).setValue(stdOut);
+			createElement(parent, name).setValue("<![CDATA[" + stdOut + "]]>");
 		}
 	}
 
@@ -413,7 +410,6 @@ public class XMLReport {
 	}
 
 	private class ReportInfo {
-		private String log;
 		private String err;
 		private String out;
 		private long startTime;

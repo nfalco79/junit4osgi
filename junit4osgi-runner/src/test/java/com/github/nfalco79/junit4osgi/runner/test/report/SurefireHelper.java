@@ -37,6 +37,12 @@ public class SurefireHelper {
 		assertEquals("Unexpected tests value", tests, getLong(suite, SUITE_TESTS_ATTRIBUTE));
 	}
 
+	public void verifySuite(String className, long tests, long failures, long errors, long ignored, double seconds) {
+		verifySuite(className, tests, failures, errors, ignored);
+		Xpp3Dom suite = xml;
+		assertThat("Unexpected " + TEST_TIME_ATTRIBUTE + " value", getDouble(suite, TEST_TIME_ATTRIBUTE), greaterThanOrEqualTo(seconds));
+	}
+
 	public boolean hasTestCase() {
 		Xpp3Dom[] testcases = xml.getChildren(TEST_ELEMENT);
 		return testcases != null && testcases.length > 0;
@@ -46,12 +52,47 @@ public class SurefireHelper {
 		return xml.getChildren(TEST_ELEMENT).length;
 	}
 
-	public void verifyTestCase(String className, String name, double time) {
+	public Xpp3Dom verifyTestCase(String className, String name, double seconds) {
 		Xpp3Dom testcase = getTestCase(name);
-		assertNotNull("Testcase " + name + "not found", testcase);
-		assertEquals("Unexpected name value", name, testcase.getAttribute(TEST_NAME_ATTRIBUTE));
-		assertEquals("Unexpected classname value", className, testcase.getAttribute(TEST_CLASSNAME_ATTRIBUTE));
-		assertThat("Unexpected time value", getDouble(testcase, TEST_TIME_ATTRIBUTE), greaterThanOrEqualTo(time));
+		assertNotNull("Testcase " + name + " not found", testcase);
+		assertEquals("Unexpected " + TEST_NAME_ATTRIBUTE + " value", name, testcase.getAttribute(TEST_NAME_ATTRIBUTE));
+		assertEquals("Unexpected " + TEST_CLASSNAME_ATTRIBUTE + " value", className, testcase.getAttribute(TEST_CLASSNAME_ATTRIBUTE));
+		assertThat("Unexpected " + TEST_TIME_ATTRIBUTE + " value", getDouble(testcase, TEST_TIME_ATTRIBUTE), greaterThanOrEqualTo(seconds));
+
+		return testcase;
+	}
+
+	public Xpp3Dom verifyError(Xpp3Dom element, Class<? extends Throwable> cause, String message) {
+		Xpp3Dom[] errors = element.getChildren(TEST_ERROR_ELEMENT);
+		assertThat("Too or no " + TEST_ERROR_ELEMENT + " element found", errors.length, greaterThanOrEqualTo(1));
+		Xpp3Dom error = errors[0];
+		assertEquals("Unexpected " + TEST_ERROR_TYPE_ATTRIBUTE + " value", cause.getName(), error.getAttribute(TEST_ERROR_TYPE_ATTRIBUTE));
+		assertEquals("Unexpected " + TEST_ERROR_MESSAGE_ATTRIBUTE + " value", message, error.getAttribute(TEST_ERROR_MESSAGE_ATTRIBUTE));
+
+		return error;
+	}
+
+	public Xpp3Dom verifyFailure(Xpp3Dom element, Class<? extends Throwable> cause, String message) {
+		Xpp3Dom[] failures = element.getChildren(TEST_FAILURE_ELEMENT);
+		assertThat("Too or no " + TEST_FAILURE_ELEMENT + " element found", failures.length, greaterThanOrEqualTo(1));
+		Xpp3Dom failure = failures[0];
+		assertEquals("Unexpected " + TEST_FAILURE_TYPE_ATTRIBUTE + " value", cause.getName(), failure.getAttribute(TEST_FAILURE_TYPE_ATTRIBUTE));
+		assertEquals("Unexpected " + TEST_FAILURE_MESSAGE_ATTRIBUTE + " value", message, failure.getAttribute(TEST_FAILURE_MESSAGE_ATTRIBUTE));
+
+		return failure;
+	}
+
+	public Xpp3Dom verifySkipedTestCase(String className, String name) {
+		Xpp3Dom testcase = verifyTestCase(className, name, 0);
+
+		Xpp3Dom[] skips = testcase.getChildren(TEST_SKIPPED_ELEMENT);
+		assertThat("Too or no " + TEST_SKIPPED_ELEMENT + " element found", skips.length, greaterThanOrEqualTo(1));
+		Xpp3Dom skipped = skips[0];
+		assertThat("Unexpected attributes on " + TEST_SKIPPED_ELEMENT + " element", skipped.getAttributeNames(), arrayWithSize(0));
+		Xpp3Dom[] children = testcase.getChildren();
+		assertEquals("Unexpected element found", 1, children.length);
+
+		return testcase;
 	}
 
 	private Xpp3Dom getTestCase(String name) {
@@ -74,24 +115,47 @@ public class SurefireHelper {
 		return Double.parseDouble(element.getAttribute(attributeName));
 	}
 
-	public void verifyStdOutMessage(String testName, String value) {
-		Xpp3Dom testcase = getTestCase(testName);
-		Xpp3Dom[] stdoutElement = testcase.getChildren(TEST_STDOUT_ELEMENT);
-		assertNotNull("No stdout element found", stdoutElement);
-		assertThat("Too many stdout elements", stdoutElement.length, greaterThan(1));
+	public void verifyStdOutMessage(Xpp3Dom element, String value) {
+		Xpp3Dom[] stdoutElement = element.getChildren(TEST_STDOUT_ELEMENT);
+		assertNotNull("No " + TEST_STDOUT_ELEMENT + " element found", stdoutElement);
+		assertThat("Too many "+ TEST_STDOUT_ELEMENT + " elements", stdoutElement, arrayWithSize(1));
 
-		Xpp3Dom stdout = testcase.getChild(TEST_STDOUT_ELEMENT);
-		assertEquals("Wrong output", value, stdout.getValue());
+		Xpp3Dom stdout = stdoutElement[0];
+		assertEquals("Wrong output", value, unwrapCData(stdout.getValue()));
 	}
 
-	public void verifyStdErrMessage(String testName, String value) {
-		Xpp3Dom testcase = getTestCase(testName);
-		Xpp3Dom[] stdoutElement = testcase.getChildren(TEST_STDERR_ELEMENT);
-		assertNotNull("No stdout element found", stdoutElement);
-		assertThat("Too many stdout elements", stdoutElement.length, greaterThan(1));
+	public void verifyStdErrMessage(Xpp3Dom element, String value) {
+		Xpp3Dom[] stderrElement = element.getChildren(TEST_STDERR_ELEMENT);
+		assertNotNull("No " + TEST_STDERR_ELEMENT + " element found", stderrElement);
+		assertThat("Too many " + TEST_STDERR_ELEMENT + " elements", stderrElement, arrayWithSize(1));
 
-		Xpp3Dom stdout = testcase.getChild(TEST_STDOUT_ELEMENT);
-		assertEquals("Wrong output", value, stdout.getValue());
+		Xpp3Dom stderr = stderrElement[0];
+		assertEquals("Wrong output", value, unwrapCData(stderr.getValue()));
 	}
 
+	public void verifyProperty(String name, String value) {
+		Xpp3Dom suite = xml;
+		Xpp3Dom propertiesEl = suite.getChild(PROPERTIES_ELEMENT);
+		assertNotNull("No " + PROPERTIES_ELEMENT + " element found", propertiesEl);
+		Xpp3Dom[] properties = propertiesEl.getChildren(PROPERTY_ELEMENT);
+		assertThat("No "+ PROPERTY_ELEMENT + " elements", properties, arrayWithSize(greaterThan(1)));
+
+		for (Xpp3Dom property : properties) {
+			String propertyKey = property.getAttribute(PROPERTY_NAME_ATTRIBUTE);
+			if (name.equals(propertyKey)) {
+				String propertyValue = property.getAttribute(PROPERTY_VALUE_ATTRIBUTE);
+				assertEquals("Property '" + propertyKey + "' value is different", value, propertyValue);
+				return;
+			}
+		}
+		fail("Property '" + name + "' not found");
+	}
+
+	private String unwrapCData(final String text) {
+		String unwrap = text;
+		if (unwrap.startsWith(CDATA_START)) {
+			unwrap = unwrap.substring(CDATA_START.length(), unwrap.length() - CDATA_END.length());
+		}
+		return unwrap;
+	}
 }
