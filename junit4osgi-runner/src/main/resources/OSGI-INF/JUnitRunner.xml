@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" deactivate="shutdown" name="JUnitRunner">
+   <implementation class="com.github.nfalco79.junit4osgi.runner.internal.JUnitRunner"/>
+   <reference bind="setLog" cardinality="1..1" interface="org.osgi.service.log.LogService" name="LogService" policy="static"/>
+   <reference bind="setRegistry" cardinality="1..n" interface="com.github.nfalco79.junit4osgi.registry.spi.TestRegistry" name="TestRegistry" policy="static" target="(discovery=auto)"/>
+</scr:component>

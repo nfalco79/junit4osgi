@@ -33,14 +33,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.jar.Manifest;
 
 import org.osgi.framework.Bundle;
+import org.osgi.service.log.LogService;
 
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
-import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent.TestRegistryEventType;
 
-public final class ManifestRegistry implements TestRegistry {
+public final class ManifestRegistry extends AbstractRegistry {
 	private static final String TEST_ENTRY = "Test-Suite";
 
 	private final List<TestRegistryChangeListener> listeners = new CopyOnWriteArrayList<TestRegistryChangeListener>();
@@ -60,8 +60,9 @@ public final class ManifestRegistry implements TestRegistry {
 		parseManifest(contributor);
 	}
 
-	/* (non-Javadoc)
-	 * @see com.github.nfalco79.junit4osgi.registry.TestRegistry#removeBundleTests(org.osgi.framework.Bundle)
+	/*
+	 * (non-Javadoc)
+	 * @see com.github.nfalco79.junit4osgi.registry.spi.TestRegistry#removeTests(org.osgi.framework.Bundle)
 	 */
 	@Override
 	public void removeTests(Bundle contributor) {
@@ -73,7 +74,8 @@ public final class ManifestRegistry implements TestRegistry {
 		}
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see com.github.nfalco79.junit4osgi.registry.TestRegistry#getTests()
 	 */
 	@Override
@@ -85,7 +87,8 @@ public final class ManifestRegistry implements TestRegistry {
 		return Collections.unmodifiableSet(allTests);
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see com.github.nfalco79.junit4osgi.registry.TestRegistry#addTestListener(com.github.nfalco79.junit4osgi.registry.TestRegistryListener)
 	 */
 	@Override
@@ -96,7 +99,8 @@ public final class ManifestRegistry implements TestRegistry {
 		listeners.add(listener);
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see com.github.nfalco79.junit4osgi.registry.TestRegistry#removeTestListener(com.github.nfalco79.junit4osgi.registry.TestRegistryListener)
 	 */
 	@Override
@@ -115,7 +119,8 @@ public final class ManifestRegistry implements TestRegistry {
 
 		final URL resource = bundle.getEntry("META-INF/MANIFEST.MF");
 		if (resource == null) {
-			System.out.println("No MANIFEST for bundle " + symbolicName + "[id:" + bundle.getVersion() + "]");
+			getLog().log(LogService.LOG_WARNING,
+					"No MANIFEST for bundle " + symbolicName + "[id:" + bundle.getVersion() + "]");
 			return;
 		}
 
@@ -136,12 +141,13 @@ public final class ManifestRegistry implements TestRegistry {
 
 						fireEvent(new TestRegistryEvent(TestRegistryEventType.ADD, bean));
 					} catch (IllegalArgumentException e) {
-						System.out.println("Test class '" + testClass + "' not found in bundle " + symbolicName);
+						getLog().log(LogService.LOG_ERROR,
+								"Test class '" + testClass + "' not found in bundle " + symbolicName, e);
 					}
 				}
 			}
 		} catch (IOException e) {
-			System.out.println("Could not read MANIFEST of bundle " + symbolicName);
+			getLog().log(LogService.LOG_ERROR, "Could not read MANIFEST of bundle " + symbolicName, e);
 		} finally {
 			closeSilently(is);
 		}
@@ -161,7 +167,8 @@ public final class ManifestRegistry implements TestRegistry {
 			try {
 				listener.registryChanged(event);
 			} catch (Exception t) {
-				System.out.println("Listener " + listener.getClass() + " fails on event " + event.getType() + " for the test " + event.getTest().getId());
+				getLog().log(LogService.LOG_INFO, "Listener " + listener.getClass() + " fails on event " + event.getType()
+						+ " for the test " + event.getTest().getId());
 			}
 		}
 	}

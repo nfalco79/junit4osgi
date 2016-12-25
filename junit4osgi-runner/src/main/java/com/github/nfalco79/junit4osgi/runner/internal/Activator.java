@@ -32,7 +32,7 @@ public class Activator implements BundleActivator {
 			}
 		}
 
-		runner.setLogger(logger);
+		runner.setLog(logger);
 		runner.setRegistry(registry);
 		runner.startup();
 	}

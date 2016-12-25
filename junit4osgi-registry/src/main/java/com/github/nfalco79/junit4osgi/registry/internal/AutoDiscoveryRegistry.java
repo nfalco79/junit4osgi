@@ -29,14 +29,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.osgi.framework.Bundle;
+import org.osgi.service.log.LogService;
 
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
-import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent.TestRegistryEventType;
 
-public final class AutoDiscoveryRegistry implements TestRegistry {
+public final class AutoDiscoveryRegistry extends AbstractRegistry {
 	private static final int EXT_LENGHT = ".class".length();
 
 	private final List<TestRegistryChangeListener> listeners = new CopyOnWriteArrayList<TestRegistryChangeListener>();
@@ -141,7 +141,7 @@ public final class AutoDiscoveryRegistry implements TestRegistry {
 			try {
 				listener.registryChanged(event);
 			} catch (Exception t) {
-				System.out.println("Listener " + listener.getClass()
+				getLog().log(LogService.LOG_ERROR, "Listener " + listener.getClass()
 						+ " fails on event " + event.getType()
 						+ " for the test " + event.getTest().getId());
 			}

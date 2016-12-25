@@ -2,6 +2,8 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>junit4osgi-registry</artifactId>
+	<name>JUnit4 for OSGi Registry</name>
+	<description>This bundle registers different test registry as OSGi service.</description>
 	<parent>
 		<groupId>com.github.nfalco79</groupId>
 		<artifactId>junit4osgi-parent</artifactId>
@@ -41,12 +43,12 @@
 					</execution>
 				</executions>
 			</plugin>
+			<!-- 
 			<plugin>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>maven-bundle-plugin</artifactId>
 				<configuration>
 					<instructions>
-						<Bundle-Activator>${bundle.namespace}.internal.Activator</Bundle-Activator>
 						<Export-Package>
 							!*.internal.*,
 							!*.experimental.*,
@@ -60,8 +62,7 @@
 					</instructions>
 				</configuration>
 			</plugin>
+			 -->
 		</plugins>
 	</build>
-	<name>JUnit4 for OSGi Registry</name>
-	<description>This bundle registers different test registry as OSGi service.</description>
 </project>

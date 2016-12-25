@@ -25,6 +25,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.runner.JUnitCore;
+import org.osgi.service.component.ComponentContext;
 import org.osgi.service.log.LogService;
 
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
@@ -80,8 +81,12 @@ public class JUnitRunner {
 		this.registry = registry;
 	}
 
-	public void setLogger(LogService logger) {
+	public void setLog(LogService logger) {
 		this.logger = logger;
+	}
+
+	protected void activate(ComponentContext context) {
+		Object locateService = context.locateService("TestRegistry");
 	}
 
 	public void startup() {
