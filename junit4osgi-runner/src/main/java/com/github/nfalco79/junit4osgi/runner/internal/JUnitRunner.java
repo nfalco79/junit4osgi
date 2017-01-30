@@ -25,7 +25,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.runner.JUnitCore;
-import org.osgi.service.component.ComponentContext;
 import org.osgi.service.log.LogService;
 
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
@@ -77,7 +76,7 @@ public class JUnitRunner {
 		reportsDirectory = new File(System.getProperty(REPORT_PATH, "surefire-reports"));
 	}
 
-	public void setRegistry(TestRegistry registry) {
+	public void setRegistry(final TestRegistry registry) {
 		this.registry = registry;
 	}
 
@@ -85,13 +84,9 @@ public class JUnitRunner {
 		this.logger = logger;
 	}
 
-	protected void activate(ComponentContext context) {
-		Object locateService = context.locateService("TestRegistry");
-	}
-
 	public void startup() {
 		if (logger == null || registry == null) {
-			throw new IllegalStateException("One of logger, listener or test registry service component is missing");
+			return;
 		}
 
 		stop = false;
@@ -150,7 +145,9 @@ public class JUnitRunner {
 
 	public void shutdown() {
 		stop = true;
-		registry.removeTestRegistryListener(testListener);
+		if (registry != null && testListener != null) {
+			registry.removeTestRegistryListener(testListener);
+		}
 		if (executor != null) {
 			executor.shutdownNow();
 		}
