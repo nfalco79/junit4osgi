@@ -31,7 +31,12 @@ import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
+import com.j256.simplejmx.common.JmxAttributeMethod;
+import com.j256.simplejmx.common.JmxOperation;
+import com.j256.simplejmx.common.JmxOperationInfo.OperationAction;
+import com.j256.simplejmx.common.JmxResource;
 
+@JmxResource(domainName = "org.osgi.junit4osgi.runner", beanName = "JUnitRunner", description = "The JUnit4 runner")
 public class JUnitRunner {
 	private final class QueeueTestListener implements TestRegistryChangeListener {
 		private final Queue<TestBean> tests;
@@ -84,6 +89,7 @@ public class JUnitRunner {
 		this.logger = logger;
 	}
 
+	@JmxOperation(description = "Start the runner", operationAction = OperationAction.ACTION)
 	public void startup() {
 		if (logger == null || registry == null) {
 			return;
@@ -143,6 +149,7 @@ public class JUnitRunner {
 		}
 	}
 
+	@JmxOperation(description = "Stop the runner", operationAction = OperationAction.ACTION)
 	public void shutdown() {
 		stop = true;
 		if (registry != null && testListener != null) {
@@ -153,10 +160,12 @@ public class JUnitRunner {
 		}
 	}
 
+	@JmxAttributeMethod(description = "Returns if the runner is plan to be stopped")
 	public boolean isStopped() {
 		return stop;
 	}
 
+	@JmxAttributeMethod(description = "Returns the state of runner")
 	public boolean isRunning() {
 		return running;
 	}

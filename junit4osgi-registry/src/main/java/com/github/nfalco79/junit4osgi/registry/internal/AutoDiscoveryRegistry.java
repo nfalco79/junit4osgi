@@ -35,13 +35,18 @@ import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent.TestRegistryEventType;
+import com.j256.simplejmx.common.JmxAttributeMethod;
+import com.j256.simplejmx.common.JmxOperation;
+import com.j256.simplejmx.common.JmxResource;
 
+@JmxResource(domainName = "org.osgi.junit4osgi.registry", beanName = "AutoDiscoveryRegistry", description = "The JUnit4 registry that discovers test using the same maven surefure test naming convention")
 public final class AutoDiscoveryRegistry extends AbstractRegistry {
 	private static final int EXT_LENGHT = ".class".length();
 
 	private final List<TestRegistryChangeListener> listeners = new CopyOnWriteArrayList<TestRegistryChangeListener>();
 	private final Map<Bundle, Set<TestBean>> tests = new ConcurrentHashMap<Bundle, Set<TestBean>>();
 
+	@JmxOperation(description = "Dispose the registry")
 	@Override
 	public void dispose() {
 		tests.clear();
@@ -103,6 +108,7 @@ public final class AutoDiscoveryRegistry extends AbstractRegistry {
 	 * (non-Javadoc)
 	 * @see com.github.nfalco79.junit4osgi.registry.spi.TestRegistry#getTests()
 	 */
+	@JmxAttributeMethod(description = "Returns a list of all tests in the registry")
 	@Override
 	public Set<TestBean> getTests() {
 		Set<TestBean> allTests = new LinkedHashSet<TestBean>();

@@ -8,14 +8,20 @@ import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
+import com.github.nfalco79.junit4osgi.runner.internal.jmx.JMXServer;
 
 public class Activator implements BundleActivator {
+
+	public static final String RUNNER_REGISTY = "org.osgi.junit.runner.registry";
+	public static final String RUNNER_AUTOSTART = "org.osgi.junit.runner.autostart";
 
 	private ServiceTracker<TestRegistry, TestRegistry> registryTracker;
 	private ServiceTracker<LogService, LogService> logTracker;
 	private JUnitRunner runner;
 	private TestRegistry registry;
 	private LogService logger;
+	private boolean runnerStart;
+	private JMXServer jmxServer;
 //	private ServiceTracker<RunListener, RunListener> listenerTracker;
 
 	private void bind() {
@@ -34,7 +40,14 @@ public class Activator implements BundleActivator {
 
 		runner.setLog(logger);
 		runner.setRegistry(registry);
-		runner.startup();
+
+		jmxServer.start();
+		jmxServer.register(registry);
+		jmxServer.register(runner);
+
+		if (runnerStart) {
+			runner.startup();
+		}
 	}
 
 	private void unbind() {
@@ -43,6 +56,11 @@ public class Activator implements BundleActivator {
 		}
 
 		runner.shutdown();
+
+		jmxServer.unregister(runner);
+		jmxServer.unregister(registry);
+		jmxServer.stop();
+
 		logger = null;
 		registry = null;
 	}
@@ -53,10 +71,15 @@ public class Activator implements BundleActivator {
 	 */
 	@Override
 	public void start(BundleContext bundleContext) throws Exception {
+		final String runnerRegistry = System.getProperty(RUNNER_REGISTY, "auto");
+		runnerStart = Boolean.getBoolean(RUNNER_AUTOSTART);
+
+		jmxServer = new JMXServer();
+
 		runner = new JUnitRunner();
 
 		registryTracker = new ServiceTracker<TestRegistry, TestRegistry>(bundleContext,
-				bundleContext.createFilter("(discovery=auto)"),
+				bundleContext.createFilter("(discovery=" + runnerRegistry + ")"),
 				createRegistryCustomizer(bundleContext));
 		logTracker = new ServiceTracker<LogService, LogService>(bundleContext,
 				LogService.class,
@@ -76,6 +99,8 @@ public class Activator implements BundleActivator {
 		registryTracker.close();
 		logTracker.close();
 //		listenerTracker.close();
+
+		jmxServer.stop();
 	}
 
 	private ServiceTrackerCustomizer<LogService, LogService> createLogCustomizer(final BundleContext bundleContext) {

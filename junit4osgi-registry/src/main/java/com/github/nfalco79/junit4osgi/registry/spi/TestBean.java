@@ -18,14 +18,16 @@
  */
 package com.github.nfalco79.junit4osgi.registry.spi;
 
+import java.io.Serializable;
 import java.net.URL;
 
 import org.osgi.framework.Bundle;
 
-public class TestBean {
+@SuppressWarnings("serial")
+public class TestBean implements Serializable {
 
 	private String className;
-	private Bundle bundle;
+	private transient Bundle bundle;
 
 	public TestBean(Bundle bundle, String className) {
 		if (bundle == null) {

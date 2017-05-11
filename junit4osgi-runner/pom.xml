@@ -17,6 +17,13 @@
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>com.j256.simplejmx</groupId>
+			<artifactId>simplejmx</artifactId>
+			<version>1.15</version>
+			<scope>provided</scope>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
 			<groupId>org.codehaus.plexus</groupId>
 			<artifactId>plexus-utils</artifactId>
 			<version>3.0.24</version>
@@ -46,19 +53,10 @@
 					</execution>
 				</executions>
 			</plugin>
-			<!-- 
-			<plugin>
-				<groupId>org.apache.felix</groupId>
-				<artifactId>maven-bundle-plugin</artifactId>
-				<configuration>
-					<instructions>
-						<Bundle-Activator>${bundle.namespace}.internal.Activator</Bundle-Activator>
-						<Embed-Dependency>plexus-utils</Embed-Dependency>
-						<Embed-Directory>lib</Embed-Directory>
-					</instructions>
-				</configuration>
-			</plugin>
-			 -->
+			<!-- <plugin> <groupId>org.apache.felix</groupId> <artifactId>maven-bundle-plugin</artifactId> 
+				<configuration> <instructions> <Bundle-Activator>${bundle.namespace}.internal.Activator</Bundle-Activator> 
+				<Embed-Dependency>plexus-utils</Embed-Dependency> <Embed-Directory>lib</Embed-Directory> 
+				</instructions> </configuration> </plugin> -->
 		</plugins>
 	</build>
 	<name>JUnit4 for OSGi Runner</name>

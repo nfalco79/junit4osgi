@@ -7,6 +7,9 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ClassPath: .,
  lib/plexus-utils-3.0.24.jar
 Import-Package: com.github.nfalco79.junit4osgi.registry.spi,
+ com.j256.simplejmx.common;version="1.12.0";resolution:=optional,
+ com.j256.simplejmx.server;version="1.12.0";resolution:=optional,
+ javax.management;resolution:=optional,
  junit.framework;version="4.12.0",
  org.junit;version="4.12.0",
  org.junit.runner;version="4.12.0",
