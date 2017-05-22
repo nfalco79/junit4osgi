@@ -3,9 +3,9 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.nfalco79</groupId>
 	<artifactId>junit4osgi-parent</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
-	<name>JUnit 4 for OSGi</name>
+	<name>JUnit4 for OSGi</name>
 	<description>This bundles enable to run JUnit 4 into a OSGi running system.</description>
 	<inceptionYear>2016</inceptionYear>
 	<properties>
@@ -30,6 +30,14 @@
 		<connection>scm:git:git://github.com/nfalco79/junit4osgi.git</connection>
 		<developerConnection>scm:git:git://github.com/nfalco79/junit4osgi.git</developerConnection>
 	</scm>
+	<ciManagement>
+		<system>Travis CI</system>
+		<url>https://travis-ci.org/nfalco79/junit4osgi</url>
+	</ciManagement>
+	<issueManagement>
+		<system>github</system>
+		<url>https://github.com/nfalco79/junit4osgi/issues</url>
+	</issueManagement>
 	<modules>
 		<module>junit4osgi-registry</module>
 		<module>junit4osgi-runner</module>
@@ -46,6 +54,12 @@
 			<artifactId>org.osgi.service.component</artifactId>
 			<version>1.3.0</version>
 			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>2.2.15</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 	<build>
@@ -76,7 +90,7 @@
 				<plugin>
 					<groupId>org.apache.felix</groupId>
 					<artifactId>maven-bundle-plugin</artifactId>
-					<version>3.0.1</version>
+					<version>3.3.0</version>
 					<executions>
 						<execution>
 							<id>bundle-manifest</id>
@@ -108,19 +122,65 @@
 						</excludes>
 					</configuration>
 				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-shade-plugin</artifactId>
+					<version>3.0.0</version>
+					<configuration>
+						<createDependencyReducedPom>true</createDependencyReducedPom>
+						<dependencyReducedPomLocation>${project.build.outputDirectory}/META-INF/pom.xml</dependencyReducedPomLocation>
+					</configuration>
+					<executions>
+						<execution>
+							<goals>
+								<goal>shade</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
 			</plugins>
 		</pluginManagement>
 		<plugins>
-		<!-- 
-			<plugin>
-				<groupId>org.apache.felix</groupId>
-				<artifactId>maven-bundle-plugin</artifactId>
-			</plugin>
-			 -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+			</plugin>
 		</plugins>
 	</build>
+	<profiles>
+		<profile>
+			<id>enable-jacoco</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.jacoco</groupId>
+						<artifactId>jacoco-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<goals>
+									<goal>prepare-agent</goal>
+								</goals>
+							</execution>
+							<execution>
+								<id>report</id>
+								<phase>prepare-package</phase>
+								<goals>
+									<goal>report</goal>
+								</goals>
+							</execution>
+						</executions>
+						<configuration>
+							<excludes>
+								<exclude>**/*Constants.class</exclude>
+							</excludes>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>

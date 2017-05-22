@@ -22,38 +22,41 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.jar.Manifest;
 
 import org.osgi.framework.Bundle;
 import org.osgi.service.log.LogService;
 
+import com.github.nfalco79.junit4osgi.registry.spi.AbstractTestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
-import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent.TestRegistryEventType;
 import com.j256.simplejmx.common.JmxAttributeMethod;
 import com.j256.simplejmx.common.JmxOperation;
 import com.j256.simplejmx.common.JmxResource;
 
-@JmxResource(domainName = "org.osgi.junit4osgi.registry", beanName = "ManifestRegistry", description = "The JUnit4 registry that collect tests from the MANIFEST header Test-Suite")
-public final class ManifestRegistry extends AbstractRegistry {
+@JmxResource(domainName = "org.osgi.junit4osgi", folderNames = "registry", beanName = "ManifestRegistry", description = "The JUnit4 registry that collect tests from the MANIFEST header Test-Suite")
+public final class ManifestRegistry extends AbstractTestRegistry {
 	private static final String TEST_ENTRY = "Test-Suite";
-
-	private final List<TestRegistryChangeListener> listeners = new CopyOnWriteArrayList<TestRegistryChangeListener>();
-	private final Map<Bundle, Set<TestBean>> tests = new ConcurrentHashMap<Bundle, Set<TestBean>>();
 
 	@JmxOperation(description = "Dispose the registry")
 	@Override
 	public void dispose() {
-		tests.clear();
+		super.dispose();
+	}
+
+	@JmxAttributeMethod(description = "Returns a list of all tests id in the registry")
+	public String[] getTestIds() {
+		Set<String> allTests = new LinkedHashSet<String>();
+		for (Set<TestBean> bundleTests : tests.values()) {
+			for (TestBean test : bundleTests) {
+				allTests.add(test.getId());
+			}
+		}
+		return allTests.toArray(new String[allTests.size()]);
 	}
 
 	/*
@@ -63,58 +66,6 @@ public final class ManifestRegistry extends AbstractRegistry {
 	@Override
 	public void registerTests(Bundle contributor) {
 		parseManifest(contributor);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see com.github.nfalco79.junit4osgi.registry.spi.TestRegistry#removeTests(org.osgi.framework.Bundle)
-	 */
-	@Override
-	public void removeTests(Bundle contributor) {
-		Set<TestBean> bundleTests = tests.remove(contributor);
-		if (bundleTests != null) {
-			for (TestBean test : bundleTests) {
-				fireEvent(new TestRegistryEvent(TestRegistryEventType.REMOVE, test));
-			}
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see com.github.nfalco79.junit4osgi.registry.TestRegistry#getTests()
-	 */
-	@JmxAttributeMethod(description = "Returns a list of all tests in the registry")
-	@Override
-	public Set<TestBean> getTests() {
-		Set<TestBean> allTests = new LinkedHashSet<TestBean>();
-		for (Set<TestBean> foo : tests.values()) {
-			allTests.addAll(foo);
-		}
-		return Collections.unmodifiableSet(allTests);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see com.github.nfalco79.junit4osgi.registry.TestRegistry#addTestListener(com.github.nfalco79.junit4osgi.registry.TestRegistryListener)
-	 */
-	@Override
-	public void addTestRegistryListener(TestRegistryChangeListener listener) {
-		if (listener == null) {
-			throw new NullPointerException("Cannot add a null listener");
-		}
-		listeners.add(listener);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see com.github.nfalco79.junit4osgi.registry.TestRegistry#removeTestListener(com.github.nfalco79.junit4osgi.registry.TestRegistryListener)
-	 */
-	@Override
-	public void removeTestRegistryListener(TestRegistryChangeListener listener) {
-		if (listener == null) {
-			throw new NullPointerException("Cannot remove a null listener");
-		}
-		listeners.remove(listener);
 	}
 
 	private void parseManifest(Bundle bundle) {
@@ -164,17 +115,6 @@ public final class ManifestRegistry extends AbstractRegistry {
 			try {
 				closeable.close();
 			} catch (IOException e) { // NOSONAR
-			}
-		}
-	}
-
-	private void fireEvent(TestRegistryEvent event) {
-		for (TestRegistryChangeListener listener : listeners) {
-			try {
-				listener.registryChanged(event);
-			} catch (Exception t) {
-				getLog().log(LogService.LOG_INFO, "Listener " + listener.getClass() + " fails on event " + event.getType()
-						+ " for the test " + event.getTest().getId());
 			}
 		}
 	}

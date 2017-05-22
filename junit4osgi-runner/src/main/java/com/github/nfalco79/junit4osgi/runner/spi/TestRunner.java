@@ -16,26 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.github.nfalco79.junit4osgi.registry.spi;
+package com.github.nfalco79.junit4osgi.runner.spi;
 
-import java.util.Set;
+import org.osgi.service.log.LogService;
 
-import org.osgi.framework.Bundle;
+import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
 
-public interface TestRegistry {
+public interface TestRunner {
 
-	void registerTests(Bundle contributor);
+	void setRegistry(TestRegistry registry);
 
-	void removeTests(Bundle contributor);
+	void setLog(LogService logger);
 
-	Set<TestBean> getTests();
+	void start();
 
-	Set<TestBean> getTests(String[] testIds);
+	void stop();
 
-	void addTestRegistryListener(TestRegistryChangeListener listener);
+	boolean isStopped();
 
-	void removeTestRegistryListener(TestRegistryChangeListener listener);
-
-	void dispose();
+	boolean isRunning();
 
 }

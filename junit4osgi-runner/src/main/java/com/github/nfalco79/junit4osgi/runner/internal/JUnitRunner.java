@@ -19,6 +19,7 @@
 package com.github.nfalco79.junit4osgi.runner.internal;
 
 import java.io.File;
+import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -31,13 +32,14 @@ import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
+import com.github.nfalco79.junit4osgi.runner.spi.TestRunner;
 import com.j256.simplejmx.common.JmxAttributeMethod;
 import com.j256.simplejmx.common.JmxOperation;
 import com.j256.simplejmx.common.JmxOperationInfo.OperationAction;
 import com.j256.simplejmx.common.JmxResource;
 
-@JmxResource(domainName = "org.osgi.junit4osgi.runner", beanName = "JUnitRunner", description = "The JUnit4 runner")
-public class JUnitRunner {
+@JmxResource(domainName = "org.osgi.junit4osgi", folderNames = "runner", beanName = "JUnitRunner", description = "The JUnit4 runner, executes JUnit3/4 test case in any OSGi bundle in the current system")
+public class JUnitRunner implements TestRunner {
 	private final class QueeueTestListener implements TestRegistryChangeListener {
 		private final Queue<TestBean> tests;
 
@@ -72,54 +74,101 @@ public class JUnitRunner {
 	private boolean stop;
 	private boolean running;
 	private LogService logger;
-	private File reportsDirectory;
+	private File defaultReportsDirectory;
 	private TestRegistryChangeListener testListener;
-
 	private ScheduledThreadPoolExecutor executor;
 
 	public JUnitRunner() {
-		reportsDirectory = new File(System.getProperty(REPORT_PATH, "surefire-reports"));
+		defaultReportsDirectory = new File(System.getProperty(REPORT_PATH, "surefire-reports"));
+		stop = true;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.github.nfalco79.junit4osgi.runner.internal.TestRunner#setRegistry(com.github.nfalco79.junit4osgi.registry.spi.TestRegistry)
+	 */
+	@Override
 	public void setRegistry(final TestRegistry registry) {
 		this.registry = registry;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.github.nfalco79.junit4osgi.runner.internal.TestRunner#setLog(org.osgi.service.log.LogService)
+	 */
+	@Override
 	public void setLog(LogService logger) {
 		this.logger = logger;
 	}
 
-	@JmxOperation(description = "Start the runner", operationAction = OperationAction.ACTION)
-	public void startup() {
+	/* (non-Javadoc)
+	 * @see com.github.nfalco79.junit4osgi.runner.internal.TestRunner#start()
+	 */
+	@Override
+	public void start() {
+		start(null, null);
+	}
+
+	@JmxOperation(description = "Start the runner that execute tests collected by the JUnit registry", operationAction = OperationAction.ACTION)
+	public void start(String[] testIds, String reportsPath) {
 		if (logger == null || registry == null) {
 			return;
 		}
 
-		stop = false;
-
-		final Queue<TestBean> tests = new ConcurrentLinkedQueue<TestBean>(registry.getTests());
-		testListener = new QueeueTestListener(tests);
-		registry.addTestRegistryListener(testListener);
-
-		if (!isRunning()) {
-			running = true;
-			executor = new ScheduledThreadPoolExecutor(1);
-			executor.scheduleAtFixedRate(new Runnable() {
-				@Override
-				public void run() {
-					try {
-						running = true;
-						runTests(tests);
-					} finally {
-						running = false;
-					}
-				}
-			}, 0l, 5, TimeUnit.SECONDS);
+		final File reportsDirectory;
+		if (reportsPath != null) {
+			reportsDirectory = new File(reportsPath);
+		} else {
+			reportsDirectory = defaultReportsDirectory;
 		}
 
+		stop = false;
+
+		if (!isRunning()) {
+			final Queue<TestBean> tests;
+			if (testIds == null) {
+				// create a queue collecting all registry tests
+				tests = new ConcurrentLinkedQueue<TestBean>(registry.getTests());
+				testListener = new QueeueTestListener(tests);
+				registry.addTestRegistryListener(testListener);
+			} else {
+				// create a queue with only the specified tests
+				tests = new ArrayDeque<TestBean>(registry.getTests(testIds));
+			}
+
+
+			running = true;
+			executor = new ScheduledThreadPoolExecutor(1);
+
+			Runnable testRunnable = getTestRunnable(reportsDirectory, tests);
+			if (testIds != null) {
+				executor.schedule(testRunnable, 0l, TimeUnit.MILLISECONDS);
+			} else {
+				executor.scheduleAtFixedRate(testRunnable, 0l, getRepeatTime(), TimeUnit.MILLISECONDS);
+			}
+		}
 	}
 
-	private void runTests(final Queue<TestBean> tests) {
+	/**
+	 * For test purpose only
+	 */
+	protected long getRepeatTime() {
+		return 5000l;
+	}
+
+	protected Runnable getTestRunnable(final File reportsDirectory, final Queue<TestBean> tests) {
+		return new Runnable() {
+			@Override
+			public void run() {
+				try {
+					running = true;
+					runTests(tests, reportsDirectory);
+				} finally {
+					running = false;
+				}
+			}
+		};
+	}
+
+	private void runTests(final Queue<TestBean> tests, final File reportsDirectory) {
 		TestBean testBean;
 		try {
 			while (!isStopped() && (testBean = tests.poll()) != null) {
@@ -139,9 +188,9 @@ public class JUnitRunner {
 					// write test result
 					report.generateReport(reportsDirectory);
 				} catch (ClassNotFoundException e) {
-					logger.log(LogService.LOG_ERROR, "Impossible load class " + testBean.getId(), e);
+					logger.log(LogService.LOG_ERROR, "Cannot load class " + testBean.getId(), e);
 				} catch (NoClassDefFoundError e) {
-					logger.log(LogService.LOG_ERROR, "Impossible load class " + testBean.getId(), e);
+					logger.log(LogService.LOG_ERROR, "Cannot load class " + testBean.getId(), e);
 				}
 			}
 		} catch (Exception e) {
@@ -149,8 +198,12 @@ public class JUnitRunner {
 		}
 	}
 
-	@JmxOperation(description = "Stop the runner", operationAction = OperationAction.ACTION)
-	public void shutdown() {
+	/* (non-Javadoc)
+	 * @see com.github.nfalco79.junit4osgi.runner.internal.TestRunner#stop()
+	 */
+	@Override
+	@JmxOperation(description = "Stop any active runner", operationAction = OperationAction.ACTION)
+	public void stop() {
 		stop = true;
 		if (registry != null && testListener != null) {
 			registry.removeTestRegistryListener(testListener);
@@ -160,12 +213,20 @@ public class JUnitRunner {
 		}
 	}
 
-	@JmxAttributeMethod(description = "Returns if the runner is plan to be stopped")
+	/* (non-Javadoc)
+	 * @see com.github.nfalco79.junit4osgi.runner.internal.TestRunner#isStopped()
+	 */
+	@Override
+	@JmxAttributeMethod(description = "Returns if the runner is stopped or is plan to be stopped")
 	public boolean isStopped() {
 		return stop;
 	}
 
-	@JmxAttributeMethod(description = "Returns the state of runner")
+	/* (non-Javadoc)
+	 * @see com.github.nfalco79.junit4osgi.runner.internal.TestRunner#isRunning()
+	 */
+	@Override
+	@JmxAttributeMethod(description = "Returns the actual state of JUnit runner")
 	public boolean isRunning() {
 		return running;
 	}

@@ -68,23 +68,30 @@ public class TestBean implements Serializable {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
+		}
 		TestBean other = (TestBean) obj;
 		if (bundle == null) {
-			if (other.bundle != null)
+			if (other.bundle != null) {
 				return false;
-		} else if (!bundle.equals(other.bundle))
+			}
+		} else if (!bundle.equals(other.bundle)) {
 			return false;
+		}
 		if (className == null) {
-			if (other.className != null)
+			if (other.className != null) {
 				return false;
-		} else if (!className.equals(other.className))
+			}
+		} else if (!className.equals(other.className)) {
 			return false;
+		}
 		return true;
 	}
 
