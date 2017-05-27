@@ -22,7 +22,6 @@ import static com.github.nfalco79.junit4osgi.runner.internal.SurefireConstants.*
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -77,8 +76,8 @@ public class XMLReport {
 	/**
 	 * A test a test will not be run.
 	 *
-	 * @param descriptor
-	 *            the test descriptor
+	 * @param description
+	 *            a description of the test
 	 */
 	public void testIgnored(Description description) {
 		ReportInfo info = new ReportInfo();
@@ -98,8 +97,8 @@ public class XMLReport {
 	/**
 	 * A test throws an unexpected errors.
 	 *
-	 * @param test
-	 *            the error cause
+	 * @param failure
+	 *            the failing cause
 	 * @param out
 	 *            the output messages printed during the test execution
 	 * @param err
@@ -142,8 +141,10 @@ public class XMLReport {
 	/**
 	 * Utility method writing failed and in error test result in the report.
 	 *
+	 * @param element
+	 *            the DOM parent element under wrote the problem
 	 * @param failure
-	 *            the cause
+	 *            the failing cause
 	 * @param name
 	 *            type of failure ("error" or "failure")
 	 */
@@ -166,14 +167,11 @@ public class XMLReport {
 	/**
 	 * Generates the XML reports.
 	 *
-	 * @param test
-	 *            the test
-	 * @param failures
-	 *            the test result
 	 * @param reportsDirectory
 	 *            the directory in which reports are created.
-	 * @throws FileNotFoundException
-	 *             if reportsDirectory does not exists
+	 * @throws IOException
+	 *             if reportsDirectory does not exists or could not be create
+	 *             the folder structure
 	 */
 	public void generateReport(File reportsDirectory) throws IOException {
 		if (root == null || runCount == 0) {

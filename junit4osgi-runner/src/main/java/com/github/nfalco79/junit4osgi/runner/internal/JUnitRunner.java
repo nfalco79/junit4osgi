@@ -149,6 +149,8 @@ public class JUnitRunner implements TestRunner {
 
 	/**
 	 * For test purpose only
+	 *
+	 * @return the delay time before reschedule the job runner
 	 */
 	protected long getRepeatTime() {
 		return 5000l;
