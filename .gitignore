@@ -4,3 +4,4 @@ target/
 .project
 .classpath
 lib/
+dependency-reduced-pom.xml

@@ -23,8 +23,8 @@ import java.net.URL;
 
 import org.osgi.framework.Bundle;
 
-@SuppressWarnings("serial")
 public class TestBean implements Serializable {
+	private static final long serialVersionUID = 8098443707075835172L;
 
 	private String className;
 	private transient Bundle bundle;

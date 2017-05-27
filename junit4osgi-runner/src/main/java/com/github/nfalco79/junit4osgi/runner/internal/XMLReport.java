@@ -24,6 +24,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
@@ -34,6 +35,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
+import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.xml.PrettyPrintXMLWriter;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
@@ -173,7 +175,7 @@ public class XMLReport {
 	 * @throws FileNotFoundException
 	 *             if reportsDirectory does not exists
 	 */
-	public void generateReport(File reportsDirectory) throws FileNotFoundException {
+	public void generateReport(File reportsDirectory) throws IOException {
 		if (root == null || runCount == 0) {
 			return;
 		}
@@ -186,7 +188,7 @@ public class XMLReport {
 
 		File reportFile = new File(reportsDirectory, MessageFormat.format(DEFAULT_NAME, dom.getAttribute(SUITE_NAME_ATTRIBUTE).replace(' ', '_')));
 		File reportDir = reportFile.getParentFile();
-		reportDir.mkdirs();
+		FileUtils.forceMkdir(reportDir);
 
 		PrintWriter writer = null;
 		try {
@@ -212,7 +214,7 @@ public class XMLReport {
 			return createDOM(dom, description.getChildren().get(0));
 		} else if (dom == null && description.isSuite()) {
 			// suite test aggregate all test methods and ignore its class container
-			dom = createTestSuiteElement(dom, description);
+			dom = createTestSuiteElement(null, description);
 			addProperties(dom);
 		} else if (description.isEmpty()) {
 			dom = createTestSuiteElement(dom, description);
@@ -409,7 +411,7 @@ public class XMLReport {
 		IGNORE, FAILURE, ERROR, NONE
 	}
 
-	private class ReportInfo {
+	private static class ReportInfo {
 		private String err;
 		private String out;
 		private long startTime;

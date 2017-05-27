@@ -33,43 +33,15 @@
 		</dependency>
 	</dependencies>
 	<build>
-		<plugins>
-			<!-- 
-			<plugin>
-				<artifactId>maven-dependency-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>copy-dependencies</id>
-						<phase>generate-resources</phase>
-						<goals>
-							<goal>copy-dependencies</goal>
-						</goals>
-						<configuration>
-							<outputDirectory>${project.build.outputDirectory}/lib</outputDirectory>
-							<includeArtifactIds>hamcrest-core,hamcrest-library,junit</includeArtifactIds>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.felix</groupId>
-				<artifactId>maven-bundle-plugin</artifactId>
-				<configuration>
-					<instructions>
-						<Export-Package>
-							!*.internal.*,
-							!*.experimental.*,
-							${bundle.namespace}.*,
-							junit.*;version="${junit.version}",
-							org.junit.*;version="${junit.version}"
-						</Export-Package>
-						<Embed-Dependency>*;scope=compile</Embed-Dependency>
-						<Embed-Transitive>true</Embed-Transitive>
-						<Embed-Directory>lib</Embed-Directory>
-					</instructions>
-				</configuration>
-			</plugin>
-			 -->
-		</plugins>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<artifactId>maven-dependency-plugin</artifactId>
+					<configuration>
+						<includeArtifactIds>hamcrest-core,hamcrest-library,junit</includeArtifactIds>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 	</build>
 </project>

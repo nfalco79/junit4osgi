@@ -42,28 +42,14 @@
 						</artifactSet>
 					</configuration>
 				</plugin>
+				<plugin>
+					<artifactId>maven-dependency-plugin</artifactId>
+					<configuration>
+							<includeArtifactIds>plexus-utils</includeArtifactIds>
+					</configuration>
+				</plugin>
 			</plugins>
 		</pluginManagement>
-		<plugins>
-		<!-- 
-			<plugin>
-				<artifactId>maven-dependency-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>copy-dependencies</id>
-						<phase>generate-resources</phase>
-						<goals>
-							<goal>copy-dependencies</goal>
-						</goals>
-						<configuration>
-							<outputDirectory>${project.build.outputDirectory}/lib</outputDirectory>
-							<includeArtifactIds>plexus-utils</includeArtifactIds>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-		 -->
-		</plugins>
 	</build>
 	<name>JUnit4 for OSGi Runner</name>
 	<description>This bundle deals to run all tests in a test registry and produce for each one an XML surefire report.</description>
