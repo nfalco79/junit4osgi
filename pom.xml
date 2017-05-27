@@ -207,6 +207,18 @@
 		<profile>
 			<id>enable-jacoco</id>
 			<build>
+				<pluginManagement>
+					<plugins>
+						<plugin>
+							<groupId>org.eluder.coveralls</groupId>
+							<artifactId>coveralls-maven-plugin</artifactId>
+							<version>4.3.0</version>
+							<configuration>
+								<repoToken>${env.COVERALLS_REPO_TOKEN}</repoToken>
+							</configuration>
+						</plugin>
+					</plugins>
+				</pluginManagement>
 				<plugins>
 					<plugin>
 						<groupId>org.jacoco</groupId>
@@ -220,7 +232,7 @@
 							</execution>
 							<execution>
 								<id>report</id>
-								<phase>prepare-package</phase>
+								<phase>test</phase>
 								<goals>
 									<goal>report</goal>
 								</goals>
