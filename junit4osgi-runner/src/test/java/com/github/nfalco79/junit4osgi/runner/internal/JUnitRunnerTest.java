@@ -10,10 +10,14 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import org.example.SimpleTestCase;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.internal.util.collections.Sets;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -25,49 +29,42 @@ import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
 
 public class JUnitRunnerTest {
 
-	private class CountRunner implements Runnable {
-		private int count = 0;
-		private CountDownLatch latch;
-
-		public CountRunner(int count) {
-			this.latch = new CountDownLatch(count);
-		}
-
-		@Override
-		public void run() {
-			count++;
-			latch.countDown();
-		}
-	}
+	@Rule
+	public TemporaryFolder folder = new TemporaryFolder();
 
 	@SuppressWarnings("unchecked")
 	@Test
 	public void test_runner_no_immediate_shutdown() throws Exception {
 		LogService logService = mock(LogService.class);
 
-		final Set<TestBean> regsitryTests = getMockTests();
+		final Set<TestBean> registryTests = getMockTests();
 		TestRegistry registry = mock(TestRegistry.class);
-		when(registry.getTests()).thenReturn(regsitryTests);
+		when(registry.getTests()).thenReturn(registryTests);
 
-		final CountRunner testRunner = new CountRunner(2);
+		final CountDownLatch latch = new CountDownLatch(2);
 
 		JUnitRunner runner = spy(new JUnitRunner());
-		when(runner.getRepeatTime()).thenReturn(10l);
+		when(runner.getRepeatTime()).thenReturn(1l);
 		when(runner.getTestRunnable(any(File.class), any(Queue.class))).thenAnswer(new Answer<Runnable>() {
 			@Override
 			public Runnable answer(InvocationOnMock invocation) throws Throwable {
 				Queue<TestBean> tests = (Queue<TestBean>) invocation.getArgument(1);
-				assertArrayEquals(regsitryTests.toArray(), tests.toArray());
-				return testRunner;
+				assertArrayEquals(registryTests.toArray(), tests.toArray());
+				return new Runnable() {
+					@Override
+					public void run() {
+						latch.countDown();
+					}
+				};
 			}
 		});
 
 		runner.setLog(logService);
 		runner.setRegistry(registry);
 		runner.start();
-//		Thread.sleep(runner.getRepeatTime() * 3);
+		assertThat(runner.isStopped(), CoreMatchers.is(false));
 		try {
-			testRunner.latch.await(runner.getRepeatTime() * 4, TimeUnit.MILLISECONDS);
+			latch.await(runner.getRepeatTime() * 4, TimeUnit.MILLISECONDS);
 		} catch (InterruptedException e) {
 			fail("The runnable seems not be scheduled continuosly");
 		}
@@ -76,7 +73,6 @@ public class JUnitRunnerTest {
 		verify(registry, atLeastOnce()).getTests();
 		verify(registry).addTestRegistryListener(any(TestRegistryChangeListener.class));
 		verify(registry).removeTestRegistryListener(any(TestRegistryChangeListener.class));
-//		assertThat("The runnable seems not be scheduled continuously", testRunner.count, is(greaterThan(1)));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -90,17 +86,22 @@ public class JUnitRunnerTest {
 		TestRegistry registry = mock(TestRegistry.class);
 		when(registry.getTests(any(String[].class))).thenReturn(Sets.newSet(testToRun));
 
-		final CountRunner testRunner = new CountRunner(1);
+		final AtomicInteger counter = new AtomicInteger(0);
 
 		JUnitRunner runner = spy(new JUnitRunner());
-		when(runner.getRepeatTime()).thenReturn(10l);
+		when(runner.getRepeatTime()).thenReturn(1l);
 		when(runner.getTestRunnable(any(File.class), any(Queue.class))).thenAnswer(new Answer<Runnable>() {
 			@Override
 			public Runnable answer(InvocationOnMock invocation) throws Throwable {
 				Queue<TestBean> tests = (Queue<TestBean>) invocation.getArgument(1);
 				assertThat(tests.size(), CoreMatchers.is(1));
 				assertThat(tests, CoreMatchers.hasItem(testToRun));
-				return testRunner;
+				return new Runnable() {
+					@Override
+					public void run() {
+						counter.incrementAndGet();
+					}
+				};
 			}
 		});
 
@@ -111,9 +112,48 @@ public class JUnitRunnerTest {
 		runner.stop();
 
 		verify(registry).getTests(new String[] { testToRun.getId() });
-		assertThat(testRunner.count, Matchers.is(1));
+		assertThat(counter.get(), Matchers.is(1));
 		verify(registry, never()).addTestRegistryListener(any(TestRegistryChangeListener.class));
 		verify(registry, never()).removeTestRegistryListener(any(TestRegistryChangeListener.class));
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void test_runner_a_test() throws Exception {
+		LogService logService = mock(LogService.class);
+
+		final TestBean testToRun = mock(TestBean.class);
+		when(testToRun.getId()).thenReturn("id1");
+		when(testToRun.getTestClass()).thenReturn((Class) SimpleTestCase.class);
+
+		TestRegistry registry = mock(TestRegistry.class);
+		when(registry.getTests(any(String[].class))).thenReturn(Sets.newSet(testToRun));
+
+		final CountDownLatch latch = new CountDownLatch(1);
+
+		JUnitRunner runner = new JUnitRunner() {
+			@Override
+			protected Runnable getTestRunnable(File reportsDirectory, java.util.Queue<TestBean> tests) {
+				final Runnable realRunnable = super.getTestRunnable(reportsDirectory, tests);
+				return new Runnable() {
+					@Override
+					public void run() {
+						realRunnable.run();
+						latch.countDown();
+					}
+				};
+			}
+		};
+
+		runner.setLog(logService);
+		runner.setRegistry(registry);
+		File tmpFolder = folder.newFolder();
+		runner.start(new String[] { testToRun.getId() }, tmpFolder.toString());
+		latch.await();
+		runner.stop();
+
+		File reportFile = new File(tmpFolder, "TEST-" + testToRun.getTestClass().getName() + ".xml");
+		assertTrue(reportFile.isFile());
 	}
 
 	private Set<TestBean> getMockTests() {
