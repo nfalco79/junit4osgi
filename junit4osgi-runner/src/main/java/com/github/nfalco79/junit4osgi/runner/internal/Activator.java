@@ -20,6 +20,7 @@ package com.github.nfalco79.junit4osgi.runner.internal;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.log.LogService;
 import org.osgi.util.tracker.ServiceTracker;
@@ -93,12 +94,11 @@ public class Activator implements BundleActivator {
 		final String runnerRegistry = System.getProperty(RUNNER_REGISTY, "auto");
 		runnerStart = Boolean.getBoolean(RUNNER_AUTOSTART);
 
-		jmxServer = new JMXServer();
-
-		runner = new JUnitRunner();
+		jmxServer = newJMXServer();
+		runner = newRunner();
 
 		registryTracker = new ServiceTracker<TestRegistry, TestRegistry>(bundleContext,
-				bundleContext.createFilter("(discovery=" + runnerRegistry + ")"),
+				bundleContext.createFilter("(&(" + Constants.OBJECTCLASS + "=" + TestRegistry.class.toString() + ")(discovery=" + runnerRegistry + ")"),
 				createRegistryCustomizer(bundleContext));
 		logTracker = new ServiceTracker<LogService, LogService>(bundleContext,
 				LogService.class,
@@ -107,6 +107,14 @@ public class Activator implements BundleActivator {
 		registryTracker.open();
 		logTracker.open();
 //		listenerTracker.open();
+	}
+
+	private TestRunner newRunner() {
+		return new JUnitRunner();
+	}
+
+	private JMXServer newJMXServer() {
+		return new JMXServer();
 	}
 
 	/*

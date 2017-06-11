@@ -16,7 +16,7 @@ Just add this artifact to your project:
 </dependency>
 ```
 
-However if you want to use the last snapshot version, you have to add the JFrog OSS repository:
+However if you want to use the last snapshot version, you have to add the Nexus OSS repository:
 
 ```xml
 <repository>

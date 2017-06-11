@@ -9,6 +9,7 @@
 	</parent>
 	<properties>
 		<bundle.namespace>com.github.nfalco79.junit4osgi.runner</bundle.namespace>
+		<powermock.version>1.7.0RC4</powermock.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -27,6 +28,18 @@
 			<groupId>org.codehaus.plexus</groupId>
 			<artifactId>plexus-utils</artifactId>
 			<version>3.0.24</version>
+		</dependency>
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-module-junit4</artifactId>
+			<version>${powermock.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-api-mockito2</artifactId>
+			<version>${powermock.version}</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 	<build>

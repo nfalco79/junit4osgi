@@ -1,6 +1,6 @@
 package com.github.nfalco79.junit4osgi.registry.spi;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -56,6 +56,22 @@ public class TestBeanTestCase {
 	@Test(expected = NullPointerException.class)
 	public void test_invalid_test_class() throws Exception {
 		new TestBean(getMockBundle(), null);
+	}
+
+	@Test
+	public void test_equals_and_hashcode() throws Exception {
+		String testClass = getClass().getName();
+		Bundle bundle = getMockBundle();
+
+		TestBean bean1 = new TestBean(bundle, testClass);
+		TestBean bean2 = new TestBean(bundle, TestBean.class.getName());
+		TestBean bean3 = new TestBean(bundle, testClass);
+
+		assertNotEquals(bean1, bean2);
+		assertEquals(bean1, bean3);
+
+		assertNotEquals(bean1.hashCode(), bean2.hashCode());
+		assertEquals(bean1.hashCode(), bean3.hashCode());
 	}
 
 	private Bundle getMockBundle() throws ClassNotFoundException {

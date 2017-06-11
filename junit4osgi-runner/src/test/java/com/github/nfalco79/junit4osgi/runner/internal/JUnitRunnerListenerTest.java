@@ -28,7 +28,7 @@ public class JUnitRunnerListenerTest {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	public void test_fire_new_test() throws Exception {
+	public void fire_event_on_new_test() throws Exception {
 		LogService logService = mock(LogService.class);
 
 		TestBean[] registryTests = getMockTests();
@@ -71,7 +71,7 @@ public class JUnitRunnerListenerTest {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	public void test_fire_remove_test() throws Exception {
+	public void fire_event_when_remove_test() throws Exception {
 		LogService logService = mock(LogService.class);
 
 		TestBean[] registryTests = getMockTests();
@@ -114,7 +114,7 @@ public class JUnitRunnerListenerTest {
 
 	@SuppressWarnings("unchecked")
 	@Test(expected = IllegalArgumentException.class)
-	public void test_invalid_event() throws Exception {
+	public void test_event_with_invalid_argument() throws Exception {
 		LogService logService = mock(LogService.class);
 
 		final List<TestRegistryChangeListener> runnerListener = new ArrayList<TestRegistryChangeListener>(1);

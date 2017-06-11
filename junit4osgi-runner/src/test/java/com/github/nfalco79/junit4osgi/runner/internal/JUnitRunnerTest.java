@@ -34,7 +34,7 @@ public class JUnitRunnerTest {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	public void test_runner_no_immediate_shutdown() throws Exception {
+	public void verify_runner_schedule_job_when_no_immediate_shutdown_is_set() throws Exception {
 		LogService logService = mock(LogService.class);
 
 		final Set<TestBean> registryTests = getMockTests();
@@ -77,7 +77,7 @@ public class JUnitRunnerTest {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	public void test_runner_single_test() throws Exception {
+	public void run_a_test() throws Exception {
 		LogService logService = mock(LogService.class);
 
 		final TestBean testToRun = mock(TestBean.class);
@@ -119,7 +119,7 @@ public class JUnitRunnerTest {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
-	public void test_runner_a_test() throws Exception {
+	public void run_a_real_test_case() throws Exception {
 		LogService logService = mock(LogService.class);
 
 		final TestBean testToRun = mock(TestBean.class);
@@ -154,6 +154,25 @@ public class JUnitRunnerTest {
 
 		File reportFile = new File(tmpFolder, "TEST-" + testToRun.getTestClass().getName() + ".xml");
 		assertTrue(reportFile.isFile());
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void verify_that_runner_does_not_start_without_a_log_service() throws Exception {
+		final TestBean testToRun = mock(TestBean.class);
+		when(testToRun.getId()).thenReturn("id1");
+		when(testToRun.getTestClass()).thenReturn((Class) SimpleTestCase.class);
+
+		TestRegistry registry = mock(TestRegistry.class);
+		when(registry.getTests(any(String[].class))).thenReturn(Sets.newSet(testToRun));
+
+		JUnitRunner runner = spy(new JUnitRunner());
+		runner.setLog(null);
+		runner.setRegistry(registry);
+		runner.start();
+		verify(runner, never()).isRunning();
+		verify(runner, never()).getTestRunnable(any(File.class), any(Queue.class));
+		runner.stop();
 	}
 
 	private Set<TestBean> getMockTests() {

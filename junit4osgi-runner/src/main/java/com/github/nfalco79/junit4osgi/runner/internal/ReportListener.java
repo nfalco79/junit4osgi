@@ -119,8 +119,8 @@ public class ReportListener extends RunListener {
 		report.testStarted(description);
 		err = new ByteArrayOutputStream();
 		out = new ByteArrayOutputStream();
-		System.setErr(new ReportPrintStream(err, errBackup, true));
-		System.setOut(new ReportPrintStream(out, outBackup, true));
+		System.setErr(new PrintStream(err));
+		System.setOut(new PrintStream(out));
 	}
 
 	/*

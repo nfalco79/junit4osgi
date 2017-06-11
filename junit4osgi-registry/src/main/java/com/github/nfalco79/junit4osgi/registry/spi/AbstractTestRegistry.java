@@ -40,11 +40,11 @@ public abstract class AbstractTestRegistry implements TestRegistry {
 	protected final Set<TestRegistryChangeListener> listeners = new CopyOnWriteArraySet<TestRegistryChangeListener>();
 	protected final Map<Bundle, Set<TestBean>> tests = new ConcurrentHashMap<Bundle, Set<TestBean>>();
 
-	protected LogService getLog() {
+	public LogService getLog() {
 		return log;
 	}
 
-	protected void setLog(LogService log) {
+	public void setLog(LogService log) {
 		this.log = log;
 	}
 

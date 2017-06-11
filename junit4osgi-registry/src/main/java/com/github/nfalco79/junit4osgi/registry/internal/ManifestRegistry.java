@@ -40,7 +40,7 @@ import com.j256.simplejmx.common.JmxResource;
 
 @JmxResource(domainName = "org.osgi.junit4osgi", folderNames = "registry", beanName = "ManifestRegistry", description = "The JUnit4 registry that collect tests from the MANIFEST header Test-Suite")
 public final class ManifestRegistry extends AbstractTestRegistry {
-	private static final String TEST_ENTRY = "Test-Suite";
+	public static final String TEST_ENTRY = "Test-Suite";
 
 	@JmxOperation(description = "Dispose the registry")
 	@Override
