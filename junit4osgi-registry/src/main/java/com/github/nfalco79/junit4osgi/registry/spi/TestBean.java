@@ -23,6 +23,14 @@ import java.net.URL;
 
 import org.osgi.framework.Bundle;
 
+/**
+ * The java bean that carries the JUnit test class informations.
+ * <p>
+ * This bean also returns the class without trigger the bundle activator until
+ * the {@link #getTestClass()} is called.
+ *
+ * @author nikolasfalco
+ */
 public class TestBean implements Serializable {
 	private static final long serialVersionUID = 8098443707075835172L;
 

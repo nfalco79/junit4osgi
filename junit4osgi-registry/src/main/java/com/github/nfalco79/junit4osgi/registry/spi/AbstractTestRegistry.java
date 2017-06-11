@@ -32,6 +32,17 @@ import org.osgi.service.log.LogService;
 import com.github.nfalco79.junit4osgi.registry.internal.JUnit4BundleListener;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent.TestRegistryEventType;
 
+/**
+ * This class provides a default common behaviour for a {@link TestRegistry}
+ * implementations.
+ * <p>
+ * This abstract class handle in a secure and ThreadSafe way the listeners
+ * mechanism and the storage for the {@link TestBean}. The implementation must
+ * just provides how to gather tests when a new contributor is
+ * registered/unregistered.
+ *
+ * @author nikolasfalco
+ */
 public abstract class AbstractTestRegistry implements TestRegistry {
 
 	private LogService log;

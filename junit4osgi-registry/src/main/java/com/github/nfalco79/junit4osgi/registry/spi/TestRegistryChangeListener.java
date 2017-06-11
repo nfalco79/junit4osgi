@@ -18,8 +18,20 @@
  */
 package com.github.nfalco79.junit4osgi.registry.spi;
 
+/**
+ * This listener is used to be notified when new JUnit is registered or is gone
+ * because the bundle that contributes it is to be uninstalling.
+ *
+ * @author nikolasfalco
+ */
 public interface TestRegistryChangeListener {
 
+	/**
+	 * Fires a {@link TestRegistry} changes.
+	 *
+	 * @param event
+	 *            a {@link TestRegistryEvent}
+	 */
 	void registryChanged(TestRegistryEvent event);
 
 }

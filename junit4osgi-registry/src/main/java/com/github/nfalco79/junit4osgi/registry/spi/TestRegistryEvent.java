@@ -18,8 +18,17 @@
  */
 package com.github.nfalco79.junit4osgi.registry.spi;
 
+/**
+ * Describes the kind of event that the {@link TestRegistry} has triggered when
+ * a new bundle is to be installing or uninstalling.
+ *
+ * @author nikolasfalco
+ */
 public class TestRegistryEvent {
 
+	/**
+	 * The event kind
+	 */
 	public enum TestRegistryEventType {
 		ADD, REMOVE
 	}
@@ -27,24 +36,55 @@ public class TestRegistryEvent {
 	private TestRegistryEventType type;
 	private TestBean test;
 
+	/**
+	 * Default constructor.
+	 *
+	 * @param type
+	 *            the event type
+	 * @param test
+	 *            the event subject
+	 */
 	public TestRegistryEvent(TestRegistryEventType type, TestBean test) {
 		this.setType(type);
 		this.setTest(test);
 	}
 
+	/**
+	 * Returns the event type.
+	 *
+	 * @return the {@link TestRegistryEventType} type
+	 */
 	public TestRegistryEventType getType() {
 		return type;
 	}
 
+	/**
+	 * Sets the event type.
+	 *
+	 * @param type
+	 *            the event type
+	 */
 	public void setType(TestRegistryEventType type) {
 		this.type = type;
 	}
 
+	/**
+	 * Returns the test subject of this event.
+	 *
+	 * @return a {@link TestBean}
+	 */
 	public TestBean getTest() {
 		return test;
 	}
 
+	/**
+	 * Sets the test subject of this event.
+	 *
+	 * @param test
+	 *            a {@link TestBean}
+	 */
 	public void setTest(TestBean test) {
 		this.test = test;
 	}
+
 }

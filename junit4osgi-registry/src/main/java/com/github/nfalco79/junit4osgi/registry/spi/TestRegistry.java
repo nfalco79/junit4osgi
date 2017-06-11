@@ -22,20 +22,73 @@ import java.util.Set;
 
 import org.osgi.framework.Bundle;
 
+/**
+ * This is an OSGi test registry that keeps all JUnit3/4 classes contained in an
+ * OSGi bundle that is in state resolved in the platform.
+ *
+ * @author nikolasfalco
+ */
 public interface TestRegistry {
 
+	/**
+	 * Register all JUnit classes contained in the given contributor bundle.
+	 *
+	 * @param contributor
+	 *            the bundle into lookup
+	 */
 	void registerTests(Bundle contributor);
 
+	/**
+	 * Unregister all JUnit classes contained in the given contributor bundle.
+	 * <p>
+	 * If the contributor did never registered than nothing will happens.
+	 *
+	 * @param contributor
+	 *            a registered the bundle registered
+	 */
 	void removeTests(Bundle contributor);
 
+	/**
+	 * Returns a set of {@link TestBean} to provides all the JUnit class in the
+	 * registry.
+	 *
+	 * @return a set of all registered {@link TestBean}
+	 */
 	Set<TestBean> getTests();
 
+	/**
+	 * Returns a set of {@link TestBean} that matches the given test id.
+	 *
+	 * @param testIds
+	 *            the requested {@link TestBean}
+	 * @return
+	 */
 	Set<TestBean> getTests(String[] testIds);
 
+	/**
+	 * Register a {@link TestRegistryChangeListener} used to be notified each
+	 * time a new JUnit test is registered or is gone.
+	 *
+	 * @param listener
+	 *            a {@link TestRegistryChangeListener} implementation
+	 */
 	void addTestRegistryListener(TestRegistryChangeListener listener);
 
+	/**
+	 * Removes a {@link TestRegistryChangeListener} registered previously.
+	 * <p>
+	 * If the listener instance was not registered nothing happens.
+	 *
+	 * @param listener
+	 *            the {@link TestRegistryChangeListener} implementation to
+	 *            remove
+	 */
 	void removeTestRegistryListener(TestRegistryChangeListener listener);
 
+	/**
+	 * Performs the operation to dispose this registry instance and clear its
+	 * internal state.
+	 */
 	void dispose();
 
 }
