@@ -38,8 +38,7 @@ public class ActivatorTest {
 		Activator activator = mockActivator(bundleContext, null, null);
 
 		activator.start(bundleContext);
-		Mockito.verify(bundleContext).createFilter(ArgumentMatchers.contains(TestRegistry.class.toString()));
-		Mockito.verify(bundleContext).createFilter(ArgumentMatchers.contains("discovery=auto"));
+		Mockito.verify(bundleContext).createFilter(ArgumentMatchers.eq("(&(objectClass=" + TestRegistry.class.getName() + ")(discovery=auto))"));
 	}
 
 	@Test
@@ -54,8 +53,7 @@ public class ActivatorTest {
 		try {
 			System.setProperty(Activator.RUNNER_REGISTY, "manifest");
 			activator.start(bundleContext);
-			Mockito.verify(bundleContext).createFilter(ArgumentMatchers.contains(TestRegistry.class.toString()));
-			Mockito.verify(bundleContext).createFilter(ArgumentMatchers.contains("discovery=manifest"));
+			Mockito.verify(bundleContext).createFilter(ArgumentMatchers.eq("(&(objectClass=" + TestRegistry.class.getName() + ")(discovery=manifest))"));
 		} finally {
 			System.setProperties(properties);
 		}

@@ -98,7 +98,7 @@ public class Activator implements BundleActivator {
 		runner = newRunner();
 
 		registryTracker = new ServiceTracker<TestRegistry, TestRegistry>(bundleContext,
-				bundleContext.createFilter("(&(" + Constants.OBJECTCLASS + "=" + TestRegistry.class.toString() + ")(discovery=" + runnerRegistry + ")"),
+				bundleContext.createFilter("(&(" + Constants.OBJECTCLASS + "=" + TestRegistry.class.getName() + ")(discovery=" + runnerRegistry + "))"),
 				createRegistryCustomizer(bundleContext));
 		logTracker = new ServiceTracker<LogService, LogService>(bundleContext,
 				LogService.class,
