@@ -2,6 +2,8 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>junit4osgi-runner</artifactId>
+	<name>JUnit4 for OSGi Runner</name>
+	<description>This bundle deals to run all tests in a test registry and produce for each one an XML surefire report.</description>
 	<parent>
 		<groupId>com.github.nfalco79</groupId>
 		<artifactId>junit4osgi-parent</artifactId>
@@ -64,6 +66,4 @@
 			</plugins>
 		</pluginManagement>
 	</build>
-	<name>JUnit4 for OSGi Runner</name>
-	<description>This bundle deals to run all tests in a test registry and produce for each one an XML surefire report.</description>
 </project>

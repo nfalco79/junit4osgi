@@ -106,8 +106,8 @@ public class ActivatorTest {
 			System.setProperty(Activator.RUNNER_AUTOSTART, "true");
 			activator.start(bundleContext);
 
-			logTracker.addingService(srLog);
 			registryTracker.addingService(srRegistry);
+			logTracker.addingService(srLog);
 
 			activator.stop(bundleContext);
 
