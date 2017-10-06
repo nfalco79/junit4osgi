@@ -60,6 +60,10 @@ public final class AutoDiscoveryRegistry extends AbstractTestRegistry {
 	 */
 	@Override
 	public void registerTests(Bundle contributor) {
+		if (tests.containsKey(contributor)) {
+			return;
+		}
+
 		Set<TestBean> bundleTest = new LinkedHashSet<TestBean>();
 		tests.put(contributor, bundleTest);
 

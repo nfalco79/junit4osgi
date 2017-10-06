@@ -33,7 +33,7 @@ import com.github.nfalco79.junit4osgi.registry.internal.JUnit4BundleListener;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent.TestRegistryEventType;
 
 /**
- * This class provides a default common behaviour for a {@link TestRegistry}
+ * This class provides a default common behavior for a {@link TestRegistry}
  * implementations.
  * <p>
  * This abstract class handle in a secure and ThreadSafe way the listeners

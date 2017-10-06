@@ -33,7 +33,8 @@ public class JUnit4BundleListener implements BundleListener {
 
 	public void addBundle(Bundle bundle) {
 		switch (bundle.getState())  {
-		case Bundle.INSTALLED:
+		case Bundle.RESOLVED:
+		case Bundle.ACTIVE:
 			registerTestCase(bundle);
 			break;
 		case Bundle.STOPPING:

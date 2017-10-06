@@ -65,6 +65,9 @@ public final class ManifestRegistry extends AbstractTestRegistry {
 	 */
 	@Override
 	public void registerTests(Bundle contributor) {
+		if (tests.containsKey(contributor)) {
+			return;
+		}
 		parseManifest(contributor);
 	}
 
