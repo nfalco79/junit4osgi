@@ -71,6 +71,9 @@ public class AutoDiscoveryRegistryTest {
 		assertThat(registry.getTests(), Matchers.hasSize(4));
 
 		registry.registerTests(bundle1);
+		assertThat(registry.getTests(), Matchers.hasSize(4));
+
+		registry.removeTests(bundle1);
 		assertThat(registry.getTests(), Matchers.hasSize(2));
 		assertThat(registry.getTests(), Matchers.hasItems(new TestBean(bundle2, MyServiceIT.class.getName()),
 				new TestBean(bundle2, SimpleITTest.class.getName())));

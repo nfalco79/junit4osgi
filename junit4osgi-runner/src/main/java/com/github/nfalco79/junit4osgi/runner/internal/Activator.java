@@ -40,9 +40,10 @@ public class Activator implements BundleActivator {
 	private TestRunner runner;
 	private TestRegistry registry;
 	private LogService logger;
+//	private Set<TestRunnerListener> listeners = new CopyOnWriteArraySet<TestRunnerListener>();
 	private boolean runnerStart;
 	private JMXServer jmxServer;
-//	private ServiceTracker<RunListener, RunListener> listenerTracker;
+//	private ServiceTracker<TestRunnerListener, TestRunnerListener> listenerTracker;
 
 	private void bind() {
 		if (registry == null) {
@@ -60,6 +61,9 @@ public class Activator implements BundleActivator {
 
 		runner.setLog(logger);
 		runner.setRegistry(registry);
+//		for (TestRunnerListener listener : listeners) {
+//			runner.addTestRunListener(listener);
+//		}
 
 		jmxServer.start();
 		jmxServer.register(registry);
@@ -103,6 +107,9 @@ public class Activator implements BundleActivator {
 		logTracker = new ServiceTracker<LogService, LogService>(bundleContext,
 				LogService.class,
 				createLogCustomizer(bundleContext));
+//		listenerTracker = new ServiceTracker<TestRunnerListener, TestRunnerListener>(bundleContext,
+//				TestRunnerListener.class,
+//				createListernerCustomizer(bundleContext));
 
 		registryTracker.open();
 		logTracker.open();
@@ -123,6 +130,8 @@ public class Activator implements BundleActivator {
 	 */
 	@Override
 	public void stop(BundleContext bundleContext) throws Exception {
+//		listeners.clear();
+
 		registryTracker.close();
 		logTracker.close();
 //		listenerTracker.close();
@@ -195,4 +204,35 @@ public class Activator implements BundleActivator {
 		};
 	}
 
+	//	private ServiceTrackerCustomizer<TestRunnerListener, TestRunnerListener> createListernerCustomizer(
+//			final BundleContext bundleContext) {
+//		return new ServiceTrackerCustomizer<TestRunnerListener, TestRunnerListener>() {
+//			@Override
+//			public TestRunnerListener addingService(ServiceReference<TestRunnerListener> reference) {
+//				TestRunnerListener listenerService = bundleContext.getService(reference);
+//				synchronized (Activator.this) {
+//					listeners.add(listenerService);
+//					if (runner != null) {
+//						runner.addTestRunListener(listenerService);
+//					}
+//				}
+//				return listenerService;
+//			}
+//
+//			@Override
+//			public void modifiedService(ServiceReference<TestRunnerListener> arg0, TestRunnerListener arg1) {
+//				// No service property modifications to handle
+//			}
+//
+//			@Override
+//			public void removedService(ServiceReference<TestRunnerListener> reference, TestRunnerListener service) {
+//				synchronized (Activator.this) {
+//					if (runner != null) {
+//						listeners.remove(service);
+//						runner.removeTestRunListener(service);
+//					}
+//				}
+//			}
+//		};
+//	}
 }

@@ -34,6 +34,7 @@ public interface TestRunner {
 	 * Sets the {@link TestRegistry}.
 	 *
 	 * @param registry
+	 *            from which takes the test to run
 	 */
 	void setRegistry(TestRegistry registry);
 
@@ -51,7 +52,7 @@ public interface TestRunner {
 	void start();
 
 	/**
-	 * Mark the execution to be stopped.
+	 * Marks the execution to be stopped.
 	 * <p>
 	 * The call to this method does not ensure to be immediate, it marks the job
 	 * to be stopped but the effective stop will be performed after complete the

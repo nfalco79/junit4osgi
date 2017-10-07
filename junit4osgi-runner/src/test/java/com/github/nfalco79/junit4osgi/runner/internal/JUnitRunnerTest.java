@@ -13,8 +13,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.swing.JInternalFrame;
-
 import org.example.ErrorTest;
 import org.example.JUnit3Test;
 import org.example.SimpleSuiteTest;
@@ -185,7 +183,7 @@ public class JUnitRunnerTest {
 	public void test_includes() {
 		Set<String> includes = new LinkedHashSet<String>();
 		includes.add("*Test");
-		
+
 		JUnitRunner runner = new JUnitRunner();
 		runner.setIncludes(includes);
 		assertTrue(runner.accept(JUnit3Test.class));
@@ -195,8 +193,9 @@ public class JUnitRunnerTest {
 	public void test_excludes() {
 		Set<String> excludes = new LinkedHashSet<String>();
 		excludes.add("*.?Unit*");
-		
+
 		JUnitRunner runner = new JUnitRunner();
+		runner.setLog(mock(LogService.class));
 		runner.setExcludes(excludes);
 		assertFalse(runner.accept(JUnit3Test.class));
 	}
@@ -208,8 +207,9 @@ public class JUnitRunnerTest {
 		Set<String> excludes = new LinkedHashSet<String>();
 		excludes.add("*3*");
 		excludes.add("*Simple*");
-		
+
 		JUnitRunner runner = new JUnitRunner();
+		runner.setLog(mock(LogService.class));
 		runner.setIncludes(includes);
 		runner.setExcludes(excludes);
 		assertTrue(runner.accept(ErrorTest.class));

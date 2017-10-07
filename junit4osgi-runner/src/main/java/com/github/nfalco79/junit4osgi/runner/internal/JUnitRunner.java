@@ -29,7 +29,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.runner.JUnitCore;
-import org.junit.runner.Result;
 import org.osgi.service.log.LogService;
 
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
@@ -72,11 +71,13 @@ public class JUnitRunner implements TestRunner {
 		}
 	}
 
+	public static final String QUIET_TIME = "org.osgi.junit.quietTime";
 	public static final String REPORT_PATH = "org.osgi.junit.reportsPath";
 	public static final String RERUN_COUNT = "org.osgi.junit.rerunFailingTestsCount";
 	public static final String PATH_INCLUDES = "org.osgi.junit.include";
 	public static final String PATH_EXCLUDE = "org.osgi.junit.exclude";
 
+//	private Set<TestRunnerListener> listeners = new CopyOnWriteArraySet<TestRunnerListener>();
 	private TestRegistry registry;
 	private boolean stop;
 	private boolean running;
@@ -86,11 +87,13 @@ public class JUnitRunner implements TestRunner {
 	private TestRegistryChangeListener testListener;
 	private ScheduledThreadPoolExecutor executor;
 	private final Integer reRunCount;
+	private final Integer quiteTime;
 	private final File defaultReportsDirectory;
 
 	public JUnitRunner() {
 		defaultReportsDirectory = new File(System.getProperty(REPORT_PATH, "surefire-reports"));
 		reRunCount = Integer.getInteger(RERUN_COUNT, 5);
+		quiteTime = Double.valueOf(Math.floor(Long.getLong(QUIET_TIME, 3 * getRepeatTime()).doubleValue() / getRepeatTime())).intValue();
 		stop = true;
 		setIncludes(new LinkedHashSet<String>());
 		setExcludes(new LinkedHashSet<String>());
@@ -139,9 +142,11 @@ public class JUnitRunner implements TestRunner {
 			final Queue<TestBean> tests;
 			if (testIds == null) {
 				// create a queue collecting all registry tests
-				tests = new ConcurrentLinkedQueue<TestBean>(registry.getTests());
+				tests = new ConcurrentLinkedQueue<TestBean>();
 				testListener = new QueeueTestListener(tests);
 				registry.addTestRegistryListener(testListener);
+
+				tests.addAll(registry.getTests());
 			} else {
 				// create a queue with only the specified tests
 				tests = new ArrayDeque<TestBean>(registry.getTests(testIds));
@@ -170,11 +175,24 @@ public class JUnitRunner implements TestRunner {
 	}
 
 	protected Runnable getTestRunnable(final File reportsDirectory, final Queue<TestBean> tests) {
+		final CountDown counter = new CountDown(quiteTime);
+
 		return new Runnable() {
 			@Override
 			public void run() {
+				if (tests.isEmpty()) {
+					counter.countDown();
+					if (counter.getCount() == 0) {
+//						fireEvent(new TestRunnerEvent(TestRunnerEventType.COMPLETE));
+						stop();
+					}
+					return;
+				}
+
+				counter.restart();
 				try {
 					running = true;
+//					fireEvent(new TestRunnerEvent(TestRunnerEventType.START));
 					runTests(tests, reportsDirectory);
 				} finally {
 					running = false;
@@ -200,7 +218,7 @@ public class JUnitRunner implements TestRunner {
 					XMLReport report = new XMLReport();
 					listener = new ReportListener(report);
 					core.addListener(listener);
-			
+
 					core.run(testClass);
 
 					// write test result
@@ -285,4 +303,17 @@ public class JUnitRunner implements TestRunner {
         }
         return matches;
     }
+
+//	@Override
+//	public void addTestRunListener(TestRunnerListener listener) {
+//		if (listener != null) {
+//			listeners.add(listener);
+//		}
+//	}
+
+//	@Override
+//	public void removeTestRunListener(TestRunnerListener listener) {
+//		listeners.remove(listener);
+//	}
+
 }
