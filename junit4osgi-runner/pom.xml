@@ -10,7 +10,6 @@
 		<version>1.0.0-SNAPSHOT</version>
 	</parent>
 	<properties>
-		<bundle.namespace>com.github.nfalco79.junit4osgi.runner</bundle.namespace>
 		<powermock.version>1.7.0RC4</powermock.version>
 	</properties>
 	<dependencies>

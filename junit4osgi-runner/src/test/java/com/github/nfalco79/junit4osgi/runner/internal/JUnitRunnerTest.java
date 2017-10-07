@@ -6,12 +6,18 @@ import static org.mockito.Mockito.*;
 
 import java.io.File;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.swing.JInternalFrame;
+
+import org.example.ErrorTest;
+import org.example.JUnit3Test;
+import org.example.SimpleSuiteTest;
 import org.example.SimpleTestCase;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
@@ -173,6 +179,50 @@ public class JUnitRunnerTest {
 		verify(runner, never()).isRunning();
 		verify(runner, never()).getTestRunnable(any(File.class), any(Queue.class));
 		runner.stop();
+	}
+
+	@Test
+	public void test_includes() {
+		Set<String> includes = new LinkedHashSet<String>();
+		includes.add("*Test");
+		
+		JUnitRunner runner = new JUnitRunner();
+		runner.setIncludes(includes);
+		assertTrue(runner.accept(JUnit3Test.class));
+	}
+
+	@Test
+	public void test_excludes() {
+		Set<String> excludes = new LinkedHashSet<String>();
+		excludes.add("*.?Unit*");
+		
+		JUnitRunner runner = new JUnitRunner();
+		runner.setExcludes(excludes);
+		assertFalse(runner.accept(JUnit3Test.class));
+	}
+
+	@Test
+	public void test_includes_and_excludes() {
+		Set<String> includes = new LinkedHashSet<String>();
+		includes.add("*Test");
+		Set<String> excludes = new LinkedHashSet<String>();
+		excludes.add("*3*");
+		excludes.add("*Simple*");
+		
+		JUnitRunner runner = new JUnitRunner();
+		runner.setIncludes(includes);
+		runner.setExcludes(excludes);
+		assertTrue(runner.accept(ErrorTest.class));
+		assertFalse(runner.accept(JUnit3Test.class));
+		assertFalse(runner.accept(SimpleSuiteTest.class));
+	}
+
+	@Test
+	public void by_default_includes_all() {
+		JUnitRunner runner = new JUnitRunner();
+		assertTrue(runner.accept(ErrorTest.class));
+		assertTrue(runner.accept(JUnit3Test.class));
+		assertTrue(runner.accept(SimpleSuiteTest.class));
 	}
 
 	private Set<TestBean> getMockTests() {

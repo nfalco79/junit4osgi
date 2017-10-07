@@ -20,18 +20,23 @@ package com.github.nfalco79.junit4osgi.runner.internal;
 
 import java.io.File;
 import java.util.ArrayDeque;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.runner.JUnitCore;
+import org.junit.runner.Result;
 import org.osgi.service.log.LogService;
 
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
+import com.github.nfalco79.junit4osgi.runner.internal.AntGlobPattern.IncludeExcludePattern;
 import com.github.nfalco79.junit4osgi.runner.spi.TestRunner;
 import com.j256.simplejmx.common.JmxAttributeMethod;
 import com.j256.simplejmx.common.JmxOperation;
@@ -69,18 +74,26 @@ public class JUnitRunner implements TestRunner {
 
 	public static final String REPORT_PATH = "org.osgi.junit.reportsPath";
 	public static final String RERUN_COUNT = "org.osgi.junit.rerunFailingTestsCount";
+	public static final String PATH_INCLUDES = "org.osgi.junit.include";
+	public static final String PATH_EXCLUDE = "org.osgi.junit.exclude";
 
 	private TestRegistry registry;
 	private boolean stop;
 	private boolean running;
 	private LogService logger;
-	private File defaultReportsDirectory;
+	private Set<IncludeExcludePattern> includes;
+	private Set<IncludeExcludePattern> excludes;
 	private TestRegistryChangeListener testListener;
 	private ScheduledThreadPoolExecutor executor;
+	private final Integer reRunCount;
+	private final File defaultReportsDirectory;
 
 	public JUnitRunner() {
 		defaultReportsDirectory = new File(System.getProperty(REPORT_PATH, "surefire-reports"));
+		reRunCount = Integer.getInteger(RERUN_COUNT, 5);
 		stop = true;
+		setIncludes(new LinkedHashSet<String>());
+		setExcludes(new LinkedHashSet<String>());
 	}
 
 	/* (non-Javadoc)
@@ -173,18 +186,21 @@ public class JUnitRunner implements TestRunner {
 	private void runTests(final Queue<TestBean> tests, final File reportsDirectory) {
 		TestBean testBean;
 		try {
+			ReportListener listener = null;
+			JUnitCore core = new JUnitCore();
+
 			while (!isStopped() && (testBean = tests.poll()) != null) {
 				try {
 					Class<?> testClass = testBean.getTestClass();
-					if (!JUnitUtils.hasTests(testClass)) {
+					if (!JUnitUtils.hasTests(testClass) && !accept(testClass)) {
 						continue;
 					}
-					JUnitCore core = new JUnitCore();
 
 					// initialise the report listener
 					XMLReport report = new XMLReport();
-					core.addListener(new ReportListener(report));
-
+					listener = new ReportListener(report);
+					core.addListener(listener);
+			
 					core.run(testClass);
 
 					// write test result
@@ -193,6 +209,10 @@ public class JUnitRunner implements TestRunner {
 					logger.log(LogService.LOG_ERROR, "Cannot load class " + testBean.getId(), e);
 				} catch (NoClassDefFoundError e) {
 					logger.log(LogService.LOG_ERROR, "Cannot load class " + testBean.getId(), e);
+				} finally {
+					if (listener != null) {
+						core.removeListener(listener);
+					}
 				}
 			}
 		} catch (Exception e) {
@@ -233,4 +253,36 @@ public class JUnitRunner implements TestRunner {
 		return running;
 	}
 
+    public void setIncludes(Set<String> includes) {
+        this.includes = new LinkedHashSet<IncludeExcludePattern>(includes.size());
+        for (String include : includes) {
+            this.includes.add(AntGlobPattern.include(include));
+        }
+    }
+
+    public void setExcludes(Set<String> excludes) {
+        this.excludes = new LinkedHashSet<IncludeExcludePattern>(excludes.size());
+        for (String exclude : excludes) {
+            this.excludes.add(AntGlobPattern.exclude(exclude));
+        }
+    }
+
+    public boolean accept(Class<?> testClass) {
+        boolean matches = includes.isEmpty(); // by default accepts all
+        String suiteName = testClass.getName();
+
+        Iterator<IncludeExcludePattern> include = includes.iterator();
+        while (include.hasNext() && !matches) {
+            matches = include.next().matches(suiteName);
+        }
+
+        Iterator<IncludeExcludePattern> exclude = excludes.iterator();
+        while (exclude.hasNext() && matches) {
+            if (exclude.next().matches(suiteName)) {
+                matches = false;
+				logger.log(LogService.LOG_DEBUG, "Test class: " + testClass.getName() + " excluded by exclude pattern");
+            }
+        }
+        return matches;
+    }
 }

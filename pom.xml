@@ -5,7 +5,7 @@
 	<artifactId>junit4osgi-parent</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
-	<name>JUnit4 for OSGi</name>
+	<name>JUnit4 for OSGi Parent</name>
 	<description>This bundles enable to run JUnit 4 into a OSGi running system.</description>
 	<inceptionYear>2016</inceptionYear>
 	<properties>
@@ -40,6 +40,7 @@
 		<url>https://github.com/nfalco79/junit4osgi/issues</url>
 	</issueManagement>
 	<modules>
+		<module>junit4osgi</module>
 		<module>junit4osgi-registry</module>
 		<module>junit4osgi-runner</module>
 	</modules>
