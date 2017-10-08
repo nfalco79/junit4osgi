@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>com.github.nfalco79</groupId>
 		<artifactId>junit4osgi-parent</artifactId>
-		<version>1.0.0</version>
+		<version>1.0.1-SNAPSHOT</version>
 	</parent>
 	<properties>
 		<powermock.version>1.7.0RC4</powermock.version>
