@@ -61,7 +61,7 @@ public interface TestRegistry {
 	 *
 	 * @param testIds
 	 *            the requested {@link TestBean}
-	 * @return
+	 * @return an array of {@link TestBean} that match the given identifiers.
 	 */
 	Set<TestBean> getTests(String[] testIds);
 

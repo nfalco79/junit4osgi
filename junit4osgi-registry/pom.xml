@@ -15,7 +15,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.github.nfalco79</groupId>
-			<artifactId>junit4osgi</artifactId>
+			<artifactId>junit4osgi-bundle</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
