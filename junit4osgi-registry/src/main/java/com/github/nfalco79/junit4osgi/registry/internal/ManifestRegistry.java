@@ -38,7 +38,7 @@ import com.j256.simplejmx.common.JmxAttributeMethod;
 import com.j256.simplejmx.common.JmxOperation;
 import com.j256.simplejmx.common.JmxResource;
 
-@JmxResource(domainName = "org.osgi.junit4osgi", folderNames = "registry", beanName = "ManifestRegistry", description = "The JUnit4 registry that collect tests from the MANIFEST header Test-Suite")
+@JmxResource(domainName = "org.osgi.junit4osgi", folderNames = "type=registry", beanName = "ManifestRegistry", description = "The JUnit4 registry that collect tests from the MANIFEST header Test-Suite")
 public final class ManifestRegistry extends AbstractTestRegistry {
 	public static final String TEST_ENTRY = "Test-Suite";
 

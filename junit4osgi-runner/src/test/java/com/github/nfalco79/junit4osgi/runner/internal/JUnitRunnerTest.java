@@ -1,7 +1,8 @@
 package com.github.nfalco79.junit4osgi.runner.internal;
 
+import static java.util.Arrays.*;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.io.File;
@@ -13,8 +14,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.example.AbstractTest;
 import org.example.ErrorTest;
 import org.example.JUnit3Test;
+import org.example.MainClassTest;
 import org.example.SimpleSuiteTest;
 import org.example.SimpleTestCase;
 import org.hamcrest.CoreMatchers;
@@ -124,40 +127,16 @@ public class JUnitRunnerTest {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
 	public void run_a_real_test_case() throws Exception {
-		LogService logService = mock(LogService.class);
-
 		final TestBean testToRun = mock(TestBean.class);
 		when(testToRun.getId()).thenReturn("id1");
 		when(testToRun.getTestClass()).thenReturn((Class) SimpleTestCase.class);
 
-		TestRegistry registry = mock(TestRegistry.class);
-		when(registry.getTests(any(String[].class))).thenReturn(Sets.newSet(testToRun));
-
-		final CountDownLatch latch = new CountDownLatch(1);
-
-		JUnitRunner runner = new JUnitRunner() {
-			@Override
-			protected Runnable getTestRunnable(File reportsDirectory, java.util.Queue<TestBean> tests) {
-				final Runnable realRunnable = super.getTestRunnable(reportsDirectory, tests);
-				return new Runnable() {
-					@Override
-					public void run() {
-						realRunnable.run();
-						latch.countDown();
-					}
-				};
-			}
-		};
-
-		runner.setLog(logService);
-		runner.setRegistry(registry);
 		File tmpFolder = folder.newFolder();
-		runner.start(new String[] { testToRun.getId() }, tmpFolder.toString());
-		latch.await();
-		runner.stop();
+
+		runTest(tmpFolder, testToRun);
 
 		File reportFile = new File(tmpFolder, "TEST-" + testToRun.getTestClass().getName() + ".xml");
-		assertTrue(reportFile.isFile());
+		assertTrue("Test has not run", reportFile.isFile());
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -176,6 +155,63 @@ public class JUnitRunnerTest {
 		runner.start();
 		verify(runner, never()).isRunning();
 		verify(runner, never()).getTestRunnable(any(File.class), any(Queue.class));
+		runner.stop();
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void verify_that_runner_does_not_start_invalid_test_cases() throws Exception {
+		final TestBean test1ToRun = mock(TestBean.class);
+		when(test1ToRun.getId()).thenReturn("id1");
+		when(test1ToRun.getTestClass()).thenReturn((Class) AbstractTest.class);
+
+		final TestBean test2ToRun = mock(TestBean.class);
+		when(test2ToRun.getId()).thenReturn("id2");
+		when(test2ToRun.getTestClass()).thenReturn((Class) SimpleTestCase.class);
+
+		final TestBean test3ToRun = mock(TestBean.class);
+		when(test3ToRun.getId()).thenReturn("id3");
+		when(test3ToRun.getTestClass()).thenReturn((Class) MainClassTest.class);
+
+		JUnitRunner runner = new StartAndStopJUnitRunner();
+		runner.setExcludes(asSet("*Simple*"));
+
+		File tmpFolder = folder.newFolder();
+		runTest(runner, tmpFolder, test1ToRun, test2ToRun, test3ToRun);
+
+		assertThat("Tests has run", tmpFolder.list(), Matchers.arrayWithSize(0));
+	}
+
+	private <T> Set<T> asSet(final T... testsToRun) {
+		return new LinkedHashSet<T>(asList(testsToRun));
+	}
+
+	private void runTest(File destination, TestBean... testsToRun) throws Exception {
+		runTest(null, destination, testsToRun);
+	}
+
+	/*
+	 * Runs real test using a configured runner.
+	 */
+	private void runTest(JUnitRunner runner, File destination, TestBean... testsToRun) throws Exception {
+		LogService logService = mock(LogService.class);
+
+		TestRegistry registry = mock(TestRegistry.class);
+		when(registry.getTests(any(String[].class))).thenReturn(asSet(testsToRun));
+
+		if (runner == null) {
+			runner = new StartAndStopJUnitRunner();
+		}
+
+		runner.setLog(logService);
+		runner.setRegistry(registry);
+
+		String[] ids = new String[testsToRun.length];
+		for (int i = 0; i < testsToRun.length; i++) {
+			ids[i] = testsToRun[i].getId();
+		}
+
+		runner.start(ids, destination.toString());
 		runner.stop();
 	}
 
@@ -237,4 +273,32 @@ public class JUnitRunnerTest {
 		tests.add(test2);
 		return tests;
 	}
+
+	private class StartAndStopJUnitRunner extends JUnitRunner {
+		private final CountDownLatch latch = new CountDownLatch(1);
+
+		@Override
+		protected Runnable getTestRunnable(File reportsDirectory, java.util.Queue<TestBean> tests) {
+			final Runnable realRunnable = super.getTestRunnable(reportsDirectory, tests);
+			return new Runnable() {
+				@Override
+				public void run() {
+					realRunnable.run();
+					// needed to know when test has ran and stop the executor
+					latch.countDown();
+				}
+			};
+		}
+
+		@Override
+		public void stop() {
+			try {
+				latch.await();
+			} catch (InterruptedException e) {
+				fail(e.getMessage());
+			}
+			super.stop();
+		}
+	}
+
 }

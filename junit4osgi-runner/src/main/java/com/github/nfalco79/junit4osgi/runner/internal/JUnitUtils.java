@@ -18,6 +18,8 @@
  */
 package com.github.nfalco79.junit4osgi.runner.internal;
 
+import java.lang.reflect.Modifier;
+
 /**
  * Utility class
  *
@@ -34,14 +36,27 @@ import junit.framework.TestCase;
 	}
 
 	/**
-	 * Return if the given class is a valid JUnit 3/4 class and contains tests.
+	 * Returns if the given class is a valid JUnit 3/4 class and contains tests.
 	 *
+	 * @param testClass to analyse.
 	 * @return {@code true} is a JUnit class that contains test method,
 	 *         {@code false} otherwise.
 	 */
 	public static boolean hasTests(Class<?> testClass) {
 		return testClass != null && (TestCase.class.isAssignableFrom(testClass)
 				|| !new TestClass(testClass).getAnnotatedMethods(Test.class).isEmpty());
+	}
+
+	/**
+	 * Returns if the given class is an normal declared java class.
+	 *
+	 * @param testClass to analyse.
+	 * @return {@code true} if the given class is a public, not abstract, not
+	 *         enumeration or not an interface, {@code false} otherwise.
+	 */
+	public static boolean isValid(Class<?> testClass) {
+		final int modifiers = testClass.getModifiers();
+		return Modifier.isPublic(modifiers) && !Modifier.isAbstract(modifiers) && !testClass.isInterface() && !testClass.isEnum();
 	}
 
 }

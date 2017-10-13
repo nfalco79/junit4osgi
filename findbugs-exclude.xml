@@ -3,4 +3,9 @@
 	<Match>
 		<Bug pattern="DM_DEFAULT_ENCODING" />
 	</Match>
+	<Match>
+		<Class name="com.github.nfalco79.junit4osgi.runner.internal.JUnitRunner" />
+		<Method name="runTests" />
+		<Bug pattern="REC_CATCH_EXCEPTION" />
+	</Match>
 </FindBugsFilter>

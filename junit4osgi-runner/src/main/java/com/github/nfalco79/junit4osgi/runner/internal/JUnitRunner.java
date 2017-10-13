@@ -42,7 +42,7 @@ import com.j256.simplejmx.common.JmxOperation;
 import com.j256.simplejmx.common.JmxOperationInfo.OperationAction;
 import com.j256.simplejmx.common.JmxResource;
 
-@JmxResource(domainName = "org.osgi.junit4osgi", folderNames = "runner", beanName = "JUnitRunner", description = "The JUnit4 runner, executes JUnit3/4 test case in any OSGi bundle in the current system")
+@JmxResource(domainName = "org.osgi.junit4osgi", folderNames = "type=runner", beanName = "JUnitRunner", description = "The JUnit4 runner, executes JUnit3/4 test case in any OSGi bundle in the current system")
 public class JUnitRunner implements TestRunner {
 	private final class QueeueTestListener implements TestRegistryChangeListener {
 		private final Queue<TestBean> tests;
@@ -124,7 +124,7 @@ public class JUnitRunner implements TestRunner {
 	}
 
 	@JmxOperation(description = "Start the runner that execute tests collected by the JUnit registry", operationAction = OperationAction.ACTION)
-	public void start(String[] testIds, String reportsPath) {
+	synchronized public void start(String[] testIds, String reportsPath) {
 		if (logger == null || registry == null) {
 			return;
 		}
@@ -135,8 +135,6 @@ public class JUnitRunner implements TestRunner {
 		} else {
 			reportsDirectory = defaultReportsDirectory;
 		}
-
-		stop = false;
 
 		if (!isRunning()) {
 			final Queue<TestBean> tests;
@@ -152,7 +150,7 @@ public class JUnitRunner implements TestRunner {
 				tests = new ArrayDeque<TestBean>(registry.getTests(testIds));
 			}
 
-
+			stop = false;
 			running = true;
 			executor = new ScheduledThreadPoolExecutor(1);
 
@@ -210,7 +208,8 @@ public class JUnitRunner implements TestRunner {
 			while (!isStopped() && (testBean = tests.poll()) != null) {
 				try {
 					Class<?> testClass = testBean.getTestClass();
-					if (!JUnitUtils.hasTests(testClass) && !accept(testClass)) {
+					if (!JUnitUtils.isValid(testClass) || !JUnitUtils.hasTests(testClass) || !accept(testClass)) {
+					    logger.log(LogService.LOG_DEBUG, "Skip test class " + testBean.getName());
 						continue;
 					}
 
@@ -219,6 +218,7 @@ public class JUnitRunner implements TestRunner {
 					listener = new ReportListener(report);
 					core.addListener(listener);
 
+					logger.log(LogService.LOG_INFO, "Running test " + testBean.getId());
 					core.run(testClass);
 
 					// write test result
@@ -249,6 +249,7 @@ public class JUnitRunner implements TestRunner {
 			registry.removeTestRegistryListener(testListener);
 		}
 		if (executor != null) {
+		    running = false;
 			executor.shutdownNow();
 		}
 	}
@@ -271,38 +272,38 @@ public class JUnitRunner implements TestRunner {
 		return running;
 	}
 
-    public void setIncludes(Set<String> includes) {
-        this.includes = new LinkedHashSet<IncludeExcludePattern>(includes.size());
-        for (String include : includes) {
-            this.includes.add(AntGlobPattern.include(include));
-        }
-    }
+	public void setIncludes(Set<String> includes) {
+		this.includes = new LinkedHashSet<IncludeExcludePattern>(includes.size());
+		for (String include : includes) {
+			this.includes.add(AntGlobPattern.include(include));
+		}
+	}
 
-    public void setExcludes(Set<String> excludes) {
-        this.excludes = new LinkedHashSet<IncludeExcludePattern>(excludes.size());
-        for (String exclude : excludes) {
-            this.excludes.add(AntGlobPattern.exclude(exclude));
-        }
-    }
+	public void setExcludes(Set<String> excludes) {
+		this.excludes = new LinkedHashSet<IncludeExcludePattern>(excludes.size());
+		for (String exclude : excludes) {
+			this.excludes.add(AntGlobPattern.exclude(exclude));
+		}
+	}
 
-    public boolean accept(Class<?> testClass) {
-        boolean matches = includes.isEmpty(); // by default accepts all
-        String suiteName = testClass.getName();
+	public boolean accept(Class<?> testClass) {
+		boolean matches = includes.isEmpty(); // by default accepts all
+		String suiteName = testClass.getName();
 
-        Iterator<IncludeExcludePattern> include = includes.iterator();
-        while (include.hasNext() && !matches) {
-            matches = include.next().matches(suiteName);
-        }
+		Iterator<IncludeExcludePattern> include = includes.iterator();
+		while (include.hasNext() && !matches) {
+			matches = include.next().matches(suiteName);
+		}
 
-        Iterator<IncludeExcludePattern> exclude = excludes.iterator();
-        while (exclude.hasNext() && matches) {
-            if (exclude.next().matches(suiteName)) {
-                matches = false;
+		Iterator<IncludeExcludePattern> exclude = excludes.iterator();
+		while (exclude.hasNext() && matches) {
+			if (exclude.next().matches(suiteName)) {
+				matches = false;
 				logger.log(LogService.LOG_DEBUG, "Test class: " + testClass.getName() + " excluded by exclude pattern");
-            }
-        }
-        return matches;
-    }
+			}
+		}
+		return matches;
+	}
 
 //	@Override
 //	public void addTestRunListener(TestRunnerListener listener) {

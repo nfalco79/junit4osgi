@@ -33,7 +33,7 @@ import com.j256.simplejmx.common.JmxAttributeMethod;
 import com.j256.simplejmx.common.JmxOperation;
 import com.j256.simplejmx.common.JmxResource;
 
-@JmxResource(domainName = "org.osgi.junit4osgi", folderNames = "registry", beanName = "AutoDiscoveryRegistry", description = "The JUnit4 registry that discovers test using the same maven surefure test naming convention")
+@JmxResource(domainName = "org.osgi.junit4osgi", folderNames = "type=registry", beanName = "AutoDiscoveryRegistry", description = "The JUnit4 registry that discovers test using the same maven surefure test naming convention")
 public final class AutoDiscoveryRegistry extends AbstractTestRegistry {
 	private static final int EXT_LENGHT = ".class".length();
 
