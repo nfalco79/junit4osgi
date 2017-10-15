@@ -29,6 +29,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.runner.JUnitCore;
+import org.junit.runner.notification.RunListener;
 import org.osgi.service.log.LogService;
 
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
@@ -37,6 +38,7 @@ import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
 import com.github.nfalco79.junit4osgi.runner.internal.AntGlobPattern.IncludeExcludePattern;
 import com.github.nfalco79.junit4osgi.runner.spi.TestRunner;
+import com.github.nfalco79.junit4osgi.runner.spi.TestRunnerNotifier;
 import com.j256.simplejmx.common.JmxAttributeMethod;
 import com.j256.simplejmx.common.JmxOperation;
 import com.j256.simplejmx.common.JmxOperationInfo.OperationAction;
@@ -71,7 +73,6 @@ public class JUnitRunner implements TestRunner {
 		}
 	}
 
-	public static final String QUIET_TIME = "org.osgi.junit.quietTime";
 	public static final String REPORT_PATH = "org.osgi.junit.reportsPath";
 	public static final String RERUN_COUNT = "org.osgi.junit.rerunFailingTestsCount";
 	public static final String PATH_INCLUDES = "org.osgi.junit.include";
@@ -87,13 +88,11 @@ public class JUnitRunner implements TestRunner {
 	private TestRegistryChangeListener testListener;
 	private ScheduledThreadPoolExecutor executor;
 	private final Integer reRunCount;
-	private final Integer quiteTime;
 	private final File defaultReportsDirectory;
 
 	public JUnitRunner() {
 		defaultReportsDirectory = new File(System.getProperty(REPORT_PATH, "surefire-reports"));
 		reRunCount = Integer.getInteger(RERUN_COUNT, 5);
-		quiteTime = Double.valueOf(Math.floor(Long.getLong(QUIET_TIME, 3 * getRepeatTime()).doubleValue() / getRepeatTime())).intValue();
 		stop = true;
 		setIncludes(new LinkedHashSet<String>());
 		setExcludes(new LinkedHashSet<String>());
@@ -120,11 +119,16 @@ public class JUnitRunner implements TestRunner {
 	 */
 	@Override
 	public void start() {
-		start(null, null);
+		start(null, null, null);
 	}
 
-	@JmxOperation(description = "Start the runner that execute tests collected by the JUnit registry", operationAction = OperationAction.ACTION)
+	@JmxOperation(description = "Start the runner that execute the test with the specified id collected by the JUnit registry", operationAction = OperationAction.ACTION)
 	public void start(String[] testIds, String reportsPath) {
+	    start(testIds, reportsPath, null);
+	}
+
+	@Override
+	public void start(String[] testIds, String reportsPath, TestRunnerNotifier notifier) {
 		if (logger == null || registry == null) {
 			return;
 		}
@@ -154,10 +158,11 @@ public class JUnitRunner implements TestRunner {
 			running = true;
 			executor = new ScheduledThreadPoolExecutor(1);
 
-			Runnable testRunnable = getTestRunnable(reportsDirectory, tests);
 			if (testIds != null) {
+				Runnable testRunnable = getSingleRunnable(reportsDirectory, tests, notifier);
 				executor.schedule(testRunnable, 0l, TimeUnit.MILLISECONDS);
 			} else {
+				Runnable testRunnable = getInfiniteRunnable(reportsDirectory, tests);
 				executor.scheduleAtFixedRate(testRunnable, 0l, getRepeatTime(), TimeUnit.MILLISECONDS);
 			}
 		}
@@ -172,36 +177,37 @@ public class JUnitRunner implements TestRunner {
 		return 5000l;
 	}
 
-	protected Runnable getTestRunnable(final File reportsDirectory, final Queue<TestBean> tests) {
-		final CountDown counter = new CountDown(quiteTime);
+	protected Runnable getSingleRunnable(final File reportsDirectory, final Queue<TestBean> tests, final TestRunnerNotifier notifier) {
+		return getTestRunnable(reportsDirectory, tests, notifier, true);
+	}
+
+	protected Runnable getInfiniteRunnable(final File reportsDirectory, final Queue<TestBean> tests) {
+		return getTestRunnable(reportsDirectory, tests, null, false);
+	}
+
+	private Runnable getTestRunnable(final File reportsDirectory, final Queue<TestBean> tests, final TestRunnerNotifier notifier, final boolean singleRun) {
+		final TestRunnerNotifier safeNotifier = new SafeTestRunnerNotifier(notifier, logger);
 
 		return new Runnable() {
 			@Override
 			public void run() {
-				if (tests.isEmpty()) {
-					counter.countDown();
-					if (counter.getCount() == 0) {
-//						fireEvent(new TestRunnerEvent(TestRunnerEventType.COMPLETE));
-						stop();
-					}
-					return;
-				}
-
-				counter.restart();
 				try {
-					running = true;
-//					fireEvent(new TestRunnerEvent(TestRunnerEventType.START));
-					runTests(tests, reportsDirectory);
+					safeNotifier.start();
+					runTests(tests, reportsDirectory, safeNotifier);
 				} finally {
-					running = false;
+					if (singleRun) {
+						running = false;
+					}
+					safeNotifier.stop();
 				}
 			}
 		};
 	}
 
-	private void runTests(final Queue<TestBean> tests, final File reportsDirectory) {
+	private void runTests(final Queue<TestBean> tests, final File reportsDirectory, TestRunnerNotifier notifier) {
 		TestBean testBean;
 		try {
+			RunListener customListener = notifier.getRunListener();
 			ReportListener listener = null;
 			JUnitCore core = new JUnitCore();
 
@@ -218,8 +224,12 @@ public class JUnitRunner implements TestRunner {
 					listener = new ReportListener(report);
 					core.addListener(listener);
 
+					if (customListener != null) {
+						core.addListener(listener);
+					}
+
 					logger.log(LogService.LOG_INFO, "Running test " + testBean.getId());
-					core.run(testClass);
+					runTest(core, testClass);
 
 					// write test result
 					report.generateReport(reportsDirectory);
@@ -228,6 +238,9 @@ public class JUnitRunner implements TestRunner {
 				} catch (NoClassDefFoundError e) {
 					logger.log(LogService.LOG_ERROR, "Cannot load class " + testBean.getId(), e);
 				} finally {
+					if (customListener != null) {
+						core.removeListener(customListener);
+					}
 					if (listener != null) {
 						core.removeListener(listener);
 					}
@@ -235,6 +248,16 @@ public class JUnitRunner implements TestRunner {
 			}
 		} catch (Exception e) {
 			logger.log(LogService.LOG_ERROR, null, e);
+		}
+	}
+
+	private void runTest(JUnitCore core, Class<?> testClass) {
+		ClassLoader ccl = Thread.currentThread().getContextClassLoader();
+		try {
+			Thread.currentThread().setContextClassLoader(testClass.getClassLoader());
+			core.run(testClass);
+		} finally {
+			Thread.currentThread().setContextClassLoader(ccl);
 		}
 	}
 

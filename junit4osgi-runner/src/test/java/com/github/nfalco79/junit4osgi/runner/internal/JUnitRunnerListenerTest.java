@@ -1,6 +1,6 @@
 package com.github.nfalco79.junit4osgi.runner.internal;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.io.File;
@@ -46,7 +46,7 @@ public class JUnitRunnerListenerTest {
 
 		JUnitRunner runner = spy(new JUnitRunner());
 		when(runner.getRepeatTime()).thenReturn(1l);
-		when(runner.getTestRunnable(any(File.class), any(Queue.class))).thenReturn(mock(Runnable.class));
+		when(runner.getInfiniteRunnable(any(File.class), any(Queue.class))).thenReturn(mock(Runnable.class));
 
 		runner.setLog(logService);
 		runner.setRegistry(registry);
@@ -89,7 +89,7 @@ public class JUnitRunnerListenerTest {
 
 		JUnitRunner runner = spy(new JUnitRunner());
 		when(runner.getRepeatTime()).thenReturn(1l);
-		when(runner.getTestRunnable(any(File.class), any(Queue.class))).thenReturn(mock(Runnable.class));
+		when(runner.getInfiniteRunnable(any(File.class), any(Queue.class))).thenReturn(mock(Runnable.class));
 
 		runner.setLog(logService);
 		runner.setRegistry(registry);
@@ -131,7 +131,7 @@ public class JUnitRunnerListenerTest {
 
 		JUnitRunner runner = spy(new JUnitRunner());
 		when(runner.getRepeatTime()).thenReturn(1l);
-		when(runner.getTestRunnable(any(File.class), any(Queue.class))).thenReturn(mock(Runnable.class));
+		when(runner.getInfiniteRunnable(any(File.class), any(Queue.class))).thenReturn(mock(Runnable.class));
 
 		runner.setLog(logService);
 		runner.setRegistry(registry);

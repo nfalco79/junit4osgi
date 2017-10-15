@@ -33,6 +33,7 @@ import org.osgi.service.log.LogService;
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
+import com.github.nfalco79.junit4osgi.runner.spi.TestRunnerNotifier;
 
 public class JUnitRunnerTest {
 
@@ -52,7 +53,7 @@ public class JUnitRunnerTest {
 
 		JUnitRunner runner = spy(new JUnitRunner());
 		when(runner.getRepeatTime()).thenReturn(1l);
-		when(runner.getTestRunnable(any(File.class), any(Queue.class))).thenAnswer(new Answer<Runnable>() {
+		when(runner.getInfiniteRunnable(any(File.class), any(Queue.class))).thenAnswer(new Answer<Runnable>() {
 			@Override
 			public Runnable answer(InvocationOnMock invocation) throws Throwable {
 				Queue<TestBean> tests = (Queue<TestBean>) invocation.getArgument(1);
@@ -97,7 +98,7 @@ public class JUnitRunnerTest {
 
 		JUnitRunner runner = spy(new JUnitRunner());
 		when(runner.getRepeatTime()).thenReturn(1l);
-		when(runner.getTestRunnable(any(File.class), any(Queue.class))).thenAnswer(new Answer<Runnable>() {
+		when(runner.getSingleRunnable(any(File.class), any(Queue.class), any(TestRunnerNotifier.class))).thenAnswer(new Answer<Runnable>() {
 			@Override
 			public Runnable answer(InvocationOnMock invocation) throws Throwable {
 				Queue<TestBean> tests = (Queue<TestBean>) invocation.getArgument(1);
@@ -114,7 +115,7 @@ public class JUnitRunnerTest {
 
 		runner.setLog(logService);
 		runner.setRegistry(registry);
-		runner.start(new String[] { testToRun.getId() }, null);
+		runner.start(new String[] { testToRun.getId() }, null, new SafeTestRunnerNotifier(null, logService));
 		Thread.sleep(runner.getRepeatTime() * 4);
 		runner.stop();
 
@@ -154,7 +155,7 @@ public class JUnitRunnerTest {
 		runner.setRegistry(registry);
 		runner.start();
 		verify(runner, never()).isRunning();
-		verify(runner, never()).getTestRunnable(any(File.class), any(Queue.class));
+		verify(runner, never()).getInfiniteRunnable(any(File.class), any(Queue.class));
 		runner.stop();
 	}
 
@@ -211,7 +212,7 @@ public class JUnitRunnerTest {
 			ids[i] = testsToRun[i].getId();
 		}
 
-		runner.start(ids, destination.toString());
+		runner.start(ids, destination.toString(), new SafeTestRunnerNotifier(null, logService));
 		runner.stop();
 	}
 
@@ -278,8 +279,8 @@ public class JUnitRunnerTest {
 		private final CountDownLatch latch = new CountDownLatch(1);
 
 		@Override
-		protected Runnable getTestRunnable(File reportsDirectory, java.util.Queue<TestBean> tests) {
-			final Runnable realRunnable = super.getTestRunnable(reportsDirectory, tests);
+		protected Runnable getSingleRunnable(File reportsDirectory, java.util.Queue<TestBean> tests, TestRunnerNotifier notifier) {
+			final Runnable realRunnable = super.getSingleRunnable(reportsDirectory, tests, notifier);
 			return new Runnable() {
 				@Override
 				public void run() {

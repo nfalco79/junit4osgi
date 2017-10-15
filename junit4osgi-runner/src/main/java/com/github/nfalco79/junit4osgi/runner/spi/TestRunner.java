@@ -52,6 +52,16 @@ public interface TestRunner {
 	void start();
 
 	/**
+	 * Performs the run only specify tests that matches in the registry.
+	 *
+	 * @param testIds a list of test identifier.
+	 * @param reportsPath the folder where generate the surefire reports.
+	 * @param notifier to be notified on test events.
+	 * @see TestBean#getId()
+	 */
+	void start(String[] testIds, String reportsPath, TestRunnerNotifier notifier);
+
+	/**
 	 * Marks the execution to be stopped.
 	 * <p>
 	 * The call to this method does not ensure to be immediate, it marks the job
