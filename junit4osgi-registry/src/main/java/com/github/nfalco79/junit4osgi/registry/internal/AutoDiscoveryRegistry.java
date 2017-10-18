@@ -70,7 +70,8 @@ public final class AutoDiscoveryRegistry extends AbstractTestRegistry {
 		Enumeration<URL> entries = contributor.findEntries("/", "*.class", true);
 		while (entries != null && entries.hasMoreElements()) {
 			String className = toClassName(entries.nextElement());
-			if (isTestCase(className) || isIntegrationTest(className)) {
+			String simpleClassName = toClassSimpleName(className);
+			if (isTestCase(simpleClassName) || isIntegrationTest(simpleClassName)) {
 				TestBean bean = new TestBean(contributor, className);
 				bundleTest.add(bean);
 
@@ -88,12 +89,16 @@ public final class AutoDiscoveryRegistry extends AbstractTestRegistry {
 		return className.replace('/', '.').replace('/', '.');
 	}
 
+	private String toClassSimpleName(String className) {
+		return className.substring(className.lastIndexOf('.') + 1);
+	}
+
 	private boolean isIntegrationTest(String className) {
 		return className.startsWith("IT") || className.endsWith("IT") || className.endsWith("ITCase");
 	}
 
 	private boolean isTestCase(String className) {
-		return className.startsWith("Test") || className.endsWith("Test") || className.endsWith("TestCase");
+		return className.startsWith("Test") || className.endsWith("Test") || className.endsWith("Tests") || className.endsWith("TestCase");
 	}
 
 	/*

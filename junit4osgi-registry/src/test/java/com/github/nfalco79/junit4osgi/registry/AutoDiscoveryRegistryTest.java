@@ -1,6 +1,6 @@
 package com.github.nfalco79.junit4osgi.registry;
 
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import java.net.URL;
@@ -11,10 +11,13 @@ import java.util.Set;
 import java.util.Vector;
 
 import org.example.GenericClass;
+import org.example.ITGenericClass;
 import org.example.JUnit3Test;
 import org.example.MyServiceIT;
+import org.example.MyServiceTests;
 import org.example.SimpleITTest;
 import org.example.SimpleTestCase;
+import org.example.TestMyService;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -32,7 +35,7 @@ public class AutoDiscoveryRegistryTest {
 	@Test
 	public void test_gather_test_by_naming_convention() throws Exception {
 		Class<?>[] testsClass = new Class<?>[] { SimpleTestCase.class, JUnit3Test.class, GenericClass.class,
-				MyServiceIT.class, SimpleITTest.class, GenericClass.class };
+				MyServiceIT.class, SimpleITTest.class, ITGenericClass.class, TestMyService.class, MyServiceTests.class };
 		Bundle bundle = getMockBundle(testsClass);
 
 		AutoDiscoveryRegistry registry = new AutoDiscoveryRegistry();
@@ -40,7 +43,7 @@ public class AutoDiscoveryRegistryTest {
 		registry.registerTests(bundle);
 
 		Set<TestBean> tests = registry.getTests();
-		assertThat(tests, Matchers.hasSize(4));
+		assertThat(tests, Matchers.hasSize(7));
 		assertThat(tests, Matchers.not(Matchers.contains(new TestBean(bundle, GenericClass.class.getName()))));
 
 		registry.dispose();
