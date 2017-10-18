@@ -43,8 +43,13 @@ import junit.framework.TestCase;
 	 *         {@code false} otherwise.
 	 */
 	public static boolean hasTests(Class<?> testClass) {
-		return testClass != null && (TestCase.class.isAssignableFrom(testClass)
+		try {
+			return testClass != null && (TestCase.class.isAssignableFrom(testClass)
 				|| !new TestClass(testClass).getAnnotatedMethods(Test.class).isEmpty());
+		} catch (Exception e) {
+			// catch exception raised by TestClass
+			return false;
+		}
 	}
 
 	/**

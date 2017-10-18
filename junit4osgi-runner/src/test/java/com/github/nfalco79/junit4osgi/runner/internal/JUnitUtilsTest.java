@@ -8,6 +8,7 @@ import org.example.JUnit3Test;
 import org.example.MainClassTest;
 import org.example.PackageRetrieverUtils;
 import org.example.SimpleTestCase;
+import org.example.TooManyConstructors;
 import org.junit.Test;
 
 
@@ -39,7 +40,12 @@ public class JUnitUtilsTest {
 	}
 
 	@Test
-	public void not_public_classes_are_skipped() throws Exception {
+	public void too_many_constructor_classes_are_skipped_without_exception() throws Exception {
+		assertFalse("this class has too constructors and must be skipped without raise exceptions", JUnitUtils.hasTests(TooManyConstructors.class));
+	}
+
+	@Test
+	public void no_constructor_not_available() throws Exception {
 		assertFalse("this class has not public visibility and must be skipped", JUnitUtils.isValid(PackageRetrieverUtils.getPackageTestClass()));
 	}
 
