@@ -36,9 +36,11 @@ import java.util.Properties;
 
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.IOUtil;
+import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.xml.PrettyPrintXMLWriter;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.Xpp3DomWriter;
+import org.junit.Ignore;
 import org.junit.runner.Description;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
@@ -85,6 +87,7 @@ public class XMLReport {
 		info.endTime = 0l;
 		map.put(description, info);
 		info.type = FailureType.IGNORE;
+		info.message = description.getAnnotation(Ignore.class).value();
 	}
 
 	private String formatNumber(double time) {
@@ -139,16 +142,38 @@ public class XMLReport {
 	}
 
 	/**
-	 * Utility method writing failed and in error test result in the report.
+	 * Utility method writing error test result in the report.
+	 *
+	 * @param element
+	 *            the DOM parent element under wrote the problem
+	 * @param failure
+	 *            the error cause
+	 */
+	private void writeTestError(Xpp3Dom element, Failure failure) {
+		Throwable exception = failure.getException();
+		if (exception != null) {
+			String message = failure.getMessage();
+			if (message != null) {
+				element.setAttribute(TEST_ERROR_MESSAGE_ATTRIBUTE, message);
+			}
+
+			element.setAttribute(TEST_ERROR_TYPE_ATTRIBUTE, exception.getClass().getName());
+		}
+		String stackTrace = failure.getTrace();
+		if (stackTrace != null) {
+			element.setValue(stackTrace);
+		}
+	}
+
+	/**
+	 * Utility method writing failed test result in the report.
 	 *
 	 * @param element
 	 *            the DOM parent element under wrote the problem
 	 * @param failure
 	 *            the failing cause
-	 * @param name
-	 *            type of failure ("error" or "failure")
 	 */
-	private void writeTestProblems(Xpp3Dom element, Failure failure) {
+	private void writeTestFailure(Xpp3Dom element, Failure failure) {
 		Throwable exception = failure.getException();
 		if (exception != null) {
 			String message = failure.getMessage();
@@ -161,6 +186,20 @@ public class XMLReport {
 		String stackTrace = failure.getTrace();
 		if (stackTrace != null) {
 			element.setValue(stackTrace);
+		}
+	}
+
+	/**
+	 * Utility method writing ignored test result in the report.
+	 *
+	 * @param element
+	 *            the DOM parent element under wrote the problem
+	 * @param failure
+	 *            the failing cause
+	 */
+	private void writeTestSkipped(Xpp3Dom element, String message) {
+		if (StringUtils.isNotEmpty(message)) {
+			element.setAttribute(TEST_SKIPPED_MESSAGE_ATTRIBUTE, message);
 		}
 	}
 
@@ -182,7 +221,7 @@ public class XMLReport {
 		dom.setAttribute(SUITE_TESTS_ATTRIBUTE, String.valueOf(runCount));
 		dom.setAttribute(SUITE_FAILURES_ATTRIBUTE, String.valueOf(failuresCount));
 		dom.setAttribute(SUITE_ERRORS_ATTRIBUTE, String.valueOf(errorsCount));
-		dom.setAttribute(SUITE_IGNORED_ATTRIBUTE, String.valueOf(ignoredCount));
+		dom.setAttribute(SUITE_SKIPPED_ATTRIBUTE, String.valueOf(ignoredCount));
 
 		File reportFile = new File(reportsDirectory, MessageFormat.format(DEFAULT_NAME, dom.getAttribute(SUITE_NAME_ATTRIBUTE).replace(' ', '_')));
 		File reportDir = reportFile.getParentFile();
@@ -227,17 +266,18 @@ public class XMLReport {
 					addOutputStreamElement(element, report.out, SurefireConstants.TEST_STDOUT_ELEMENT);
 					addOutputStreamElement(element, report.err, SurefireConstants.TEST_STDERR_ELEMENT);
 					Xpp3Dom error = createElement(element, TEST_ERROR_ELEMENT);
-					writeTestProblems(error, report.failure);
+					writeTestError(error, report.failure);
 					break;
 				case FAILURE:
 					failuresCount++;
 					addOutputStreamElement(element, report.out, SurefireConstants.TEST_STDOUT_ELEMENT);
 					addOutputStreamElement(element, report.err, SurefireConstants.TEST_STDERR_ELEMENT);
 					Xpp3Dom failure  = createElement(element, TEST_FAILURE_ELEMENT);
-					writeTestProblems(failure, report.failure);
+					writeTestFailure(failure, report.failure);
 					break;
 				case IGNORE:
-					createElement(element, TEST_SKIPPED_ELEMENT);
+					Xpp3Dom skipped = createElement(element, TEST_SKIPPED_ELEMENT);
+					writeTestSkipped(skipped, report.message);
 					break;
 				default:
 					// it's a normal success test
@@ -410,6 +450,7 @@ public class XMLReport {
 	}
 
 	private static class ReportInfo {
+		private String message;
 		private String err;
 		private String out;
 		private long startTime;

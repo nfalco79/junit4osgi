@@ -33,4 +33,10 @@ public class ErrorTest {
 	public void ignoreTest2() {
 		// do nothing
 	}
+
+	@Test
+	@Ignore(value = "reason message")
+	public void ignoreTest3() {
+		// do nothing
+	}
 }

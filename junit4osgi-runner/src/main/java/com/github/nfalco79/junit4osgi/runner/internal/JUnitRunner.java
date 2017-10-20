@@ -124,7 +124,7 @@ public class JUnitRunner implements TestRunner {
 	}
 
 	@JmxOperation(description = "Start the runner that execute tests collected by the JUnit registry", operationAction = OperationAction.ACTION)
-	synchronized public void start(String[] testIds, String reportsPath) {
+	public void start(String[] testIds, String reportsPath) {
 		if (logger == null || registry == null) {
 			return;
 		}

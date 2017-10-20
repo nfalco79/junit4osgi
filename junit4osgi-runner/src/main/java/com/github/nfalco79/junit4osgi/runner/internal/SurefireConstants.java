@@ -46,7 +46,8 @@ public final class SurefireConstants {
 	public static final String SUITE_TESTS_ATTRIBUTE = "tests";
 	public static final String SUITE_FAILURES_ATTRIBUTE = "failures";
 	public static final String SUITE_ERRORS_ATTRIBUTE = "errors";
-	public static final String SUITE_IGNORED_ATTRIBUTE = "ignored";
+	public static final String SUITE_SKIPPED_ATTRIBUTE = "skipped";
+	public static final String SUITE_GROUP_ATTRIBUTE = "group";
 
 	/*
 	 * Test element and its children and attributes
@@ -60,10 +61,13 @@ public final class SurefireConstants {
 	public static final String TEST_FAILURE_ELEMENT = "failure";
 	public static final String TEST_FAILURE_MESSAGE_ATTRIBUTE = "message";
 	public static final String TEST_FAILURE_TYPE_ATTRIBUTE = "type";
+	public static final String TEST_FAILURE_TIME_ATTRIBUTE = "time";
 	public static final String TEST_SKIPPED_ELEMENT = "skipped";
+	public static final String TEST_SKIPPED_MESSAGE_ATTRIBUTE = "message";
 	public static final String TEST_NAME_ATTRIBUTE = "name";
 	public static final String TEST_CLASSNAME_ATTRIBUTE = "classname";
 	public static final String TEST_TIME_ATTRIBUTE = "time";
+	public static final String TEST_GROUP_ATTRIBUTE = "group";
 
 	/*
 	 * Properties element and its children and attributes

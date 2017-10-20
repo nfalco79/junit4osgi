@@ -31,7 +31,7 @@ public class SurefireHelper {
 		assertNotNull("No suite element found", suite);
 		assertEquals("No suite element found", SUITE_ELEMENT, suite.getName());
 		assertEquals("Unexpected suite name value", className, suite.getAttribute(SUITE_NAME_ATTRIBUTE));
-		assertEquals("Unexpected ignored value", ignored, getLong(suite, SUITE_IGNORED_ATTRIBUTE));
+		assertEquals("Unexpected ignored value", ignored, getLong(suite, SUITE_SKIPPED_ATTRIBUTE));
 		assertEquals("Unexpected failures value", failures, getLong(suite, SUITE_FAILURES_ATTRIBUTE));
 		assertEquals("Unexpected errors value", errors, getLong(suite, SUITE_ERRORS_ATTRIBUTE));
 		assertEquals("Unexpected tests value", tests, getLong(suite, SUITE_TESTS_ATTRIBUTE));
@@ -83,12 +83,19 @@ public class SurefireHelper {
 	}
 
 	public Xpp3Dom verifySkipedTestCase(String className, String name) {
+		return verifySkipedTestCase(className, name, null);
+	}
+
+	public Xpp3Dom verifySkipedTestCase(String className, String name, String message) {
 		Xpp3Dom testcase = verifyTestCase(className, name, 0);
 
 		Xpp3Dom[] skips = testcase.getChildren(TEST_SKIPPED_ELEMENT);
-		assertThat("Too or no " + TEST_SKIPPED_ELEMENT + " element found", skips.length, greaterThanOrEqualTo(1));
+		assertThat("Too or no " + TEST_SKIPPED_ELEMENT + " element found", skips.length, equalTo(1));
 		Xpp3Dom skipped = skips[0];
-		assertThat("Unexpected attributes on " + TEST_SKIPPED_ELEMENT + " element", skipped.getAttributeNames(), arrayWithSize(0));
+		assertThat("Unexpected attributes on " + TEST_SKIPPED_ELEMENT + " element", skipped.getAttributeNames(), arrayWithSize(message == null ? 0 : 1));
+		if (message != null) {
+			assertThat("Unexpected message on " + TEST_SKIPPED_ELEMENT + " element", skipped.getAttribute(TEST_SKIPPED_MESSAGE_ATTRIBUTE), is(message));
+		}
 		Xpp3Dom[] children = testcase.getChildren();
 		assertEquals("Unexpected element found", 1, children.length);
 
