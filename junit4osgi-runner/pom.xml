@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>junit4osgi-runner</artifactId>
 	<name>JUnit4 for OSGi Runner</name>
@@ -46,22 +47,25 @@
 		<pluginManagement>
 			<plugins>
 				<plugin>
-					<artifactId>maven-shade-plugin</artifactId>
+					<groupId>org.apache.felix</groupId>
+					<artifactId>maven-bundle-plugin</artifactId>
 					<configuration>
-						<artifactSet>
-							<includes>
-								<include>*:plexus-utils</include>
-							</includes>
-						</artifactSet>
-					</configuration>
-				</plugin>
-				<plugin>
-					<artifactId>maven-dependency-plugin</artifactId>
-					<configuration>
-							<includeArtifactIds>plexus-utils</includeArtifactIds>
+						<instructions>
+							<Bundle-Activator>com.github.nfalco79.junit4osgi.runner.internal.Activator</Bundle-Activator>
+							<Embed-Dependency>plexus-utils</Embed-Dependency>
+							<Embed-Directory>lib</Embed-Directory>
+						</instructions>
 					</configuration>
 				</plugin>
 			</plugins>
 		</pluginManagement>
+		<plugins>
+			<plugin>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<configuration>
+					<includeArtifactIds>plexus-utils</includeArtifactIds>
+				</configuration>
+			</plugin>
+		</plugins>
 	</build>
 </project>

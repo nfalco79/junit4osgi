@@ -27,8 +27,10 @@ import com.github.nfalco79.junit4osgi.runner.spi.TestRunner;
 @PrepareForTest(Activator.class)
 public class ActivatorTest {
 
-	private ServiceTrackerCustomizer<TestRegistry, TestRegistry> registryTracker;
-	private ServiceTrackerCustomizer<LogService, LogService> logTracker;
+	@SuppressWarnings("rawtypes")
+	private ServiceTrackerCustomizer registryTracker;
+	@SuppressWarnings("rawtypes")
+	private ServiceTrackerCustomizer logTracker;
 
 	@Test
 	public void verify_auto_registry_ldap_filter() throws Exception {
@@ -61,8 +63,8 @@ public class ActivatorTest {
 
 	@Test
 	public void runner_does_not_start_with_autostart_set_to_false() throws Exception {
-		ServiceReference<TestRegistry> srRegistry = mock(ServiceReference.class);
-		ServiceReference<LogService> srLog = mock(ServiceReference.class);
+		ServiceReference srRegistry = mock(ServiceReference.class);
+		ServiceReference srLog = mock(ServiceReference.class);
 
 		BundleContext bundleContext = mock(BundleContext.class);
 		when(bundleContext.createFilter(ArgumentMatchers.anyString())).thenReturn(mock(Filter.class));
@@ -86,8 +88,8 @@ public class ActivatorTest {
 
 	@Test
 	public void runner_starts_if_autostart_set_to_true() throws Exception {
-		ServiceReference<TestRegistry> srRegistry = mock(ServiceReference.class);
-		ServiceReference<LogService> srLog = mock(ServiceReference.class);
+		ServiceReference srRegistry = mock(ServiceReference.class);
+		ServiceReference srLog = mock(ServiceReference.class);
 
 		BundleContext bundleContext = mock(BundleContext.class);
 		when(bundleContext.createFilter(ArgumentMatchers.anyString())).thenReturn(mock(Filter.class));
@@ -121,8 +123,8 @@ public class ActivatorTest {
 
 	@Test
 	public void stop_runner_if_a_required_service_is_gone() throws Exception {
-		ServiceReference<TestRegistry> srRegistry = mock(ServiceReference.class);
-		ServiceReference<LogService> srLog = mock(ServiceReference.class);
+		ServiceReference srRegistry = mock(ServiceReference.class);
+		ServiceReference srLog = mock(ServiceReference.class);
 
 		LogService logService = mock(LogService.class);
 		TestRegistry registry = mock(TestRegistry.class);

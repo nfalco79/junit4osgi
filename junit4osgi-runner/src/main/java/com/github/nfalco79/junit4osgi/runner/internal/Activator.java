@@ -142,8 +142,8 @@ public class Activator implements BundleActivator {
 	private ServiceTrackerCustomizer<LogService, LogService> createLogCustomizer(final BundleContext bundleContext) {
 		return new ServiceTrackerCustomizer<LogService, LogService>() {
 			@Override
-			public LogService addingService(ServiceReference<LogService> reference) {
-				LogService logService = bundleContext.getService(reference);
+			public LogService addingService(ServiceReference reference) {
+				LogService logService = (LogService) bundleContext.getService(reference);
 				synchronized (Activator.this) {
 					if (logger == null) {
 						logger = logService;
@@ -154,12 +154,12 @@ public class Activator implements BundleActivator {
 			}
 
 			@Override
-			public void modifiedService(ServiceReference<LogService> reference, LogService service) {
+			public void modifiedService(ServiceReference reference, LogService service) {
 				// No service property modifications to handle
 			}
 
 			@Override
-			public void removedService(ServiceReference<LogService> reference, LogService service) {
+			public void removedService(ServiceReference reference, LogService service) {
 				synchronized (Activator.this) {
 					if (service != logger) {
 						return;
@@ -175,8 +175,8 @@ public class Activator implements BundleActivator {
 			final BundleContext bundleContext) {
 		return new ServiceTrackerCustomizer<TestRegistry, TestRegistry>() {
 			@Override
-			public TestRegistry addingService(ServiceReference<TestRegistry> reference) {
-				TestRegistry registryService = bundleContext.getService(reference);
+			public TestRegistry addingService(ServiceReference reference) {
+				TestRegistry registryService = (TestRegistry) bundleContext.getService(reference);
 				synchronized (Activator.this) {
 					if (registry == null) {
 						registry = registryService;
@@ -187,12 +187,12 @@ public class Activator implements BundleActivator {
 			}
 
 			@Override
-			public void modifiedService(ServiceReference<TestRegistry> arg0, TestRegistry arg1) {
+			public void modifiedService(ServiceReference arg0, TestRegistry arg1) {
 				// No service property modifications to handle
 			}
 
 			@Override
-			public void removedService(ServiceReference<TestRegistry> reference, TestRegistry service) {
+			public void removedService(ServiceReference reference, TestRegistry service) {
 				synchronized (Activator.this) {
 					if (service != registry) {
 						return;

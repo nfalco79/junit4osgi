@@ -80,7 +80,7 @@ public final class ManifestRegistry extends AbstractTestRegistry {
 		final URL resource = bundle.getEntry("META-INF/MANIFEST.MF");
 		if (resource == null) {
 			getLog().log(LogService.LOG_WARNING,
-					"No MANIFEST for bundle " + symbolicName + "[id:" + bundle.getVersion() + "]");
+					"No MANIFEST for bundle " + symbolicName + "[id:" + bundle.getBundleId() + "]");
 			return;
 		}
 
