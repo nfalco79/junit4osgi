@@ -43,6 +43,7 @@
 		<module>junit4osgi-bundle</module>
 		<module>junit4osgi-registry</module>
 		<module>junit4osgi-runner</module>
+		<module>junit4osgi-gui</module>
 	</modules>
 	<dependencies>
 		<dependency>
@@ -301,7 +302,7 @@
 											</pluginExecutionFilter>
 											<action>
 												<execute>
-													<runOnConfiguration>false</runOnConfiguration>
+													<runOnConfiguration>true</runOnConfiguration>
 													<runOnIncremental>true</runOnIncremental>
 												</execute>
 											</action>

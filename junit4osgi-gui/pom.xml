@@ -1,0 +1,37 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>com.github.nfalco79</groupId>
+		<artifactId>junit4osgi-parent</artifactId>
+		<version>1.0.1-SNAPSHOT</version>
+	</parent>
+	<artifactId>junit4osgi-gui</artifactId>
+	<properties>
+		<findbugs.failOnError>false</findbugs.failOnError>
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>com.github.nfalco79</groupId>
+			<artifactId>junit4osgi-registry</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+	</dependencies>
+	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.felix</groupId>
+					<artifactId>maven-bundle-plugin</artifactId>
+					<configuration>
+						<instructions>
+							<Bundle-SymbolicName>${maven-symbolicname};singleton:=true</Bundle-SymbolicName>
+							<Service-Component>OSGI-INF/*.xml</Service-Component>
+						</instructions>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
+	<name>JUnit4 for OSGi Swing GUI</name>
+</project>
