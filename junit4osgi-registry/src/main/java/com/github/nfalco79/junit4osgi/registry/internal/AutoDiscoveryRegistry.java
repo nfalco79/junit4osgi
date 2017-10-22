@@ -25,6 +25,8 @@ import java.util.Set;
 
 import org.osgi.framework.Bundle;
 
+import com.github.nfalco79.junit4osgi.registry.internal.asm.ASMUtils;
+import com.github.nfalco79.junit4osgi.registry.internal.asm.TestClassVisitor;
 import com.github.nfalco79.junit4osgi.registry.spi.AbstractTestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
@@ -67,15 +69,22 @@ public final class AutoDiscoveryRegistry extends AbstractTestRegistry {
 		Set<TestBean> bundleTest = new LinkedHashSet<TestBean>();
 		tests.put(contributor, bundleTest);
 
+		@SuppressWarnings("unchecked")
 		Enumeration<URL> entries = contributor.findEntries("/", "*.class", true);
 		while (entries != null && entries.hasMoreElements()) {
-			String className = toClassName(entries.nextElement());
+			URL entry = entries.nextElement();
+			String className = toClassName(entry);
 			String simpleClassName = toClassSimpleName(className);
 			if (isTestCase(simpleClassName) || isIntegrationTest(simpleClassName)) {
-				TestBean bean = new TestBean(contributor, className);
-				bundleTest.add(bean);
+				TestClassVisitor visitor = new TestClassVisitor();
+				ASMUtils.analyseByteCode(entry, visitor);
 
-				fireEvent(new TestRegistryEvent(TestRegistryEventType.ADD, bean));
+				if (visitor.isTestClass()) {
+					TestBean bean = new TestBean(contributor, className);
+					bundleTest.add(bean);
+
+					fireEvent(new TestRegistryEvent(TestRegistryEventType.ADD, bean));
+				}
 			}
 		}
 	}

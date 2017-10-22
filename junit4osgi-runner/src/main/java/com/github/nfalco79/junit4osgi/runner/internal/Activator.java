@@ -22,6 +22,7 @@ import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.log.LogService;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
@@ -44,6 +45,8 @@ public class Activator implements BundleActivator {
 	private boolean runnerStart;
 	private JMXServer jmxServer;
 //	private ServiceTracker<TestRunnerListener, TestRunnerListener> listenerTracker;
+	private ServiceRegistration serviceRegistration;
+	private BundleContext bundleContext;
 
 	private void bind() {
 		if (registry == null) {
@@ -72,6 +75,8 @@ public class Activator implements BundleActivator {
 		if (runnerStart) {
 			runner.start();
 		}
+
+		serviceRegistration = bundleContext.registerService(TestRunner.class.getName(), runner, null);
 	}
 
 	private void unbind() {
@@ -95,6 +100,8 @@ public class Activator implements BundleActivator {
 	 */
 	@Override
 	public void start(BundleContext bundleContext) throws Exception {
+		this.bundleContext = bundleContext;
+
 		final String runnerRegistry = System.getProperty(RUNNER_REGISTY, "auto");
 		runnerStart = Boolean.getBoolean(RUNNER_AUTOSTART);
 
@@ -136,6 +143,7 @@ public class Activator implements BundleActivator {
 		logTracker.close();
 //		listenerTracker.close();
 
+		bundleContext.ungetService(serviceRegistration.getReference());
 		jmxServer.stop();
 	}
 
