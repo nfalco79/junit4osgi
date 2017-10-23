@@ -1,6 +1,6 @@
 package com.github.nfalco79.junit4osgi.registry;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
 import java.net.URL;
@@ -19,6 +19,7 @@ import org.example.SimpleITTest;
 import org.example.SimpleTestCase;
 import org.example.TestMyService;
 import org.hamcrest.Matchers;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.osgi.framework.Bundle;
@@ -32,6 +33,11 @@ import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent.TestRegistr
 
 public class AutoDiscoveryRegistryTest {
 
+	@BeforeClass
+	public static void setup() {
+		URL.setURLStreamHandlerFactory(new TestURLStreamHandlerFactory());
+	}
+
 	@Test
 	public void test_gather_test_by_naming_convention() throws Exception {
 		Class<?>[] testsClass = new Class<?>[] { SimpleTestCase.class, JUnit3Test.class, GenericClass.class,
@@ -39,11 +45,12 @@ public class AutoDiscoveryRegistryTest {
 		Bundle bundle = getMockBundle(testsClass);
 
 		AutoDiscoveryRegistry registry = new AutoDiscoveryRegistry();
+
 		registry.setLog(mock(LogService.class));
 		registry.registerTests(bundle);
 
 		Set<TestBean> tests = registry.getTests();
-		assertThat(tests, Matchers.hasSize(7));
+		assertThat(tests, Matchers.hasSize(6));
 		assertThat(tests, Matchers.not(Matchers.contains(new TestBean(bundle, GenericClass.class.getName()))));
 
 		registry.dispose();
@@ -90,6 +97,7 @@ public class AutoDiscoveryRegistryTest {
 		TestRegistryChangeListener listener = spy(TestRegistryChangeListener.class);
 
 		AutoDiscoveryRegistry registry = new AutoDiscoveryRegistry();
+
 		registry.setLog(mock(LogService.class));
 		registry.addTestRegistryListener(listener);
 
@@ -117,22 +125,29 @@ public class AutoDiscoveryRegistryTest {
 	private Collection<URL> toURL(Class<?>[] testsClass) throws Exception {
 		List<URL> resources = new ArrayList<URL>(testsClass.length);
 		for (Class<?> testClass : testsClass) {
-			resources.add(new URL("file:///" + toResource(testClass.getName())));
+			resources.add(toTestURL(testClass));
 		}
 		return resources;
 	}
 
-	private String toResource(String clazz) {
-		return clazz.replace('.', '/') + ".class";
+	private URL toTestURL(Class<?> testClass) throws Exception {
+		return new URL("testentry:/" + testClass.getName().replace('.', '/') + ".class?url=" + testClass.getResource("/" + toResource(testClass)));
+	}
+
+	private String toResource(Class<?> clazz) {
+		return clazz.getName().replace('.', '/') + ".class";
 	}
 
 	private Bundle getMockBundle(Class<?>... classes) throws Exception {
 		Bundle bundle = mock(Bundle.class);
+
 		when(bundle.getSymbolicName()).thenReturn("acme");
-		when(bundle.findEntries("/", "*.class", true)).thenReturn(new Vector<URL>(toURL(classes)).elements());
+
+		Vector<URL> resources = new Vector<URL>(toURL(classes));
+		when(bundle.findEntries("/", "*.class", true)).thenReturn(resources.elements());
+
 		for (Class<?> clazz : classes) {
-			String resource = toResource(clazz.getName());
-			when(bundle.getEntry(resource)).thenReturn(getClass().getResource('/' + resource));
+			when(bundle.getEntry(toResource(clazz))).thenReturn(toTestURL(clazz));
 		}
 		return bundle;
 	}

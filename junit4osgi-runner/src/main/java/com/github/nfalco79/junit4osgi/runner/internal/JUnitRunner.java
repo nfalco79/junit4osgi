@@ -22,6 +22,7 @@ import java.io.File;
 import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -37,6 +38,7 @@ import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
 import com.github.nfalco79.junit4osgi.runner.internal.AntGlobPattern.IncludeExcludePattern;
+import com.github.nfalco79.junit4osgi.runner.internal.jmx.JMXServer;
 import com.github.nfalco79.junit4osgi.runner.spi.TestRunner;
 import com.github.nfalco79.junit4osgi.runner.spi.TestRunnerNotifier;
 import com.j256.simplejmx.common.JmxAttributeMethod;
@@ -73,12 +75,13 @@ public class JUnitRunner implements TestRunner {
 		}
 	}
 
+	public static final String RUNNER_REGISTY = "org.osgi.junit.runner.registry";
+	public static final String RUNNER_AUTOSTART = "org.osgi.junit.runner.autostart";
 	public static final String REPORT_PATH = "org.osgi.junit.reportsPath";
 	public static final String RERUN_COUNT = "org.osgi.junit.rerunFailingTestsCount";
 	public static final String PATH_INCLUDES = "org.osgi.junit.include";
 	public static final String PATH_EXCLUDE = "org.osgi.junit.exclude";
 
-//	private Set<TestRunnerListener> listeners = new CopyOnWriteArraySet<TestRunnerListener>();
 	private TestRegistry registry;
 	private boolean stop;
 	private boolean running;
@@ -103,14 +106,44 @@ public class JUnitRunner implements TestRunner {
 	 */
 	@Override
 	public void setRegistry(final TestRegistry registry) {
-		this.registry = registry;
+		bindRegistry(registry, null);
+	}
+
+	/**
+	 * Binds the registry service reference.
+	 *
+	 * @param registry
+	 *            an implementation of {@link TestRegistry}
+	 * @param properties
+	 *            component declaration properties registered for the given
+	 *            registry instance.
+	 */
+	public void bindRegistry(final TestRegistry registry, final Map<String, Object> properties) {
+		final String defaultRegistry = System.getProperty(RUNNER_REGISTY, "auto");
+
+		if (properties == null || defaultRegistry.equals(properties.get("discovery"))) {
+			this.registry = registry;
+		}
+	}
+
+	/**
+	 * Remove binds of the registry service instance if matches the current.
+	 *
+	 * @param registry
+	 *            the implementation of {@link TestRegistry} that is being
+	 *            disabled.
+	 */
+	public void unbindRegistry(final TestRegistry registry) {
+		if (this.registry == registry) {
+			this.registry = null;
+		}
 	}
 
 	/* (non-Javadoc)
 	 * @see com.github.nfalco79.junit4osgi.runner.internal.TestRunner#setLog(org.osgi.service.log.LogService)
 	 */
 	@Override
-	public void setLog(LogService logger) {
+	public void setLog(final LogService logger) {
 		this.logger = logger;
 	}
 
@@ -328,16 +361,27 @@ public class JUnitRunner implements TestRunner {
 		return matches;
 	}
 
-//	@Override
-//	public void addTestRunListener(TestRunnerListener listener) {
-//		if (listener != null) {
-//			listeners.add(listener);
-//		}
-//	}
+	private JMXServer jmxServer = newJMXServer();
 
-//	@Override
-//	public void removeTestRunListener(TestRunnerListener listener) {
-//		listeners.remove(listener);
-//	}
+	protected JMXServer newJMXServer() {
+		return new JMXServer();
+	}
 
+	public void activate() {
+		jmxServer.start();
+		jmxServer.register(registry);
+		jmxServer.register(this);
+
+		if (Boolean.getBoolean(RUNNER_AUTOSTART)) {
+			start();
+		}
+	}
+
+	public void deactivate() {
+		stop();
+
+		jmxServer.unregister(this);
+		jmxServer.unregister(registry);
+		jmxServer.stop();
+	}
 }

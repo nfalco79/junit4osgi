@@ -11,6 +11,8 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.osgi.framework.Bundle;
 
+import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
+
 public class TestBeanTestCase {
 
 	@Test

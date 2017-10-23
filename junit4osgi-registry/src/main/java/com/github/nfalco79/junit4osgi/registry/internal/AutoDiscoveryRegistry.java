@@ -90,7 +90,7 @@ public final class AutoDiscoveryRegistry extends AbstractTestRegistry {
 	}
 
 	private String toClassName(URL entry) {
-		String className = entry.getFile();
+		String className = entry.getPath();
 		if (className.startsWith("/")) {
 			className = className.substring(1);
 		}

@@ -9,9 +9,6 @@
 		<artifactId>junit4osgi-parent</artifactId>
 		<version>1.0.1-SNAPSHOT</version>
 	</parent>
-	<properties>
-		<powermock.version>1.7.0RC4</powermock.version>
-	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>com.github.nfalco79</groupId>
@@ -30,18 +27,6 @@
 			<artifactId>plexus-utils</artifactId>
 			<version>3.0.24</version>
 		</dependency>
-		<dependency>
-			<groupId>org.powermock</groupId>
-			<artifactId>powermock-module-junit4</artifactId>
-			<version>${powermock.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.powermock</groupId>
-			<artifactId>powermock-api-mockito2</artifactId>
-			<version>${powermock.version}</version>
-			<scope>test</scope>
-		</dependency>
 	</dependencies>
 	<build>
 		<pluginManagement>
@@ -51,7 +36,7 @@
 					<artifactId>maven-bundle-plugin</artifactId>
 					<configuration>
 						<instructions>
-							<Bundle-Activator>com.github.nfalco79.junit4osgi.runner.internal.Activator</Bundle-Activator>
+							<Service-Component>OSGI-INF/*.xml</Service-Component>
 							<Embed-Dependency>plexus-utils</Embed-Dependency>
 							<Embed-Directory>lib</Embed-Directory>
 						</instructions>
