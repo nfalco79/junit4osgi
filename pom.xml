@@ -257,6 +257,9 @@
 							</execution>
 						</executions>
 						<configuration>
+							<includes>
+								<include>com/github/nfalco79/junit4osgi/**</include>
+							</includes>
 							<excludes>
 								<exclude>**/*Constants.class</exclude>
 							</excludes>
