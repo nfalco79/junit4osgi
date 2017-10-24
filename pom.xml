@@ -185,13 +185,6 @@
 					<configuration>
 						<outputDirectory>${project.build.outputDirectory}/lib</outputDirectory>
 					</configuration>
-					<executions>
-						<execution>
-							<goals>
-								<goal>copy-dependencies</goal>
-							</goals>
-						</execution>
-					</executions>
 				</plugin>
 			</plugins>
 		</pluginManagement>
