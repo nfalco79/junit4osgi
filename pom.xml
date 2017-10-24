@@ -129,6 +129,7 @@
 					<version>3.1.0</version>
 					<configuration>
 						<createDependencyReducedPom>true</createDependencyReducedPom>
+						<createSourcesJar>true</createSourcesJar>
 					</configuration>
 					<executions>
 						<execution>

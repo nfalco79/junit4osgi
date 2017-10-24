@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>com.github.nfalco79</groupId>
@@ -12,6 +13,10 @@
 		<license>
 			<name>Eclipse Public License 1.0</name>
 			<url>https://spdx.org/licenses/EPL-1.0</url>
+		</license>
+		<license>
+			<name>BSD-3-Clause</name>
+			<url>https://spdx.org/licenses/BSD-3-Clause</url>
 		</license>
 	</licenses>
 	<properties>
@@ -42,7 +47,12 @@
 				<plugin>
 					<artifactId>maven-javadoc-plugin</artifactId>
 					<configuration>
-						<sourcepath>${project.build.directory}/sources</sourcepath>
+						<additionalparam>-Xdoclint:none</additionalparam>
+						<includeDependencySources>true</includeDependencySources>
+						<dependencySourceIncludes>
+							<dependencySourceInclude>junit:*</dependencySourceInclude>
+							<dependencySourceInclude>org.hamcrest:*</dependencySourceInclude>
+						</dependencySourceIncludes>
 					</configuration>
 				</plugin>
 				<plugin>
@@ -51,7 +61,6 @@
 					<configuration>
 						<instructions>
 							<Embed-Dependency>hamcrest-core;inline=true,hamcrest-library;inline=true,junit;inline=true</Embed-Dependency>
-							<Embed-Directory>lib</Embed-Directory>
 							<Export-Package>
 								!*.internal*,
 								!*.experimental*,
@@ -67,6 +76,22 @@
 		<plugins>
 			<plugin>
 				<artifactId>maven-shade-plugin</artifactId>
+				<configuration>
+					<filters>
+						<filter>
+							<artifact>junit:junit</artifact>
+							<excludes>
+								<exclude>LICENSE*</exclude>
+							</excludes>
+						</filter>
+						<filter>
+							<artifact>org.hamcrest:*</artifact>
+							<excludes>
+								<exclude>LICENSE.txt</exclude>
+							</excludes>
+						</filter>
+					</filters>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
@@ -79,6 +104,20 @@
 				</property>
 			</activation>
 			<build>
+				<pluginManagement>
+					<plugins>
+						<plugin>
+							<groupId>org.apache.felix</groupId>
+							<artifactId>maven-bundle-plugin</artifactId>
+							<configuration>
+								<instructions>
+									<Embed-Dependency>hamcrest-core,hamcrest-library,junit</Embed-Dependency>
+									<Embed-Directory>lib</Embed-Directory>
+								</instructions>
+							</configuration>
+						</plugin>
+					</plugins>
+				</pluginManagement>
 				<plugins>
 					<plugin>
 						<artifactId>maven-dependency-plugin</artifactId>
@@ -90,86 +129,6 @@
 								<goals>
 									<goal>copy-dependencies</goal>
 								</goals>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-		<profile>
-			<id>java8</id>
-			<activation>
-				<jdk>[1.8,2.0)</jdk>
-			</activation>
-			<build>
-				<pluginManagement>
-					<plugins>
-						<plugin>
-							<artifactId>maven-javadoc-plugin</artifactId>
-							<configuration>
-								<additionalparam>-Xdoclint:none</additionalparam>
-							</configuration>
-						</plugin>
-					</plugins>
-				</pluginManagement>
-			</build>
-		</profile>
-		<profile>
-			<id>release</id>
-			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-dependency-plugin</artifactId>
-						<executions>
-							<execution>
-								<id>unpack-sources</id>
-								<goals>
-									<goal>unpack</goal>
-								</goals>
-								<configuration>
-									<outputDirectory>${project.build.directory}/sources</outputDirectory>
-									<artifactItems>
-										<artifactItem>
-											<groupId>junit</groupId>
-											<artifactId>junit</artifactId>
-											<version>${junit.version}</version>
-											<classifier>sources</classifier>
-											<excludes>LICENSE*.txt,**/MANIFEST.MF</excludes>
-										</artifactItem>
-										<artifactItem>
-											<groupId>org.hamcrest</groupId>
-											<artifactId>hamcrest-core</artifactId>
-											<version>${hamcrest.version}</version>
-											<classifier>sources</classifier>
-											<excludes>LICENSE.txt,**/MANIFEST.MF</excludes>
-										</artifactItem>
-										<artifactItem>
-											<groupId>org.hamcrest</groupId>
-											<artifactId>hamcrest-library</artifactId>
-											<version>${hamcrest.version}</version>
-											<classifier>sources</classifier>
-											<excludes>LICENSE.txt,**/MANIFEST.MF</excludes>
-										</artifactItem>
-									</artifactItems>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<artifactId>maven-assembly-plugin</artifactId>
-						<version>3.1.0</version>
-						<executions>
-							<execution>
-								<id>source-assembly</id>
-								<phase>package</phase>
-								<goals>
-									<goal>single</goal>
-								</goals>
-								<configuration>
-									<descriptors>
-										<descriptor>sources.xml</descriptor>
-									</descriptors>
-								</configuration>
 							</execution>
 						</executions>
 					</plugin>
