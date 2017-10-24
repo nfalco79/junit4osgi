@@ -57,7 +57,7 @@ public interface TestRunner {
 	 * @param testIds a list of test identifier.
 	 * @param reportsPath the folder where generate the surefire reports.
 	 * @param notifier to be notified on test events.
-	 * @see TestBean#getId()
+	 * @see com.github.nfalco79.junit4osgi.registry.spi.TestBean#getId()
 	 */
 	void start(String[] testIds, String reportsPath, TestRunnerNotifier notifier);
 
