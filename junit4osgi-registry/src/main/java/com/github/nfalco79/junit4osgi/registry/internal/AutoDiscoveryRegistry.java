@@ -26,7 +26,7 @@ import java.util.Set;
 import org.osgi.framework.Bundle;
 
 import com.github.nfalco79.junit4osgi.registry.internal.asm.ASMUtils;
-import com.github.nfalco79.junit4osgi.registry.internal.asm.TestClassVisitor;
+import com.github.nfalco79.junit4osgi.registry.internal.asm.BundleTestClassVisitor;
 import com.github.nfalco79.junit4osgi.registry.spi.AbstractTestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
@@ -69,6 +69,8 @@ public final class AutoDiscoveryRegistry extends AbstractTestRegistry {
 		Set<TestBean> bundleTest = new LinkedHashSet<TestBean>();
 		tests.put(contributor, bundleTest);
 
+		BundleTestClassVisitor visitor = new BundleTestClassVisitor(contributor);
+
 		@SuppressWarnings("unchecked")
 		Enumeration<URL> entries = contributor.findEntries("/", "*.class", true);
 		while (entries != null && entries.hasMoreElements()) {
@@ -76,9 +78,9 @@ public final class AutoDiscoveryRegistry extends AbstractTestRegistry {
 			String className = toClassName(entry);
 			String simpleClassName = toClassSimpleName(className);
 			if (isTestCase(simpleClassName) || isIntegrationTest(simpleClassName)) {
-				TestClassVisitor visitor = new TestClassVisitor();
-				ASMUtils.analyseByteCode(entry, visitor);
+				visitor.reset();
 
+				ASMUtils.analyseByteCode(entry, visitor);
 				if (visitor.isTestClass()) {
 					TestBean bean = new TestBean(contributor, className);
 					bundleTest.add(bean);
@@ -98,15 +100,20 @@ public final class AutoDiscoveryRegistry extends AbstractTestRegistry {
 		return className.replace('/', '.').replace('/', '.');
 	}
 
-	private String toClassSimpleName(String className) {
-		return className.substring(className.lastIndexOf('.') + 1);
+	private String toClassSimpleName(final String className) {
+		int idxInnerClass = className.lastIndexOf('$');
+		if (idxInnerClass != -1) {
+			return className.substring(idxInnerClass + 1);
+		} else {
+			return className.substring(className.lastIndexOf('.') + 1);
+		}
 	}
 
-	private boolean isIntegrationTest(String className) {
+	private boolean isIntegrationTest(final String className) {
 		return className.startsWith("IT") || className.endsWith("IT") || className.endsWith("ITCase");
 	}
 
-	private boolean isTestCase(String className) {
+	private boolean isTestCase(final String className) {
 		return className.startsWith("Test") || className.endsWith("Test") || className.endsWith("Tests") || className.endsWith("TestCase");
 	}
 
