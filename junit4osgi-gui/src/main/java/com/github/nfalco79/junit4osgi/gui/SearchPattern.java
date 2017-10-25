@@ -33,7 +33,7 @@ public class SearchPattern {
 			return true;
 		}
 
-		if (text == null || !"".equals(text.trim())) {
+		if (text == null || "".equals(text.trim())) {
 			return false;
 		}
 

@@ -25,7 +25,9 @@ import java.util.List;
 import java.util.Set;
 
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
 import javax.swing.table.TableColumn;
 
 import org.junit.runner.Description;
@@ -45,8 +47,6 @@ public class SwingRunner extends JFrame {
 
 	private static final long serialVersionUID = 1L;
 
-	private TestRegistry registry;
-
 	/**
 	 * State variable describing if we are executing tests.
 	 */
@@ -56,20 +56,18 @@ public class SwingRunner extends JFrame {
 	private javax.swing.JButton btnSearch;
 	private javax.swing.JButton btnSelectAll;
 	private javax.swing.JButton btnExecute;
-	private javax.swing.JLabel m_executedResults;
-	private javax.swing.JScrollPane m_message;
+	private javax.swing.JLabel lblExecutedResults;
 	private javax.swing.JTextArea messageArea;
 	private javax.swing.JButton btnOk;
 	private javax.swing.JProgressBar progressBar;
 	private javax.swing.JDialog dlgTestResult;
-	private javax.swing.JScrollPane m_resultScroll;
+	private javax.swing.JScrollPane srcResult;
 	private javax.swing.JTable tblTestResult;
-	private javax.swing.JPanel m_statusBar;
-	private javax.swing.JList<TestRecord> suiteList;
-	private javax.swing.JScrollPane m_suiteScroll;
+	private javax.swing.JList lstSuite;
 	private javax.swing.JTextField txtSearchTest;
 
-	private SwingTestRegistryChangeListener registryListener;
+	private transient SwingTestRegistryChangeListener registryListener = new SwingTestRegistryChangeListener();
+	private transient TestRegistry registry;
 
 	public SwingRunner() {
 		running = false;
@@ -87,7 +85,7 @@ public class SwingRunner extends JFrame {
 		setVisible(true);
 		dlgTestResult.setVisible(false);
 		refreshSuites();
-		m_executedResults.setText(" \t No executed tests");
+		lblExecutedResults.setText(" \t No executed tests");
 		progressBar.setMaximum(100);
 		progressBar.setValue(100);
 
@@ -118,11 +116,12 @@ public class SwingRunner extends JFrame {
 		SearchPattern searchPattern = new SearchPattern(txtSearchTest.getText());
 		Set<TestBean> tests = registry.getTests();
 
-		TestListModel lm = (TestListModel) suiteList.getModel();
+		TestListModel lm = (TestListModel) lstSuite.getModel();
 		lm.clear();
 
 		for (TestBean test : tests) {
-			if (searchPattern.matches(test.getName())) {
+			String text = test.getName().toLowerCase();
+            if (searchPattern.matches(text)) {
 				lm.addTest(test);
 			}
 		}
@@ -135,18 +134,18 @@ public class SwingRunner extends JFrame {
 	 */
 	private void initComponents() {
 		dlgTestResult = new javax.swing.JDialog();
-		m_message = new javax.swing.JScrollPane();
+		JScrollPane srcMessage = new javax.swing.JScrollPane();
 		messageArea = new javax.swing.JTextArea();
 		btnOk = new javax.swing.JButton();
-		m_statusBar = new javax.swing.JPanel();
+		JPanel panStatusBar = new javax.swing.JPanel();
 		progressBar = new javax.swing.JProgressBar();
 		btnExecute = new javax.swing.JButton();
 		btnSelectAll = new javax.swing.JButton();
-		m_suiteScroll = new javax.swing.JScrollPane();
-		suiteList = new javax.swing.JList<TestRecord>();
-		m_resultScroll = new javax.swing.JScrollPane();
+		JScrollPane srcSuite = new javax.swing.JScrollPane();
+		lstSuite = new javax.swing.JList();
+		srcResult = new javax.swing.JScrollPane();
 		tblTestResult = new javax.swing.JTable();
-		m_executedResults = new javax.swing.JLabel();
+		lblExecutedResults = new javax.swing.JLabel();
 		txtSearchTest = new javax.swing.JTextField();
 		btnSearch = new javax.swing.JButton();
 		btnRefresh = new javax.swing.JButton();
@@ -165,9 +164,9 @@ public class SwingRunner extends JFrame {
 			}
 		});
 
-		m_message.setBorder(null);
-		m_message.setMinimumSize(new java.awt.Dimension(300, 202));
-		m_message.setPreferredSize(new java.awt.Dimension(300, 202));
+		srcMessage.setBorder(null);
+		srcMessage.setMinimumSize(new java.awt.Dimension(300, 202));
+		srcMessage.setPreferredSize(new java.awt.Dimension(300, 202));
 
 		messageArea.setBackground(javax.swing.UIManager.getDefaults().getColor("Panel.background"));
 		messageArea.setColumns(20);
@@ -177,9 +176,9 @@ public class SwingRunner extends JFrame {
 		messageArea.setWrapStyleWord(true);
 		messageArea.setMinimumSize(new java.awt.Dimension(300, 250));
 		messageArea.setPreferredSize(new java.awt.Dimension(250, 200));
-		m_message.setViewportView(messageArea);
+		srcMessage.setViewportView(messageArea);
 
-		dlgTestResult.getContentPane().add(m_message, java.awt.BorderLayout.CENTER);
+		dlgTestResult.getContentPane().add(srcMessage, java.awt.BorderLayout.CENTER);
 
 		btnOk.setText("Ok");
 		btnOk.setPreferredSize(new java.awt.Dimension(120, 23));
@@ -199,14 +198,14 @@ public class SwingRunner extends JFrame {
 		progressBar.setMinimumSize(null);
 		progressBar.setPreferredSize(null);
 
-		javax.swing.GroupLayout m_statusBarLayout = new javax.swing.GroupLayout(m_statusBar);
-		m_statusBar.setLayout(m_statusBarLayout);
-		m_statusBarLayout
-				.setHorizontalGroup(m_statusBarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+		javax.swing.GroupLayout lyStatusBar = new javax.swing.GroupLayout(panStatusBar);
+		panStatusBar.setLayout(lyStatusBar);
+		lyStatusBar
+				.setHorizontalGroup(lyStatusBar.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
 						.addComponent(progressBar, javax.swing.GroupLayout.DEFAULT_SIZE, 466, Short.MAX_VALUE));
-		m_statusBarLayout
-				.setVerticalGroup(m_statusBarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-						.addGroup(m_statusBarLayout.createSequentialGroup()
+		lyStatusBar
+				.setVerticalGroup(lyStatusBar.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(lyStatusBar.createSequentialGroup()
 								.addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE,
 										javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
 								.addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
@@ -235,15 +234,15 @@ public class SwingRunner extends JFrame {
 			}
 		});
 
-		m_suiteScroll.setAutoscrolls(true);
+		srcSuite.setAutoscrolls(true);
 
-		suiteList.setModel(new TestListModel());
-		suiteList.setMaximumSize(null);
-		suiteList.setMinimumSize(null);
-		suiteList.setPreferredSize(null);
-		m_suiteScroll.setViewportView(suiteList);
+		lstSuite.setModel(new TestListModel());
+		lstSuite.setMaximumSize(null);
+		lstSuite.setMinimumSize(null);
+		lstSuite.setPreferredSize(null);
+		srcSuite.setViewportView(lstSuite);
 
-		m_resultScroll.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		srcResult.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 
 		tblTestResult.setAutoCreateRowSorter(true);
 		tblTestResult.setFont(new java.awt.Font("Tahoma", 0, 10)); // NOI18N
@@ -258,9 +257,9 @@ public class SwingRunner extends JFrame {
 				resultTableMouseClicked(evt);
 			}
 		});
-		m_resultScroll.setViewportView(tblTestResult);
+		srcResult.setViewportView(tblTestResult);
 
-		m_executedResults.setPreferredSize(null);
+		lblExecutedResults.setPreferredSize(null);
 
 		txtSearchTest.setToolTipText("Search your testcase by typing part of its name");
 
@@ -291,19 +290,19 @@ public class SwingRunner extends JFrame {
 		layout.setHorizontalGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(layout
 				.createSequentialGroup().addContainerGap()
 				.addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-						.addComponent(m_resultScroll, javax.swing.GroupLayout.Alignment.TRAILING,
+						.addComponent(srcResult, javax.swing.GroupLayout.Alignment.TRAILING,
 								javax.swing.GroupLayout.DEFAULT_SIZE, 598, Short.MAX_VALUE)
 						.addGroup(layout.createSequentialGroup()
-								.addComponent(m_statusBar, javax.swing.GroupLayout.DEFAULT_SIZE,
+								.addComponent(panStatusBar, javax.swing.GroupLayout.DEFAULT_SIZE,
 										javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 								.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-								.addComponent(m_executedResults, javax.swing.GroupLayout.PREFERRED_SIZE,
+								.addComponent(lblExecutedResults, javax.swing.GroupLayout.PREFERRED_SIZE,
 										javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
 						.addGroup(javax.swing.GroupLayout.Alignment.TRAILING,
 								layout.createSequentialGroup()
 										.addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
 												.addComponent(txtSearchTest, javax.swing.GroupLayout.Alignment.LEADING)
-												.addComponent(m_suiteScroll, javax.swing.GroupLayout.DEFAULT_SIZE, 492,
+												.addComponent(srcSuite, javax.swing.GroupLayout.DEFAULT_SIZE, 492,
 														Short.MAX_VALUE))
 										.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
 										.addGroup(layout
@@ -335,17 +334,17 @@ public class SwingRunner extends JFrame {
 								.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
 								.addComponent(btnRefresh, javax.swing.GroupLayout.PREFERRED_SIZE,
 										javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-								.addGap(0, 0, Short.MAX_VALUE)).addComponent(m_suiteScroll,
+								.addGap(0, 0, Short.MAX_VALUE)).addComponent(srcSuite,
 										javax.swing.GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE))
 						.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-						.addComponent(m_resultScroll, javax.swing.GroupLayout.PREFERRED_SIZE, 374,
+						.addComponent(srcResult, javax.swing.GroupLayout.PREFERRED_SIZE, 374,
 								javax.swing.GroupLayout.PREFERRED_SIZE)
 						.addGap(18, 18, 18)
 						.addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-								.addComponent(m_executedResults, javax.swing.GroupLayout.PREFERRED_SIZE,
+								.addComponent(lblExecutedResults, javax.swing.GroupLayout.PREFERRED_SIZE,
 										javax.swing.GroupLayout.DEFAULT_SIZE,
 										javax.swing.GroupLayout.PREFERRED_SIZE)
-								.addComponent(m_statusBar, javax.swing.GroupLayout.PREFERRED_SIZE,
+								.addComponent(panStatusBar, javax.swing.GroupLayout.PREFERRED_SIZE,
 										javax.swing.GroupLayout.DEFAULT_SIZE,
 										javax.swing.GroupLayout.PREFERRED_SIZE))));
 
@@ -357,9 +356,9 @@ public class SwingRunner extends JFrame {
 			return;
 		}
 		// Collect selected test.
-		int[] indices = suiteList.getSelectedIndices();
+		int[] indices = lstSuite.getSelectedIndices();
 		List<TestBean> list = new ArrayList<TestBean>(indices.length);
-		TestListModel model = (TestListModel) suiteList.getModel();
+		TestListModel model = (TestListModel) lstSuite.getModel();
 		for (int i = 0; i < indices.length; i++) {
 			list.add(model.getTestElementAt(indices[i]));
 		}
@@ -368,12 +367,12 @@ public class SwingRunner extends JFrame {
 	}
 
 	private void allButtonActionPerformed(java.awt.event.ActionEvent evt) {
-		int max = suiteList.getModel().getSize();
+		int max = lstSuite.getModel().getSize();
 		int[] indices = new int[max];
 		for (int i = 0; i < max; i++) {
 			indices[i] = i;
 		}
-		suiteList.setSelectedIndices(indices);
+		lstSuite.setSelectedIndices(indices);
 	}
 
 	private void resultTableMouseClicked(java.awt.event.MouseEvent evt) {// GEN-FIRST:event_m_resultTableMouseClicked
@@ -468,12 +467,11 @@ public class SwingRunner extends JFrame {
 		m += results.getSucess() + " success / ";
 		m += results.getFailures() + " failures / ";
 		m += results.getErrors() + " errors ";
-		m_executedResults.setText(m);
+		lblExecutedResults.setText(m);
 	}
 
 	public void setRegistry(TestRegistry registry) {
 		this.registry = registry;
-		registryListener = new SwingTestRegistryChangeListener();
 		registry.addTestRegistryListener(registryListener);
 	}
 
@@ -481,33 +479,33 @@ public class SwingRunner extends JFrame {
 		/**
 		 * Table model.
 		 */
-		ResultTableModel m_model = (ResultTableModel) tblTestResult.getModel();
+		ResultTableModel tblModel = (ResultTableModel) tblTestResult.getModel();
 
 		@Override
 		public void testIgnored(Description description) throws Exception {
-			m_model.addSkippedTest(description);
+			tblModel.addSkippedTest(description);
 			adjustScroll();
 		}
 
 		@Override
 		public void testAssumptionFailure(Failure failure) {
-			m_model.addFailedTest(failure.getDescription(), (Error) failure.getException());
+			tblModel.addFailedTest(failure.getDescription(), (Error) failure.getException());
 			adjustScroll();
 		}
 
 		@Override
 		public void testFailure(Failure failure) throws Exception {
 			if (failure.getException() instanceof Error) {
-				m_model.addFailedTest(failure.getDescription(), (Error) failure.getException());
+				tblModel.addFailedTest(failure.getDescription(), (Error) failure.getException());
 			} else {
-				m_model.addErrorTest(failure.getDescription(), failure.getException());
+				tblModel.addErrorTest(failure.getDescription(), failure.getException());
 			}
 			adjustScroll();
 		}
 
 		@Override
 		public void testFinished(Description description) throws Exception {
-			m_model.addTest(description);
+			tblModel.addTest(description);
 			adjustScroll();
 		}
 
@@ -515,7 +513,7 @@ public class SwingRunner extends JFrame {
 		 * Adjust the scrolling bar of the result table.
 		 */
 		private void adjustScroll() {
-			JScrollBar bar = m_resultScroll.getVerticalScrollBar();
+			JScrollBar bar = srcResult.getVerticalScrollBar();
 			if ((bar != null) && (bar.isVisible())) {
 				bar.setValue(Integer.MAX_VALUE);
 			}
@@ -525,7 +523,7 @@ public class SwingRunner extends JFrame {
 	private class SwingTestRegistryChangeListener implements TestRegistryChangeListener {
 		@Override
 		public void registryChanged(TestRegistryEvent event) {
-			TestListModel lm = (TestListModel) suiteList.getModel();
+			TestListModel lm = (TestListModel) lstSuite.getModel();
 			TestBean test = event.getTest();
 
 			switch (event.getType()) {
