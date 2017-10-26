@@ -2,8 +2,9 @@ package com.github.nfalco79.junit4osgi.registry.spi;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import org.junit.Test;
@@ -11,7 +12,8 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.osgi.framework.Bundle;
 
-import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
+import com.github.nfalco79.junit4osgi.registry.util.BundleBuilder;
+import com.github.nfalco79.junit4osgi.registry.util.BundleBuilder.URLStrategy;
 
 public class TestBeanTestCase {
 
@@ -76,16 +78,24 @@ public class TestBeanTestCase {
 		assertEquals(bean1.hashCode(), bean3.hashCode());
 	}
 
-	private Bundle getMockBundle() throws ClassNotFoundException {
-		Bundle bundle = mock(Bundle.class);
-		when(bundle.getSymbolicName()).thenReturn("acme");
-		when(bundle.getEntry(anyString())).thenAnswer(new Answer<URL>() {
-			@Override
-			public URL answer(InvocationOnMock invocation) throws Throwable {
-				String entry = invocation.getArgument(0);
-				return getClass().getClassLoader().getResource(entry);
-			}
-		});
+	private Bundle getMockBundle() throws Exception {
+		Bundle bundle = BundleBuilder.newBuilder() //
+				.symbolicName("acme") //
+				.urlStrategy(new URLStrategy() {
+					@Override
+					public URL resolveURL(Class<?> resource) throws MalformedURLException {
+						return null;
+					}
+
+					@Override
+					public URL resolveURL(String entry) {
+						if (entry.startsWith("/")) {
+							entry = entry.substring(1);
+						}
+						return getClass().getClassLoader().getResource(entry);
+					}
+				})
+				.build();
 		when(bundle.loadClass(anyString())).thenAnswer(new Answer<Class<?>>() {
 			@Override
 			public Class<?> answer(InvocationOnMock invocation) throws Throwable {

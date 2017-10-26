@@ -152,6 +152,11 @@ public class AutoDiscoveryRegistryTest {
 								resourcePath + "?url=" + resource.getResource("/" + resourcePath),
 								new TestURLStreamHandler());
 					}
+
+					@Override
+					public URL resolveURL(String entry) {
+						return null;
+					}
 				}) //
 				.build();
 	}

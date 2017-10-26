@@ -1,5 +1,6 @@
 package com.github.nfalco79.junit4osgi.registry.util;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 import java.io.File;
@@ -16,6 +17,8 @@ import java.util.Vector;
 
 import org.hamcrest.Matchers;
 import org.junit.Assert;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.wiring.BundleRequirement;
 import org.osgi.framework.wiring.BundleRevision;
@@ -26,12 +29,23 @@ public final class BundleBuilder {
 
 	public interface URLStrategy {
 		URL resolveURL(Class<?> resource) throws MalformedURLException;
+
+		URL resolveURL(String entry);
 	}
 
 	private class DefaultURLStrategy implements URLStrategy {
 		@Override
 		public URL resolveURL(Class<?> resource) {
 			return resource.getResource(toResource(resource));
+		}
+
+		@Override
+		public URL resolveURL(String entry) {
+			try {
+				return new URL(entry);
+			} catch (MalformedURLException e) {
+				return null;
+			}
 		}
 	}
 
@@ -120,6 +134,15 @@ public final class BundleBuilder {
 
 		for (Class<?> clazz : bundleClasses) {
 			when(bundle.getEntry(toResource(clazz))).thenReturn(strategy.resolveURL(clazz));
+		}
+		if (bundleClasses.isEmpty()) {
+			when(bundle.getEntry(anyString())).thenAnswer(new Answer<URL>() {
+				@Override
+				public URL answer(InvocationOnMock invocation) throws Throwable {
+					String entry = (String) invocation.getArgument(0);
+					return strategy.resolveURL(entry);
+				}
+			});
 		}
 
 		for (Entry<String, File> resEntry : bundleResources.entrySet()) {
