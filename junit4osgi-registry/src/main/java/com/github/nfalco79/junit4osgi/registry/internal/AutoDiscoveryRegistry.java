@@ -71,7 +71,6 @@ public final class AutoDiscoveryRegistry extends AbstractTestRegistry {
 
 		BundleTestClassVisitor visitor = new BundleTestClassVisitor(contributor);
 
-		@SuppressWarnings("unchecked")
 		Enumeration<URL> entries = contributor.findEntries("/", "*.class", true);
 		while (entries != null && entries.hasMoreElements()) {
 			URL entry = entries.nextElement();

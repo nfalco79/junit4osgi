@@ -45,7 +45,7 @@ public class TestBean implements Serializable {
 			throw new NullPointerException("className is null");
 		}
 
-		URL entry = bundle.getEntry(className.replace('.', '/') + ".class");
+		URL entry = bundle.getEntry('/' + className.replace('.', '/') + ".class");
 		if (entry == null) {
 			throw new IllegalArgumentException(className + " not found in bundle " + bundle.getSymbolicName());
 		}
@@ -103,4 +103,8 @@ public class TestBean implements Serializable {
 		return true;
 	}
 
+	@Override
+	public String toString() {
+		return getId();
+	}
 }

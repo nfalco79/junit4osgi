@@ -18,11 +18,11 @@ public class BundleTestClassVisitor extends ClassVisitor {
 
 	private Set<String> cache;
 	private boolean testClass;
-	private Bundle contributor;
+	private Bundle bundle;
 
 	public BundleTestClassVisitor(Bundle bundle) {
 		super(Opcodes.ASM6);
-		this.contributor = bundle;
+		this.bundle = bundle;
 
 		// cache is for bundle, if bundle is stopped and started, byte code could be changed
 		cache = new HashSet<String>();
@@ -51,7 +51,7 @@ public class BundleTestClassVisitor extends ClassVisitor {
 				testClass = !isInterface(access);
 			}
 		} else if (superName != null && !superName.startsWith("java/") && !superName.startsWith("junit/")) {
-			URL entry = contributor.getEntry("/" + superName + ".class");
+			URL entry = bundle.getEntry("/" + superName + ".class");
 			if (entry == null) {
 				entry = findInWiredBundle(superName);
 			}
@@ -73,12 +73,15 @@ public class BundleTestClassVisitor extends ClassVisitor {
 	private URL findInWiredBundle(final String superName) {
 		String superClassName = superName.replace('/', '.');
 		String packageName = superClassName.substring(0, superClassName.lastIndexOf('.'));
-		BundleWiring wiring = contributor.adapt(BundleWiring.class);
+
+		BundleWiring wiring = bundle.adapt(BundleWiring.class);
 		Iterator<BundleWire> requiredWires = wiring.getRequiredWires(BundleRevision.PACKAGE_NAMESPACE).iterator();
+
 		while (!testClass && requiredWires.hasNext()) {
 			final BundleWire wire = requiredWires.next();
+
 			final String filter = wire.getRequirement().getDirectives().get("filter");
-			if (filter.contains(packageName)) {
+			if (filter != null && filter.contains(packageName)) {
 				final Bundle bundle = wire.getProviderWiring().getBundle();
 				return bundle.getEntry("/" + superName + ".class");
 			}

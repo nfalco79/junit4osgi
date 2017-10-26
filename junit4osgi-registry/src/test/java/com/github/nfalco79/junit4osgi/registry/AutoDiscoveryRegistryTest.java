@@ -3,12 +3,9 @@ package com.github.nfalco79.junit4osgi.registry;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Set;
-import java.util.Vector;
 
 import org.example.GenericClass;
 import org.example.ITGenericClass;
@@ -18,8 +15,10 @@ import org.example.MyServiceTests;
 import org.example.SimpleITTest;
 import org.example.SimpleTestCase;
 import org.example.TestMyService;
+import org.example.inner.TestInnerClassIsNotAJUnit3;
+import org.example.inner.TestInnerClassIsNotAJUnit3.XClass;
+import org.example.inner.TestOuterIsNotAJUnit3;
 import org.hamcrest.Matchers;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.osgi.framework.Bundle;
@@ -30,18 +29,16 @@ import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent.TestRegistryEventType;
+import com.github.nfalco79.junit4osgi.registry.util.BundleBuilder;
+import com.github.nfalco79.junit4osgi.registry.util.BundleBuilder.URLStrategy;
 
 public class AutoDiscoveryRegistryTest {
-
-	@BeforeClass
-	public static void setup() {
-		URL.setURLStreamHandlerFactory(new TestURLStreamHandlerFactory());
-	}
 
 	@Test
 	public void test_gather_test_by_naming_convention() throws Exception {
 		Class<?>[] testsClass = new Class<?>[] { SimpleTestCase.class, JUnit3Test.class, GenericClass.class,
-				MyServiceIT.class, SimpleITTest.class, ITGenericClass.class, TestMyService.class, MyServiceTests.class };
+				MyServiceIT.class, SimpleITTest.class, ITGenericClass.class, TestMyService.class,
+				MyServiceTests.class };
 		Bundle bundle = getMockBundle(testsClass);
 
 		AutoDiscoveryRegistry registry = new AutoDiscoveryRegistry();
@@ -57,6 +54,26 @@ public class AutoDiscoveryRegistryTest {
 	}
 
 	@Test
+	public void test_naming_convention_on_inner() throws Exception {
+		Class<?>[] testsClass = new Class<?>[] { TestInnerClassIsNotAJUnit3.class,
+				TestInnerClassIsNotAJUnit3.XClass.class, TestOuterIsNotAJUnit3.class,
+				TestOuterIsNotAJUnit3.TestInner.class };
+		Bundle bundle = getMockBundle(testsClass);
+
+		AutoDiscoveryRegistry registry = new AutoDiscoveryRegistry();
+
+		registry.setLog(mock(LogService.class));
+		registry.registerTests(bundle);
+
+		Set<TestBean> tests = registry.getTests();
+		assertThat(tests, Matchers.hasSize(2));
+		assertThat(tests, Matchers.not(Matchers.contains(new TestBean(bundle, XClass.class.getName()),
+				new TestBean(bundle, TestOuterIsNotAJUnit3.class.getName()))));
+
+		registry.dispose();
+	}
+
+	@Test
 	public void test_jmx_method_get_test_ids() throws Exception {
 		Class<?>[] testsClass = new Class<?>[] { SimpleTestCase.class, JUnit3Test.class };
 		Bundle bundle = getMockBundle(testsClass);
@@ -65,7 +82,8 @@ public class AutoDiscoveryRegistryTest {
 		registry.setLog(mock(LogService.class));
 		registry.registerTests(bundle);
 
-		assertThat(registry.getTestIds(), Matchers.arrayContainingInAnyOrder("acme@" + SimpleTestCase.class.getName(), "acme@" + JUnit3Test.class.getName()));
+		assertThat(registry.getTestIds(), Matchers.arrayContainingInAnyOrder("acme@" + SimpleTestCase.class.getName(),
+				"acme@" + JUnit3Test.class.getName()));
 	}
 
 	@Test
@@ -93,7 +111,7 @@ public class AutoDiscoveryRegistryTest {
 
 	@Test
 	public void test_listener_event() throws Exception {
-		Bundle bundle = getMockBundle(new Class<?>[] { SimpleTestCase.class, JUnit3Test.class });
+		Bundle bundle = getMockBundle(SimpleTestCase.class, JUnit3Test.class);
 		TestRegistryChangeListener listener = spy(TestRegistryChangeListener.class);
 
 		AutoDiscoveryRegistry registry = new AutoDiscoveryRegistry();
@@ -122,34 +140,20 @@ public class AutoDiscoveryRegistryTest {
 		registry.dispose();
 	}
 
-	private Collection<URL> toURL(Class<?>[] testsClass) throws Exception {
-		List<URL> resources = new ArrayList<URL>(testsClass.length);
-		for (Class<?> testClass : testsClass) {
-			resources.add(toTestURL(testClass));
-		}
-		return resources;
-	}
-
-	private URL toTestURL(Class<?> testClass) throws Exception {
-		return new URL("testentry:/" + testClass.getName().replace('.', '/') + ".class?url=" + testClass.getResource("/" + toResource(testClass)));
-	}
-
-	private String toResource(Class<?> clazz) {
-		return clazz.getName().replace('.', '/') + ".class";
-	}
-
 	private Bundle getMockBundle(Class<?>... classes) throws Exception {
-		Bundle bundle = mock(Bundle.class);
-
-		when(bundle.getSymbolicName()).thenReturn("acme");
-
-		Vector<URL> resources = new Vector<URL>(toURL(classes));
-		when(bundle.findEntries("/", "*.class", true)).thenReturn(resources.elements());
-
-		for (Class<?> clazz : classes) {
-			when(bundle.getEntry(toResource(clazz))).thenReturn(toTestURL(clazz));
-		}
-		return bundle;
+		return BundleBuilder.newBuilder() //
+				.symbolicName("acme") //
+				.addClasses(classes) //
+				.urlStrategy(new URLStrategy() {
+					@Override
+					public URL resolveURL(Class<?> resource) throws MalformedURLException {
+						String resourcePath = resource.getName().replace('.', '/') + ".class";
+						return new URL("testentry", (String) null, 0,
+								resourcePath + "?url=" + resource.getResource("/" + resourcePath),
+								new TestURLStreamHandler());
+					}
+				}) //
+				.build();
 	}
 
 }
