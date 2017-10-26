@@ -2,6 +2,7 @@ package com.github.nfalco79.junit4osgi.registry.util;
 
 import static org.mockito.Mockito.*;
 
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -10,6 +11,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Vector;
 
 import org.hamcrest.Matchers;
@@ -35,12 +37,14 @@ public final class BundleBuilder {
 
 	private Bundle bundle;
 	private List<Class<?>> bundleClasses;
+	private Map<String, File> bundleResources;
 	private URLStrategy strategy;
 	private Map<String, BundleWire> wires;
 
 	private BundleBuilder() {
 		bundle = mock(Bundle.class);
 		bundleClasses = new ArrayList<Class<?>>();
+		bundleResources = new HashMap<String, File>();
 		strategy = new DefaultURLStrategy();
 		wires = new HashMap<String, BundleWire>();
 	}
@@ -60,6 +64,14 @@ public final class BundleBuilder {
 		Assert.assertNotNull(bundleClass);
 
 		bundleClasses.add(bundleClass);
+		return this;
+	}
+
+	public BundleBuilder addResource(String path, File resource) {
+		Assert.assertNotNull(path);
+		Assert.assertNotNull(resource);
+
+		bundleResources.put(path, resource);
 		return this;
 	}
 
@@ -108,6 +120,10 @@ public final class BundleBuilder {
 
 		for (Class<?> clazz : bundleClasses) {
 			when(bundle.getEntry(toResource(clazz))).thenReturn(strategy.resolveURL(clazz));
+		}
+
+		for (Entry<String, File> resEntry : bundleResources.entrySet()) {
+			when(bundle.getEntry(resEntry.getKey())).thenReturn(resEntry.getValue().toURI().toURL());
 		}
 
 		BundleWiring bundleWiring = mock(BundleWiring.class);

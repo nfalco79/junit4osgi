@@ -1,6 +1,6 @@
 package com.github.nfalco79.junit4osgi.registry;
 
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -29,6 +29,7 @@ import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent.TestRegistryEventType;
+import com.github.nfalco79.junit4osgi.registry.util.BundleBuilder;
 
 public class ManifestRegistryTest {
 
@@ -52,8 +53,12 @@ public class ManifestRegistryTest {
 	@Test
 	public void testclass_not_found() throws Exception {
 		LogService logService = spy(LogService.class);
+
 		String className = "com.acme.Foo";
-		Bundle bundle = getMockBundle(className);
+		Bundle bundle = BundleBuilder.newBuilder() //
+				.symbolicName("acme") //
+				.addResource("META-INF/MANIFEST.MF", getManifest(className)) //
+				.build();
 
 		ManifestRegistry registry = new ManifestRegistry();
 		registry.setLog(logService);
@@ -69,7 +74,7 @@ public class ManifestRegistryTest {
 	@Test
 	public void registry_must_returns_the_expected_tests() throws Exception {
 		TestRegistryChangeListener listener = spy(TestRegistryChangeListener.class);
-		String[] testsClass = new String[] { SimpleTestCase.class.getName(), JUnit3Test.class.getName() };
+		Class<?> testsClass[] = new Class<?>[] { SimpleTestCase.class, JUnit3Test.class };
 		Bundle bundle = getMockBundle(testsClass);
 
 		ManifestRegistry registry = new ManifestRegistry();
@@ -79,7 +84,7 @@ public class ManifestRegistryTest {
 
 		Set<TestBean> tests = registry.getTests();
 		assertThat(tests, Matchers.hasSize(2));
-		assertThat(tests, Matchers.hasItems(new TestBean(bundle, testsClass[0]), new TestBean(bundle, testsClass[1])));
+		assertThat(tests, Matchers.hasItems(new TestBean(bundle, testsClass[0].getName()), new TestBean(bundle, testsClass[1].getName())));
 
 		ArgumentCaptor<TestRegistryEvent> argument = ArgumentCaptor.forClass(TestRegistryEvent.class);
 		verify(listener, times(2)).registryChanged(argument.capture());
@@ -92,8 +97,7 @@ public class ManifestRegistryTest {
 
 	@Test
 	public void remove_a_contributor_fires_a_remove_event() throws Exception {
-		String[] testsClass = new String[] { SimpleTestCase.class.getName(), JUnit3Test.class.getName() };
-		Bundle bundle = getMockBundle(testsClass);
+		Bundle bundle = getMockBundle(SimpleTestCase.class, JUnit3Test.class);
 
 		ManifestRegistry registry = new ManifestRegistry();
 		registry.setLog(mock(LogService.class));
@@ -114,8 +118,8 @@ public class ManifestRegistryTest {
 
 	@Test
 	public void remove_a_contributor_removes_only_tests_contributed_by_that_bundle() throws Exception {
-		Bundle bundle1 = getMockBundle(new String[] { SimpleTestCase.class.getName(), JUnit3Test.class.getName() });
-		Bundle bundle2 = getMockBundle(new String[] { MyServiceIT.class.getName(), SimpleITTest.class.getName() });
+		Bundle bundle1 = getMockBundle(SimpleTestCase.class, JUnit3Test.class);
+		Bundle bundle2 = getMockBundle(MyServiceIT.class, SimpleITTest.class);
 
 		ManifestRegistry registry = new ManifestRegistry();
 		registry.setLog(mock(LogService.class));
@@ -126,14 +130,9 @@ public class ManifestRegistryTest {
 
 		registry.removeTests(bundle1);
 		assertThat(registry.getTests(), Matchers.hasSize(2));
-		assertThat(registry.getTests(), Matchers.hasItems(new TestBean(bundle2, MyServiceIT.class.getName()),
-				new TestBean(bundle2, SimpleITTest.class.getName())));
+		assertThat(registry.getTests(), Matchers.hasItems(new TestBean(bundle2, MyServiceIT.class.getName()), new TestBean(bundle2, SimpleITTest.class.getName())));
 
 		registry.dispose();
-	}
-
-	private String toResource(String clazz) {
-		return clazz.replace('.', '/') + ".class";
 	}
 
 	private File getManifest(String... className) throws Exception {
@@ -156,17 +155,20 @@ public class ManifestRegistryTest {
 		return manifestFile;
 	}
 
-	private Bundle getMockBundle(String... className) throws Exception {
-		Bundle bundle = mock(Bundle.class);
-		when(bundle.getSymbolicName()).thenReturn("acme");
-		if (className.length > 0) {
-			when(bundle.getEntry("META-INF/MANIFEST.MF")).thenReturn(getManifest(className).toURI().toURL());
-			for (String testClass : className) {
-				String resource = toResource(testClass);
-				when(bundle.getEntry(resource)).thenReturn(getClass().getResource('/' + resource));
+	private Bundle getMockBundle(final Class<?>... testsClass) throws Exception {
+		BundleBuilder builder = BundleBuilder.newBuilder() //
+				.symbolicName("acme") //
+				.addClasses(testsClass);
+
+		if (testsClass != null && testsClass.length > 0) {
+			String[] classesName = new String[testsClass.length];
+			for (int i = 0; i < testsClass.length; i++) {
+				classesName[i] = testsClass[i].getName();
 			}
+
+			builder.addResource("META-INF/MANIFEST.MF", getManifest(classesName));
 		}
-		return bundle;
+		return builder.build();
 	}
 
 }
