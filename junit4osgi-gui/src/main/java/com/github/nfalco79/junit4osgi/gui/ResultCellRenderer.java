@@ -25,7 +25,7 @@ import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 
 /**
- * Test result renderer.
+ * Test result cell renderer.
  */
 public class ResultCellRenderer extends DefaultTableCellRenderer {
 
@@ -53,22 +53,22 @@ public class ResultCellRenderer extends DefaultTableCellRenderer {
 	@Override
 	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
 			int row, int column) {
-		Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+		ResultCellRenderer c = (ResultCellRenderer) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
 		ResultTableModel results = (ResultTableModel) table.getModel();
-		String status = (String) results.getValueAt(row, column);
+		String status = c.getText();
 		if (status.equals(ResultTableModel.SUCCESS)) {
 			c.setForeground(Color.GREEN);
-			setToolTipText(results.getMessage(row, column));
+			c.setToolTipText(results.getToolTip(row, column));
 		} else if (status.equals(ResultTableModel.FAILURE)) {
 			c.setForeground(Color.BLUE);
-			setToolTipText(results.getMessage(row, column));
+			c.setToolTipText(results.getToolTip(row, column));
 		} else if (status.equals(ResultTableModel.ERROR)) {
 			c.setForeground(Color.RED);
-			setToolTipText(results.getMessage(row, column));
+			c.setToolTipText(results.getToolTip(row, column));
 		} else if (status.equals(ResultTableModel.SKIPPED)) {
 			c.setForeground(Color.GRAY);
-			setToolTipText(results.getMessage(row, column));
+			c.setToolTipText(results.getToolTip(row, column));
 		}
 
 		return c;

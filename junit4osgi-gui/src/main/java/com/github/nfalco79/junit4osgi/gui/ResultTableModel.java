@@ -289,6 +289,34 @@ public class ResultTableModel extends AbstractTableModel {
 		return "";
 	}
 
+	/**
+	 * Gets the tool tip message.
+	 *
+	 * @param row
+	 *            the row
+	 * @param column
+	 *            the column
+	 * @return a short message to be renderer as the tool tip for this cell
+	 */
+	public String getToolTip(int row, int column) {
+		if (row == -1) {
+			return null;
+		}
+		TestRecord rec = results.get(row);
+		if (rec.isSucess()) {
+			return "The test " + rec.getTest() + " was executed sucessfully.";
+		} else if (rec.isSkipped()) {
+			return "The test " + rec.getTest() + " was ignored.";
+		} else if (rec.isFailed()) {
+			Error failure = ((FailureTestRecord) rec).getFailure();
+			return "The test " + rec.getTest() + " has failed : \n" + failure.getMessage();
+		} else if (rec.isError()) {
+			Throwable error = ((ErrorTestRecord) rec).getError();
+			return "The test " + rec.getTest() + " has thrown an error : " + error.getMessage();
+		}
+		return "";
+	}
+
 	private class ErrorTestRecord extends TestRecord {
 		private Throwable error;
 

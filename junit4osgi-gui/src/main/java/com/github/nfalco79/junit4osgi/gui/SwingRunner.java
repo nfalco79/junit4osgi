@@ -19,15 +19,26 @@
 package com.github.nfalco79.junit4osgi.gui;
 
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import javax.swing.GroupLayout;
+import javax.swing.GroupLayout.Alignment;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.table.TableColumn;
 
 import org.junit.runner.Description;
@@ -51,11 +62,16 @@ public class SwingRunner extends JFrame {
 	 * State variable describing if we are executing tests.
 	 */
 	private boolean running = false;
+	/**
+	 * State variable describing if you intend stop the current test execution.
+	 */
+	private boolean stopped = false;
 
 	private javax.swing.JButton btnRefresh;
 	private javax.swing.JButton btnSearch;
 	private javax.swing.JButton btnSelectAll;
 	private javax.swing.JButton btnExecute;
+	private javax.swing.JButton btnStop;
 	private javax.swing.JLabel lblExecutedResults;
 	private javax.swing.JTextArea messageArea;
 	private javax.swing.JButton btnOk;
@@ -121,7 +137,7 @@ public class SwingRunner extends JFrame {
 
 		for (TestBean test : tests) {
 			String text = test.getName().toLowerCase();
-            if (searchPattern.matches(text)) {
+			if (searchPattern.matches(text)) {
 				lm.addTest(test);
 			}
 		}
@@ -140,6 +156,7 @@ public class SwingRunner extends JFrame {
 		JPanel panStatusBar = new javax.swing.JPanel();
 		progressBar = new javax.swing.JProgressBar();
 		btnExecute = new javax.swing.JButton();
+		btnStop = new javax.swing.JButton();
 		btnSelectAll = new javax.swing.JButton();
 		JScrollPane srcSuite = new javax.swing.JScrollPane();
 		lstSuite = new javax.swing.JList();
@@ -151,22 +168,22 @@ public class SwingRunner extends JFrame {
 		btnRefresh = new javax.swing.JButton();
 
 		dlgTestResult.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-		dlgTestResult.setMinimumSize(new java.awt.Dimension(320, 250));
-		dlgTestResult.addWindowListener(new java.awt.event.WindowAdapter() {
+		dlgTestResult.setMinimumSize(new Dimension(320, 250));
+		dlgTestResult.addWindowListener(new WindowAdapter() {
 			@Override
-			public void windowClosed(java.awt.event.WindowEvent evt) {
+			public void windowClosed(WindowEvent evt) {
 				onDialogClosed(evt);
 			}
 
 			@Override
-			public void windowClosing(java.awt.event.WindowEvent evt) {
+			public void windowClosing(WindowEvent evt) {
 				onDialogClosed(evt);
 			}
 		});
 
 		srcMessage.setBorder(null);
-		srcMessage.setMinimumSize(new java.awt.Dimension(300, 202));
-		srcMessage.setPreferredSize(new java.awt.Dimension(300, 202));
+		srcMessage.setMinimumSize(new Dimension(300, 202));
+		srcMessage.setPreferredSize(new Dimension(300, 202));
 
 		messageArea.setBackground(javax.swing.UIManager.getDefaults().getColor("Panel.background"));
 		messageArea.setColumns(20);
@@ -174,17 +191,17 @@ public class SwingRunner extends JFrame {
 		messageArea.setLineWrap(true);
 		messageArea.setRows(5);
 		messageArea.setWrapStyleWord(true);
-		messageArea.setMinimumSize(new java.awt.Dimension(300, 250));
-		messageArea.setPreferredSize(new java.awt.Dimension(250, 200));
+		messageArea.setMinimumSize(new Dimension(300, 250));
+		messageArea.setPreferredSize(new Dimension(250, 200));
 		srcMessage.setViewportView(messageArea);
 
 		dlgTestResult.getContentPane().add(srcMessage, java.awt.BorderLayout.CENTER);
 
 		btnOk.setText("Ok");
-		btnOk.setPreferredSize(new java.awt.Dimension(120, 23));
-		btnOk.addActionListener(new java.awt.event.ActionListener() {
+		btnOk.setPreferredSize(new Dimension(120, 23));
+		btnOk.addActionListener(new ActionListener() {
 			@Override
-			public void actionPerformed(java.awt.event.ActionEvent evt) {
+			public void actionPerformed(ActionEvent evt) {
 				okActionPerformed(evt);
 			}
 		});
@@ -193,43 +210,55 @@ public class SwingRunner extends JFrame {
 		setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 		setTitle("JUnit4OSGi Runner");
 		setMinimumSize(null);
-		setPreferredSize(new java.awt.Dimension(622, 657));
+		setPreferredSize(new Dimension(622, 657));
 
 		progressBar.setMinimumSize(null);
 		progressBar.setPreferredSize(null);
 
-		javax.swing.GroupLayout lyStatusBar = new javax.swing.GroupLayout(panStatusBar);
+		javax.swing.GroupLayout lyStatusBar = new GroupLayout(panStatusBar);
 		panStatusBar.setLayout(lyStatusBar);
-		lyStatusBar
-				.setHorizontalGroup(lyStatusBar.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-						.addComponent(progressBar, javax.swing.GroupLayout.DEFAULT_SIZE, 466, Short.MAX_VALUE));
-		lyStatusBar
-				.setVerticalGroup(lyStatusBar.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-						.addGroup(lyStatusBar.createSequentialGroup()
-								.addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE,
-										javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-								.addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
+		lyStatusBar.setHorizontalGroup(lyStatusBar.createParallelGroup(Alignment.LEADING).addComponent(progressBar,
+				GroupLayout.DEFAULT_SIZE, 466, Short.MAX_VALUE));
+		lyStatusBar.setVerticalGroup(lyStatusBar.createParallelGroup(Alignment.LEADING)
+				.addGroup(lyStatusBar.createSequentialGroup()
+						.addComponent(progressBar, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
+								GroupLayout.PREFERRED_SIZE)
+						.addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
 
 		btnExecute.setText("Execute");
+		btnExecute.setEnabled(!running);
 		btnExecute.setToolTipText("Execute selected testcase/s");
-		btnExecute.setMaximumSize(new java.awt.Dimension(90, 23));
-		btnExecute.setMinimumSize(new java.awt.Dimension(90, 23));
-		btnExecute.setPreferredSize(new java.awt.Dimension(100, 23));
-		btnExecute.addActionListener(new java.awt.event.ActionListener() {
+		btnExecute.setMaximumSize(new Dimension(90, 23));
+		btnExecute.setMinimumSize(new Dimension(90, 23));
+		btnExecute.setPreferredSize(new Dimension(100, 23));
+		btnExecute.addActionListener(new ActionListener() {
 			@Override
-			public void actionPerformed(java.awt.event.ActionEvent evt) {
+			public void actionPerformed(ActionEvent evt) {
 				executeButtonActionPerformed(evt);
+			}
+		});
+
+		btnStop.setText("Stop");
+		btnStop.setEnabled(stopped);
+		btnStop.setToolTipText("Stop current execution of selected testcase/s");
+		btnStop.setMaximumSize(new Dimension(90, 23));
+		btnStop.setMinimumSize(new Dimension(90, 23));
+		btnStop.setPreferredSize(new Dimension(100, 23));
+		btnStop.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent evt) {
+				stopButtonActionPerformed(evt);
 			}
 		});
 
 		btnSelectAll.setText("Select All");
 		btnSelectAll.setToolTipText("Select all testcases");
-		btnSelectAll.setMaximumSize(new java.awt.Dimension(90, 23));
-		btnSelectAll.setMinimumSize(new java.awt.Dimension(90, 23));
-		btnSelectAll.setPreferredSize(new java.awt.Dimension(100, 23));
-		btnSelectAll.addActionListener(new java.awt.event.ActionListener() {
+		btnSelectAll.setMaximumSize(new Dimension(90, 23));
+		btnSelectAll.setMinimumSize(new Dimension(90, 23));
+		btnSelectAll.setPreferredSize(new Dimension(100, 23));
+		btnSelectAll.addActionListener(new ActionListener() {
 			@Override
-			public void actionPerformed(java.awt.event.ActionEvent evt) {
+			public void actionPerformed(ActionEvent evt) {
 				allButtonActionPerformed(evt);
 			}
 		});
@@ -247,13 +276,13 @@ public class SwingRunner extends JFrame {
 		tblTestResult.setAutoCreateRowSorter(true);
 		tblTestResult.setFont(new java.awt.Font("Tahoma", 0, 10)); // NOI18N
 		tblTestResult.setModel(new ResultTableModel());
-		tblTestResult.setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_ALL_COLUMNS);
+		tblTestResult.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 		tblTestResult.setMaximumSize(null);
 		tblTestResult.setMinimumSize(null);
 		tblTestResult.setPreferredSize(null);
-		tblTestResult.addMouseListener(new java.awt.event.MouseAdapter() {
+		tblTestResult.addMouseListener(new MouseAdapter() {
 			@Override
-			public void mouseClicked(java.awt.event.MouseEvent evt) {
+			public void mouseClicked(MouseEvent evt) {
 				resultTableMouseClicked(evt);
 			}
 		});
@@ -265,96 +294,103 @@ public class SwingRunner extends JFrame {
 
 		btnSearch.setText("Search");
 		btnSearch.setToolTipText("search testcase by its name");
-		btnSearch.setMaximumSize(new java.awt.Dimension(90, 23));
-		btnSearch.setMinimumSize(new java.awt.Dimension(90, 23));
-		btnSearch.setPreferredSize(new java.awt.Dimension(100, 23));
-		btnSearch.addActionListener(new java.awt.event.ActionListener() {
+		btnSearch.setMaximumSize(new Dimension(90, 23));
+		btnSearch.setMinimumSize(new Dimension(90, 23));
+		btnSearch.setPreferredSize(new Dimension(100, 23));
+		btnSearch.addActionListener(new ActionListener() {
 			@Override
-			public void actionPerformed(java.awt.event.ActionEvent evt) {
+			public void actionPerformed(ActionEvent evt) {
 				btnSearchActionPerformed(evt);
 			}
 		});
 
 		btnRefresh.setToolTipText("Force refresh of testcase list");
 		btnRefresh.setText("Refresh");
-		btnRefresh.setPreferredSize(new java.awt.Dimension(90, 23));
-		btnRefresh.addActionListener(new java.awt.event.ActionListener() {
+		btnRefresh.setPreferredSize(new Dimension(90, 23));
+		btnRefresh.addActionListener(new ActionListener() {
 			@Override
-			public void actionPerformed(java.awt.event.ActionEvent evt) {
+			public void actionPerformed(ActionEvent evt) {
 				btnRefreshActionPerformed(evt);
 			}
 		});
 
 		javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
 		getContentPane().setLayout(layout);
-		layout.setHorizontalGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(layout
-				.createSequentialGroup().addContainerGap()
-				.addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-						.addComponent(srcResult, javax.swing.GroupLayout.Alignment.TRAILING,
-								javax.swing.GroupLayout.DEFAULT_SIZE, 598, Short.MAX_VALUE)
-						.addGroup(layout.createSequentialGroup()
-								.addComponent(panStatusBar, javax.swing.GroupLayout.DEFAULT_SIZE,
-										javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-								.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-								.addComponent(lblExecutedResults, javax.swing.GroupLayout.PREFERRED_SIZE,
-										javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-						.addGroup(javax.swing.GroupLayout.Alignment.TRAILING,
+		layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING).addGroup(layout.createSequentialGroup()
+				.addContainerGap().addGroup(layout.createParallelGroup(Alignment.LEADING).addComponent(srcResult,
+						Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 598, Short.MAX_VALUE)
+						.addGroup(
 								layout.createSequentialGroup()
-										.addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-												.addComponent(txtSearchTest, javax.swing.GroupLayout.Alignment.LEADING)
-												.addComponent(srcSuite, javax.swing.GroupLayout.DEFAULT_SIZE, 492,
-														Short.MAX_VALUE))
+										.addComponent(panStatusBar, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)
 										.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-										.addGroup(layout
-												.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-												.addComponent(btnExecute, javax.swing.GroupLayout.DEFAULT_SIZE,
-														javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-												.addComponent(btnSelectAll, javax.swing.GroupLayout.DEFAULT_SIZE,
-														javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-												.addComponent(btnSearch, javax.swing.GroupLayout.DEFAULT_SIZE,
-														javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-												.addComponent(btnRefresh, javax.swing.GroupLayout.DEFAULT_SIZE,
-														javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
-				.addContainerGap()));
-		layout.setVerticalGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-				.addGroup(layout.createSequentialGroup().addContainerGap()
-						.addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-								.addComponent(txtSearchTest, javax.swing.GroupLayout.PREFERRED_SIZE,
-										javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-								.addComponent(btnSearch, javax.swing.GroupLayout.PREFERRED_SIZE,
-										javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-						.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-						.addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(layout
+										.addComponent(lblExecutedResults, GroupLayout.PREFERRED_SIZE,
+												GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+						.addGroup(Alignment.TRAILING, layout
 								.createSequentialGroup()
-								.addComponent(btnSelectAll, javax.swing.GroupLayout.PREFERRED_SIZE,
-										javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+								.addGroup(layout.createParallelGroup(Alignment.TRAILING)
+										.addComponent(txtSearchTest, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)
+										.addComponent(srcSuite, GroupLayout.DEFAULT_SIZE, 492, Short.MAX_VALUE))
 								.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-								.addComponent(btnExecute, javax.swing.GroupLayout.PREFERRED_SIZE,
-										javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-								.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-								.addComponent(btnRefresh, javax.swing.GroupLayout.PREFERRED_SIZE,
-										javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-								.addGap(0, 0, Short.MAX_VALUE)).addComponent(srcSuite,
-										javax.swing.GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE))
+								.addGroup(layout.createParallelGroup(Alignment.LEADING, false)
+										.addComponent(btnExecute, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)
+										.addComponent(btnStop, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)
+										.addComponent(btnSelectAll, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)
+										.addComponent(btnSearch, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)
+										.addComponent(btnRefresh, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE))))
+				.addContainerGap()));
+		layout.setVerticalGroup(layout.createParallelGroup(Alignment.LEADING)
+				.addGroup(layout.createSequentialGroup().addContainerGap()
+						.addGroup(layout.createParallelGroup(Alignment.BASELINE)
+								.addComponent(txtSearchTest, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
+										GroupLayout.PREFERRED_SIZE)
+								.addComponent(btnSearch, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
+										GroupLayout.PREFERRED_SIZE))
 						.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-						.addComponent(srcResult, javax.swing.GroupLayout.PREFERRED_SIZE, 374,
-								javax.swing.GroupLayout.PREFERRED_SIZE)
+						.addGroup(layout.createParallelGroup(Alignment.LEADING)
+								.addGroup(layout.createSequentialGroup()
+										.addComponent(btnSelectAll, GroupLayout.PREFERRED_SIZE,
+												GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+										.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+										.addComponent(btnExecute, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
+												GroupLayout.PREFERRED_SIZE)
+										.addComponent(btnStop, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
+												GroupLayout.PREFERRED_SIZE)
+										.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+										.addComponent(btnRefresh, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
+												GroupLayout.PREFERRED_SIZE)
+										.addGap(0, 0, Short.MAX_VALUE))
+								.addComponent(srcSuite, GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE))
+						.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+						.addComponent(srcResult, GroupLayout.PREFERRED_SIZE, 374, GroupLayout.PREFERRED_SIZE)
 						.addGap(18, 18, 18)
-						.addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-								.addComponent(lblExecutedResults, javax.swing.GroupLayout.PREFERRED_SIZE,
-										javax.swing.GroupLayout.DEFAULT_SIZE,
-										javax.swing.GroupLayout.PREFERRED_SIZE)
-								.addComponent(panStatusBar, javax.swing.GroupLayout.PREFERRED_SIZE,
-										javax.swing.GroupLayout.DEFAULT_SIZE,
-										javax.swing.GroupLayout.PREFERRED_SIZE))));
+						.addGroup(layout.createParallelGroup(Alignment.LEADING)
+								.addComponent(lblExecutedResults, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
+										GroupLayout.PREFERRED_SIZE)
+								.addComponent(panStatusBar, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
+										GroupLayout.PREFERRED_SIZE))));
 
 		pack();
 	}
 
-	private void executeButtonActionPerformed(java.awt.event.ActionEvent evt) {
+	private void executeButtonActionPerformed(ActionEvent evt) {
 		if (running) {
 			return;
 		}
+
+		btnExecute.setEnabled(false);
+		btnExecute.setText("Running...");
+		running = true;
+
+		btnStop.setEnabled(true);
+
+
 		// Collect selected test.
 		int[] indices = lstSuite.getSelectedIndices();
 		List<TestBean> list = new ArrayList<TestBean>(indices.length);
@@ -366,7 +402,16 @@ public class SwingRunner extends JFrame {
 		executeTest(list);
 	}
 
-	private void allButtonActionPerformed(java.awt.event.ActionEvent evt) {
+	private void stopButtonActionPerformed(ActionEvent evt) {
+		if (!running || stopped) {
+			return;
+		}
+		btnStop.setEnabled(false);
+		btnStop.setText("Stopping...");
+		stopped = true;
+	}
+
+	private void allButtonActionPerformed(ActionEvent evt) {
 		int max = lstSuite.getModel().getSize();
 		int[] indices = new int[max];
 		for (int i = 0; i < max; i++) {
@@ -375,7 +420,7 @@ public class SwingRunner extends JFrame {
 		lstSuite.setSelectedIndices(indices);
 	}
 
-	private void resultTableMouseClicked(java.awt.event.MouseEvent evt) {// GEN-FIRST:event_m_resultTableMouseClicked
+	private void resultTableMouseClicked(MouseEvent evt) {
 		Point p = evt.getPoint();
 		int row = tblTestResult.rowAtPoint(p);
 		int col = tblTestResult.columnAtPoint(p);
@@ -389,21 +434,21 @@ public class SwingRunner extends JFrame {
 		}
 	}
 
-	private void okActionPerformed(java.awt.event.ActionEvent evt) {
+	private void okActionPerformed(ActionEvent evt) {
 		dlgTestResult.setVisible(false);
 		setEnabled(true);
 	}
 
-	private void btnRefreshActionPerformed(java.awt.event.ActionEvent evt) {
+	private void btnRefreshActionPerformed(ActionEvent evt) {
 		refreshSuites();
 	}
 
-	private void onDialogClosed(java.awt.event.WindowEvent evt) {
+	private void onDialogClosed(WindowEvent evt) {
 		dlgTestResult.setVisible(false);
 		setEnabled(true);
 	}
 
-	private void btnSearchActionPerformed(java.awt.event.ActionEvent evt) {
+	private void btnSearchActionPerformed(ActionEvent evt) {
 		refreshSuites();
 
 	}
@@ -415,8 +460,6 @@ public class SwingRunner extends JFrame {
 	 *            of test to execute.
 	 */
 	private void executeTest(final List<TestBean> tests) {
-		running = true;
-		btnExecute.setText("Running...");
 		progressBar.setIndeterminate(true);
 
 		ResultTableModel model = (ResultTableModel) tblTestResult.getModel();
@@ -429,7 +472,9 @@ public class SwingRunner extends JFrame {
 				JUnitCore core = new JUnitCore();
 				core.addListener(new MyTestListener());
 
-				for (TestBean bean : tests) {
+				Iterator<TestBean> testIt = tests.iterator();
+				while (!stopped && testIt.hasNext()) {
+					TestBean bean = testIt.next();
 					ClassLoader ccl = Thread.currentThread().getContextClassLoader();
 					try {
 						Class<?> testClass = bean.getTestClass();
@@ -445,11 +490,17 @@ public class SwingRunner extends JFrame {
 					}
 				}
 
-				running = false;
 				progressBar.setIndeterminate(false);
 				progressBar.setMaximum(100);
 				progressBar.setValue(100);
+
 				btnExecute.setText("Execute");
+				btnExecute.setEnabled(true);
+				btnStop.setText("Stop");
+				btnStop.setEnabled(false);
+				running = false;
+				stopped = false;
+
 				computeExecutedTest();
 				setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 			}
