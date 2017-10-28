@@ -24,7 +24,6 @@ import org.mockito.ArgumentCaptor;
 import org.osgi.framework.Bundle;
 import org.osgi.service.log.LogService;
 
-import com.github.nfalco79.junit4osgi.registry.internal.AutoDiscoveryRegistry;
 import com.github.nfalco79.junit4osgi.registry.internal.util.BundleBuilder;
 import com.github.nfalco79.junit4osgi.registry.internal.util.BundleBuilder.URLStrategy;
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
@@ -36,10 +35,8 @@ public class AutoDiscoveryRegistryTest {
 
 	@Test
 	public void test_gather_test_by_naming_convention() throws Exception {
-		Class<?>[] testsClass = new Class<?>[] { SimpleTestCase.class, JUnit3Test.class, GenericClass.class,
-				MyServiceIT.class, SimpleITTest.class, ITGenericClass.class, TestMyService.class,
-				MyServiceTests.class };
-		Bundle bundle = getMockBundle(testsClass);
+		Bundle bundle = getMockBundle(SimpleTestCase.class, JUnit3Test.class, GenericClass.class, MyServiceIT.class,
+				SimpleITTest.class, ITGenericClass.class, TestMyService.class, MyServiceTests.class).build();
 
 		AutoDiscoveryRegistry registry = new AutoDiscoveryRegistry();
 
@@ -55,10 +52,28 @@ public class AutoDiscoveryRegistryTest {
 
 	@Test
 	public void test_naming_convention_on_inner() throws Exception {
-		Class<?>[] testsClass = new Class<?>[] { TestInnerClassIsNotAJUnit3.class,
-				TestInnerClassIsNotAJUnit3.XClass.class, TestOuterIsNotAJUnit3.class,
-				TestOuterIsNotAJUnit3.TestInner.class };
-		Bundle bundle = getMockBundle(testsClass);
+		Bundle bundle = getMockBundle(TestInnerClassIsNotAJUnit3.class, TestInnerClassIsNotAJUnit3.XClass.class,
+				TestOuterIsNotAJUnit3.class, TestOuterIsNotAJUnit3.TestInner.class).build();
+
+		AutoDiscoveryRegistry registry = new AutoDiscoveryRegistry();
+
+		registry.setLog(mock(LogService.class));
+		registry.registerTests(bundle);
+
+		Set<TestBean> tests = registry.getTests();
+		assertThat(tests, Matchers.hasSize(2));
+		assertThat(tests, Matchers.not(Matchers.contains(new TestBean(bundle, XClass.class.getName()),
+				new TestBean(bundle, TestOuterIsNotAJUnit3.class.getName()))));
+
+		registry.dispose();
+	}
+
+	@Test
+	public void test_naming_convention_on_inner_when_state_is_ACTIVE() throws Exception {
+		Bundle bundle = getMockBundle(TestInnerClassIsNotAJUnit3.class, TestInnerClassIsNotAJUnit3.XClass.class,
+				TestOuterIsNotAJUnit3.class, TestOuterIsNotAJUnit3.TestInner.class) //
+						.state(Bundle.ACTIVE) //
+						.build();
 
 		AutoDiscoveryRegistry registry = new AutoDiscoveryRegistry();
 
@@ -75,8 +90,7 @@ public class AutoDiscoveryRegistryTest {
 
 	@Test
 	public void test_jmx_method_get_test_ids() throws Exception {
-		Class<?>[] testsClass = new Class<?>[] { SimpleTestCase.class, JUnit3Test.class };
-		Bundle bundle = getMockBundle(testsClass);
+		Bundle bundle = getMockBundle(SimpleTestCase.class, JUnit3Test.class).build();
 
 		AutoDiscoveryRegistry registry = new AutoDiscoveryRegistry();
 		registry.setLog(mock(LogService.class));
@@ -88,8 +102,8 @@ public class AutoDiscoveryRegistryTest {
 
 	@Test
 	public void test_that_remove_unregister_only_the_contributor_tests() throws Exception {
-		Bundle bundle1 = getMockBundle(new Class<?>[] { SimpleTestCase.class, JUnit3Test.class });
-		Bundle bundle2 = getMockBundle(new Class<?>[] { MyServiceIT.class, SimpleITTest.class });
+		Bundle bundle1 = getMockBundle(SimpleTestCase.class, JUnit3Test.class).build();
+		Bundle bundle2 = getMockBundle(MyServiceIT.class, SimpleITTest.class).build();
 
 		AutoDiscoveryRegistry registry = new AutoDiscoveryRegistry();
 		registry.setLog(mock(LogService.class));
@@ -111,7 +125,7 @@ public class AutoDiscoveryRegistryTest {
 
 	@Test
 	public void test_listener_event() throws Exception {
-		Bundle bundle = getMockBundle(SimpleTestCase.class, JUnit3Test.class);
+		Bundle bundle = getMockBundle(SimpleTestCase.class, JUnit3Test.class).build();
 		TestRegistryChangeListener listener = spy(TestRegistryChangeListener.class);
 
 		AutoDiscoveryRegistry registry = new AutoDiscoveryRegistry();
@@ -140,7 +154,7 @@ public class AutoDiscoveryRegistryTest {
 		registry.dispose();
 	}
 
-	private Bundle getMockBundle(Class<?>... classes) throws Exception {
+	private BundleBuilder getMockBundle(Class<?>... classes) throws Exception {
 		return BundleBuilder.newBuilder() //
 				.symbolicName("acme") //
 				.addClasses(classes) //
@@ -157,8 +171,7 @@ public class AutoDiscoveryRegistryTest {
 					public URL resolveURL(String entry) {
 						return null;
 					}
-				}) //
-				.build();
+				});
 	}
 
 }

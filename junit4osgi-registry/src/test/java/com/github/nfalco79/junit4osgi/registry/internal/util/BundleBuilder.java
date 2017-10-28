@@ -54,6 +54,7 @@ public final class BundleBuilder {
 	private Map<String, File> bundleResources;
 	private URLStrategy strategy;
 	private Map<String, BundleWire> wires;
+	private int bundleState;
 
 	private BundleBuilder() {
 		bundle = mock(Bundle.class);
@@ -61,6 +62,7 @@ public final class BundleBuilder {
 		bundleResources = new HashMap<String, File>();
 		strategy = new DefaultURLStrategy();
 		wires = new HashMap<String, BundleWire>();
+		bundleState = Bundle.RESOLVED;
 	}
 
 	public static BundleBuilder newBuilder() {
@@ -71,6 +73,13 @@ public final class BundleBuilder {
 		Assert.assertNotNull(symbolicName);
 
 		when(bundle.getSymbolicName()).thenReturn(symbolicName);
+		return this;
+	}
+
+	public BundleBuilder state(int bundleState) {
+		Assert.assertTrue(bundleState > 0);
+
+		this.bundleState = bundleState;
 		return this;
 	}
 
@@ -131,9 +140,11 @@ public final class BundleBuilder {
 
 	public Bundle build() throws Exception {
 		when(bundle.findEntries("/", "*.class", true)).thenReturn(toURLs(bundleClasses));
+		when(bundle.getState()).thenReturn(bundleState);
 
 		for (Class<?> clazz : bundleClasses) {
 			when(bundle.getEntry(toResource(clazz))).thenReturn(strategy.resolveURL(clazz));
+			when(bundle.loadClass(clazz.getName())).thenReturn((Class) clazz);
 		}
 		if (bundleClasses.isEmpty()) {
 			when(bundle.getEntry(anyString())).thenAnswer(new Answer<URL>() {
