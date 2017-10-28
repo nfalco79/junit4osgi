@@ -1,4 +1,4 @@
-package com.github.nfalco79.junit4osgi.registry.asm;
+package com.github.nfalco79.junit4osgi.registry.internal.asm;
 
 import static org.junit.Assert.assertThat;
 
@@ -20,7 +20,7 @@ import org.osgi.framework.Bundle;
 
 import com.github.nfalco79.junit4osgi.registry.internal.asm.ASMUtils;
 import com.github.nfalco79.junit4osgi.registry.internal.asm.BundleTestClassVisitor;
-import com.github.nfalco79.junit4osgi.registry.util.BundleBuilder;
+import com.github.nfalco79.junit4osgi.registry.internal.util.BundleBuilder;
 
 import junit.framework.TestCase;
 

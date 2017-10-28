@@ -24,7 +24,9 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.osgi.framework.Bundle;
+import org.osgi.service.log.LogService;
 
+import com.github.nfalco79.junit4osgi.registry.TestRegistryUtils;
 import com.github.nfalco79.junit4osgi.registry.internal.asm.ASMUtils;
 import com.github.nfalco79.junit4osgi.registry.internal.asm.BundleTestClassVisitor;
 import com.github.nfalco79.junit4osgi.registry.spi.AbstractTestRegistry;
@@ -58,30 +60,57 @@ public final class AutoDiscoveryRegistry extends AbstractTestRegistry {
 
 	/*
 	 * (non-Javadoc)
-	 * @see com.github.nfalco79.junit4osgi.registry.spi.TestRegistry#registerTests(org.osgi.framework.Bundle)
+	 *
+	 * @see
+	 * com.github.nfalco79.junit4osgi.registry.spi.TestRegistry#registerTests(
+	 * org.osgi.framework.Bundle)
 	 */
 	@Override
-	public void registerTests(Bundle contributor) {
-		if (tests.containsKey(contributor)) {
+	public void registerTests(Bundle bundle) {
+		if (tests.containsKey(bundle)) {
 			return;
 		}
 
+		final String symbolicName = bundle.getSymbolicName();
+
 		Set<TestBean> bundleTest = new LinkedHashSet<TestBean>();
-		tests.put(contributor, bundleTest);
+		tests.put(bundle, bundleTest);
 
-		BundleTestClassVisitor visitor = new BundleTestClassVisitor(contributor);
+		BundleTestClassVisitor visitor = new BundleTestClassVisitor(bundle);
 
-		Enumeration<URL> entries = contributor.findEntries("/", "*.class", true);
+		Enumeration<URL> entries = bundle.findEntries("/", "*.class", true);
 		while (entries != null && entries.hasMoreElements()) {
 			URL entry = entries.nextElement();
 			String className = toClassName(entry);
 			String simpleClassName = toClassSimpleName(className);
 			if (isTestCase(simpleClassName) || isIntegrationTest(simpleClassName)) {
-				visitor.reset();
+				TestBean bean = new TestBean(bundle, className);
 
-				ASMUtils.analyseByteCode(entry, visitor);
-				if (visitor.isTestClass()) {
-					TestBean bean = new TestBean(contributor, className);
+				boolean isTest = false;
+				if (bundle.getState() == Bundle.ACTIVE) {
+					// use classloader to introspect class
+					try {
+						Class<?> testClass = bean.getTestClass();
+						isTest = TestRegistryUtils.isValidTestClass(testClass);
+					} catch (ClassNotFoundException e) {
+						// could happen if some static code in the class fails
+						getLog().log(LogService.LOG_ERROR,
+								"The class " + className + " could not be found in the bundle " + symbolicName, e);
+					} catch (NoClassDefFoundError e) {
+						// happen when miss some import package in MANIFEST.MF
+						getLog().log(LogService.LOG_ERROR, "The class " + className
+								+ " could not be loaded by its bundle " + symbolicName + " classloader: ", e);
+					}
+				} else {
+					// to not trigger the bundle activation, just analyse the
+					// class byte code
+					visitor.reset();
+
+					ASMUtils.analyseByteCode(entry, visitor);
+					isTest = visitor.isTestClass();
+				}
+
+				if (isTest) {
 					bundleTest.add(bean);
 
 					fireEvent(new TestRegistryEvent(TestRegistryEventType.ADD, bean));
@@ -113,12 +142,16 @@ public final class AutoDiscoveryRegistry extends AbstractTestRegistry {
 	}
 
 	private boolean isTestCase(final String className) {
-		return className.startsWith("Test") || className.endsWith("Test") || className.endsWith("Tests") || className.endsWith("TestCase");
+		return className.startsWith("Test") || className.endsWith("Test") || className.endsWith("Tests")
+				|| className.endsWith("TestCase");
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * @see com.github.nfalco79.junit4osgi.registry.spi.TestRegistry#removeTests(org.osgi.framework.Bundle)
+	 *
+	 * @see
+	 * com.github.nfalco79.junit4osgi.registry.spi.TestRegistry#removeTests(org.
+	 * osgi.framework.Bundle)
 	 */
 	@Override
 	public void removeTests(Bundle contributor) {

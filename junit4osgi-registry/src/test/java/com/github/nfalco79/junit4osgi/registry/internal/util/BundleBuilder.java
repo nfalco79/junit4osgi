@@ -1,4 +1,4 @@
-package com.github.nfalco79.junit4osgi.registry.util;
+package com.github.nfalco79.junit4osgi.registry.internal.util;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;

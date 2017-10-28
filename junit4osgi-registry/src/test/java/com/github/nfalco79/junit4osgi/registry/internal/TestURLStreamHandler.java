@@ -1,4 +1,4 @@
-package com.github.nfalco79.junit4osgi.registry;
+package com.github.nfalco79.junit4osgi.registry.internal;
 
 import java.io.IOException;
 import java.io.InputStream;

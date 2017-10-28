@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.github.nfalco79.junit4osgi.runner.internal;
+package com.github.nfalco79.junit4osgi.registry;
 
 import java.lang.reflect.Modifier;
 
@@ -30,9 +30,9 @@ import org.junit.runners.model.TestClass;
 
 import junit.framework.TestCase;
 
-/*package*/ final class JUnitUtils {
+public final class TestRegistryUtils {
 
-	private JUnitUtils() {
+	private TestRegistryUtils() {
 	}
 
 	/**
@@ -64,4 +64,15 @@ import junit.framework.TestCase;
 		return Modifier.isPublic(modifiers) && !Modifier.isAbstract(modifiers) && !testClass.isInterface() && !testClass.isEnum();
 	}
 
+
+	/**
+	 * Returns if the given class is a valid JUnit 3/4 class and contains tests.
+	 *
+	 * @param testClass to analyse.
+	 * @return {@code true} if the given class is a JUnit3/4 public class, not abstract, not
+	 *         enumeration or not an interface and that contains test methods, {@code false} otherwise.
+	 */
+	public static boolean isValidTestClass(Class<?> testClass) {
+		return isValid(testClass) && hasTests(testClass);
+	}
 }

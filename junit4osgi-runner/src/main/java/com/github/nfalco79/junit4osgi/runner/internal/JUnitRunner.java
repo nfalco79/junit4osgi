@@ -33,6 +33,7 @@ import org.junit.runner.JUnitCore;
 import org.junit.runner.notification.RunListener;
 import org.osgi.service.log.LogService;
 
+import com.github.nfalco79.junit4osgi.registry.TestRegistryUtils;
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
@@ -247,7 +248,7 @@ public class JUnitRunner implements TestRunner {
 			while (!isStopped() && (testBean = tests.poll()) != null) {
 				try {
 					Class<?> testClass = testBean.getTestClass();
-					if (!JUnitUtils.isValid(testClass) || !JUnitUtils.hasTests(testClass) || !accept(testClass)) {
+					if (!TestRegistryUtils.isValidTestClass(testClass) || !accept(testClass)) {
 					    logger.log(LogService.LOG_DEBUG, "Skip test class " + testBean.getName());
 						continue;
 					}

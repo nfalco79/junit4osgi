@@ -1,4 +1,4 @@
-package com.github.nfalco79.junit4osgi.registry.spi;
+package com.github.nfalco79.junit4osgi.registry.internal.spi;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -12,8 +12,9 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.osgi.framework.Bundle;
 
-import com.github.nfalco79.junit4osgi.registry.util.BundleBuilder;
-import com.github.nfalco79.junit4osgi.registry.util.BundleBuilder.URLStrategy;
+import com.github.nfalco79.junit4osgi.registry.internal.util.BundleBuilder;
+import com.github.nfalco79.junit4osgi.registry.internal.util.BundleBuilder.URLStrategy;
+import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 
 public class TestBeanTestCase {
 

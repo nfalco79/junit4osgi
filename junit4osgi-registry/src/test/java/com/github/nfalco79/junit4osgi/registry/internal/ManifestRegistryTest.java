@@ -1,4 +1,4 @@
-package com.github.nfalco79.junit4osgi.registry;
+package com.github.nfalco79.junit4osgi.registry.internal;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -25,11 +25,11 @@ import org.osgi.framework.Bundle;
 import org.osgi.service.log.LogService;
 
 import com.github.nfalco79.junit4osgi.registry.internal.ManifestRegistry;
+import com.github.nfalco79.junit4osgi.registry.internal.util.BundleBuilder;
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent.TestRegistryEventType;
-import com.github.nfalco79.junit4osgi.registry.util.BundleBuilder;
 
 public class ManifestRegistryTest {
 
