@@ -271,13 +271,11 @@ public class ResultTableModel extends AbstractTableModel {
 	}
 
 	/**
-	 * Gets the message.
+	 * Gets the test description for the given index.
 	 *
-	 * @param row
-	 *            the row
-	 * @param column
-	 *            the column
-	 * @return the message for this cell
+	 * @param index
+	 *            the index of the test to retrieve.
+	 * @return the test run description for the given index.
 	 */
 	public Description getTest(int index) {
 		if (index == -1 || index > results.size()) {
