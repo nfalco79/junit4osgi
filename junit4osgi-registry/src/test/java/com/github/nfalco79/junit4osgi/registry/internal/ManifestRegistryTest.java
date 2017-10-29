@@ -65,6 +65,35 @@ public class ManifestRegistryTest {
 	}
 
 	@Test
+	public void test_jmx_method_get_test_ids() throws Exception {
+		Bundle bundle = getMockBundle(SimpleTestCase.class, JUnit3Test.class);
+
+		ManifestRegistry registry = new ManifestRegistry();
+		registry.setLog(mock(LogService.class));
+		registry.registerTests(bundle);
+
+		assertThat(registry.getTestIds(), Matchers.arrayContainingInAnyOrder("acme@" + SimpleTestCase.class.getName(),
+				"acme@" + JUnit3Test.class.getName()));
+	}
+
+	@Test
+	public void bundle_are_not_registered_twice() throws Exception {
+		Bundle bundle = getMockBundle(SimpleTestCase.class, JUnit3Test.class);
+
+		ManifestRegistry registry = new ManifestRegistry();
+		registry.setLog(mock(LogService.class));
+
+		registry.registerTests(bundle);
+		registry.registerTests(bundle);
+
+		assertThat(registry.getTests(), Matchers.hasSize(2));
+		assertThat(registry.getTests(), Matchers.hasItems(new TestBean(bundle, SimpleTestCase.class.getName()),
+				new TestBean(bundle, JUnit3Test.class.getName())));
+
+		verify(bundle).getEntry("META-INF/MANIFEST.MF");
+	}
+
+	@Test
 	public void testclass_not_found() throws Exception {
 		LogService logService = spy(LogService.class);
 
@@ -72,6 +101,7 @@ public class ManifestRegistryTest {
 		Bundle bundle = BundleBuilder.newBuilder() //
 				.symbolicName("acme") //
 				.addResource("META-INF/MANIFEST.MF", getManifest(className)) //
+				.state(Bundle.ACTIVE) //
 				.build();
 
 		ManifestRegistry registry = new ManifestRegistry();
@@ -79,7 +109,7 @@ public class ManifestRegistryTest {
 		registry.registerTests(bundle);
 
 		assertThat(registry.getTests(), Matchers.empty());
-		String expectedLog = "Test class '" + className + "' not found in bundle " + bundle.getSymbolicName();
+		String expectedLog = "Test class '" + className + "' could not be found in the bundle " + bundle.getSymbolicName();
 		verify(logService).log(eq(LogService.LOG_ERROR), contains(expectedLog), any(Exception.class));
 
 		registry.dispose();
@@ -98,7 +128,8 @@ public class ManifestRegistryTest {
 
 		Set<TestBean> tests = registry.getTests();
 		assertThat(tests, Matchers.hasSize(2));
-		assertThat(tests, Matchers.hasItems(new TestBean(bundle, testsClass[0].getName()), new TestBean(bundle, testsClass[1].getName())));
+		assertThat(tests, Matchers.hasItems(new TestBean(bundle, testsClass[0].getName()),
+				new TestBean(bundle, testsClass[1].getName())));
 
 		ArgumentCaptor<TestRegistryEvent> argument = ArgumentCaptor.forClass(TestRegistryEvent.class);
 		verify(listener, times(2)).registryChanged(argument.capture());
@@ -144,7 +175,8 @@ public class ManifestRegistryTest {
 
 		registry.removeTests(bundle1);
 		assertThat(registry.getTests(), Matchers.hasSize(2));
-		assertThat(registry.getTests(), Matchers.hasItems(new TestBean(bundle2, MyServiceIT.class.getName()), new TestBean(bundle2, SimpleITTest.class.getName())));
+		assertThat(registry.getTests(), Matchers.hasItems(new TestBean(bundle2, MyServiceIT.class.getName()),
+				new TestBean(bundle2, SimpleITTest.class.getName())));
 
 		registry.dispose();
 	}

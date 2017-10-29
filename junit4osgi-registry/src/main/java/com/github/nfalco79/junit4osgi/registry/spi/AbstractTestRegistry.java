@@ -15,6 +15,7 @@
  */
 package com.github.nfalco79.junit4osgi.registry.spi;
 
+import java.net.URL;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -26,7 +27,10 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.log.LogService;
 
+import com.github.nfalco79.junit4osgi.registry.TestRegistryUtils;
 import com.github.nfalco79.junit4osgi.registry.internal.JUnit4BundleListener;
+import com.github.nfalco79.junit4osgi.registry.internal.asm.ASMUtils;
+import com.github.nfalco79.junit4osgi.registry.internal.asm.BundleTestClassVisitor;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent.TestRegistryEventType;
 
 /**
@@ -83,6 +87,41 @@ public abstract class AbstractTestRegistry implements TestRegistry {
 					+ " for the test " + event.getTest().getId());
 			}
 		}
+	}
+
+	protected boolean isTestClass(Bundle bundle, TestBean bean, BundleTestClassVisitor visitor) {
+		final String className = bean.getName();
+
+		boolean isTest = false;
+		if (bundle.getState() == Bundle.ACTIVE) {
+
+			final String symbolicName = bundle.getSymbolicName();
+
+			// use classloader to introspect class
+			try {
+				Class<?> testClass = bean.getTestClass();
+				isTest = TestRegistryUtils.isValidTestClass(testClass);
+			} catch (ClassNotFoundException e) {
+				// could happen if some static code in the class fails
+				getLog().log(LogService.LOG_ERROR,
+						"Test class '" + className + "' could not be found in the bundle " + symbolicName, e);
+			} catch (NoClassDefFoundError e) {
+				// happen when miss some import package in MANIFEST.MF
+				getLog().log(LogService.LOG_ERROR, "Test class '" + className
+						+ "' could not be loaded by its bundle " + symbolicName + " classloader: ", e);
+			}
+		} else {
+			URL entry = bundle.getEntry('/' + className.replace('.', '/') + ".class");
+			assert entry != null; // checked by TestBean constructor
+
+			// to not trigger the bundle activation, just analyse the class byte code
+			visitor.reset();
+
+			ASMUtils.analyseByteCode(entry, visitor);
+			isTest = visitor.isTestClass();
+		}
+
+		return isTest;
 	}
 
 	@Override

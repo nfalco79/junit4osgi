@@ -16,6 +16,7 @@
 package com.github.nfalco79.junit4osgi.registry.internal;
 
 import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.net.MalformedURLException;
@@ -167,6 +168,42 @@ public class AutoDiscoveryRegistryTest {
 		}
 
 		registry.dispose();
+	}
+
+	@Test
+	public void bundle_are_not_registered_twice() throws Exception {
+		Bundle bundle = getMockBundle(SimpleTestCase.class, JUnit3Test.class).build();
+
+		AutoDiscoveryRegistry registry = new AutoDiscoveryRegistry();
+		registry.setLog(mock(LogService.class));
+
+		registry.registerTests(bundle);
+		registry.registerTests(bundle);
+
+		assertThat(registry.getTests(), Matchers.hasSize(2));
+		assertThat(registry.getTests(), Matchers.hasItems(new TestBean(bundle, SimpleTestCase.class.getName()),
+				new TestBean(bundle, JUnit3Test.class.getName())));
+
+		verify(bundle).findEntries("/", "*.class", true);
+	}
+
+	@Test
+	public void testclass_not_found() throws Exception {
+		LogService logService = spy(LogService.class);
+
+		String className = SimpleTestCase.class.getName();
+		Bundle bundle = getMockBundle(SimpleTestCase.class) //
+				.state(Bundle.ACTIVE) //
+				.build();
+		when(bundle.loadClass(className)).thenThrow(ClassNotFoundException.class);
+
+		AutoDiscoveryRegistry registry = new AutoDiscoveryRegistry();
+		registry.setLog(logService);
+		registry.registerTests(bundle);
+
+		assertThat(registry.getTests(), Matchers.empty());
+		String expectedLog = "Test class '" + className + "' could not be found in the bundle " + bundle.getSymbolicName();
+		verify(logService).log(eq(LogService.LOG_ERROR), contains(expectedLog), any(Exception.class));
 	}
 
 	private BundleBuilder getMockBundle(Class<?>... classes) throws Exception {

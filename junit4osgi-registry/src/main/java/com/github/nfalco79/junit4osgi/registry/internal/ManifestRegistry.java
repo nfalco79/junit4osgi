@@ -27,8 +27,6 @@ import java.util.jar.Manifest;
 import org.osgi.framework.Bundle;
 import org.osgi.service.log.LogService;
 
-import com.github.nfalco79.junit4osgi.registry.TestRegistryUtils;
-import com.github.nfalco79.junit4osgi.registry.internal.asm.ASMUtils;
 import com.github.nfalco79.junit4osgi.registry.internal.asm.BundleTestClassVisitor;
 import com.github.nfalco79.junit4osgi.registry.spi.AbstractTestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
@@ -89,7 +87,7 @@ public final class ManifestRegistry extends AbstractTestRegistry {
 			is = resource.openStream();
 			Manifest mf = new Manifest(is);
 
-			// fragments must be handled differently??
+			// should fragments be manage differently??
 			final String value = mf.getMainAttributes().getValue(TEST_ENTRY);
 			if (value != null && !"".equals(value)) {
 				BundleTestClassVisitor visitor = new BundleTestClassVisitor(bundle);
@@ -103,37 +101,11 @@ public final class ManifestRegistry extends AbstractTestRegistry {
 						bean = new TestBean(bundle, className);
 					} catch (IllegalArgumentException e) {
 						getLog().log(LogService.LOG_ERROR,
-								"Test class '" + className + "' not found in bundle " + symbolicName, e);
+								"Test class '" + className + "' could not be found in the bundle " + symbolicName, e);
 						continue;
 					}
 
-					boolean isTest = false;
-					if (bundle.getState() == Bundle.ACTIVE) {
-						// use classloader to introspect class
-						try {
-							Class<?> testClass = bean.getTestClass();
-							isTest = TestRegistryUtils.isValidTestClass(testClass);
-						} catch (NoClassDefFoundError e) {
-							// happen when miss some import package in MANIFEST.MF
-							getLog().log(LogService.LOG_ERROR, "The class '" + className
-									+ "' could not be loaded by its bundle " + symbolicName + " classloader: ", e);
-						} catch (ClassNotFoundException e) {
-							// could happen if some static code in the class fails
-							getLog().log(LogService.LOG_ERROR,
-									"The class '" + className + "' could not be found in the bundle " + symbolicName, e);
-						}
-					} else {
-						URL entry = bundle.getEntry('/' + className.replace('.', '/') + ".class");
-						assert entry != null; // checked by TestBean constructor
-
-						// to not trigger the bundle activation, just analyse the class byte code
-						visitor.reset();
-
-						ASMUtils.analyseByteCode(entry, visitor);
-						isTest = visitor.isTestClass();
-					}
-
-					if (isTest) {
+					if (isTestClass(bundle, bean, visitor)) {
 						bundleTest.add(bean);
 
 						fireEvent(new TestRegistryEvent(TestRegistryEventType.ADD, bean));
