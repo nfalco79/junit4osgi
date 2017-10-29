@@ -1,9 +1,6 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
+ * Copyright 2017 Nikolas Falco
+ * Licensed under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
@@ -23,6 +20,7 @@ import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
@@ -35,7 +33,9 @@ import java.util.Set;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JFrame;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -43,8 +43,10 @@ import javax.swing.table.TableColumn;
 
 import org.junit.runner.Description;
 import org.junit.runner.JUnitCore;
+import org.junit.runner.Request;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
+import org.osgi.service.log.LogService;
 
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
@@ -81,9 +83,12 @@ public class SwingRunner extends JFrame {
 	private javax.swing.JTable tblTestResult;
 	private javax.swing.JList lstSuite;
 	private javax.swing.JTextField txtSearchTest;
+	private JPopupMenu popmnuTestSelected;
 
 	private transient SwingTestRegistryChangeListener registryListener = new SwingTestRegistryChangeListener();
 	private transient TestRegistry registry;
+	private transient LogService logService;
+
 
 	public SwingRunner() {
 		running = false;
@@ -161,7 +166,15 @@ public class SwingRunner extends JFrame {
 		JScrollPane srcSuite = new javax.swing.JScrollPane();
 		lstSuite = new javax.swing.JList();
 		srcResult = new javax.swing.JScrollPane();
-		tblTestResult = new javax.swing.JTable();
+		tblTestResult = new javax.swing.JTable() {
+			@Override
+			public Point getPopupLocation(MouseEvent event) {
+				if (getSelectedRows().length == 0) {
+					return null;
+				}
+				return super.getPopupLocation(event);
+			}
+		};
 		lblExecutedResults = new javax.swing.JLabel();
 		txtSearchTest = new javax.swing.JTextField();
 		btnSearch = new javax.swing.JButton();
@@ -280,13 +293,29 @@ public class SwingRunner extends JFrame {
 		tblTestResult.setMaximumSize(null);
 		tblTestResult.setMinimumSize(null);
 		tblTestResult.setPreferredSize(null);
+		tblTestResult.getTableHeader().setReorderingAllowed(false);
 		tblTestResult.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent evt) {
+				showPopupMenu(evt);
+			}
+
 			@Override
 			public void mouseClicked(MouseEvent evt) {
 				resultTableMouseClicked(evt);
 			}
 		});
 		srcResult.setViewportView(tblTestResult);
+
+		JMenuItem mnuRelaunch = new JMenuItem("Relaunch");
+		mnuRelaunch.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent evt) {
+				relaunchPopUpMenuActionPerformed(evt);
+			}
+		});
+		popmnuTestSelected = new JPopupMenu();
+		popmnuTestSelected.add(mnuRelaunch);
 
 		lblExecutedResults.setPreferredSize(null);
 
@@ -379,24 +408,45 @@ public class SwingRunner extends JFrame {
 		pack();
 	}
 
-	private void executeButtonActionPerformed(ActionEvent evt) {
-		if (running) {
+	private void relaunchPopUpMenuActionPerformed(ActionEvent evt) {
+		int[] selection = tblTestResult.getSelectedRows();
+		if (running || selection.length == 0) {
 			return;
 		}
 
-		btnExecute.setEnabled(false);
-		btnExecute.setText("Running...");
 		running = true;
 
+		btnExecute.setEnabled(false);
+		btnExecute.setText("Running...");
 		btnStop.setEnabled(true);
 
+		List<Description> list = new ArrayList<Description>(selection.length);
+		ResultTableModel model = (ResultTableModel) tblTestResult.getModel();
+		for (int idx : selection) {
+			int idxModel = tblTestResult.convertRowIndexToModel(idx);
+			list.add(model.getTest(idxModel));
+		}
+		setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+		executeTestDescription(list);
+	}
+
+	private void executeButtonActionPerformed(ActionEvent evt) {
+		int[] selection = lstSuite.getSelectedIndices();
+		if (running || selection.length == 0) {
+			return;
+		}
+
+		running = true;
+
+		btnExecute.setEnabled(false);
+		btnExecute.setText("Running...");
+		btnStop.setEnabled(true);
 
 		// Collect selected test.
-		int[] indices = lstSuite.getSelectedIndices();
-		List<TestBean> list = new ArrayList<TestBean>(indices.length);
+		List<TestBean> list = new ArrayList<TestBean>(selection.length);
 		TestListModel model = (TestListModel) lstSuite.getModel();
-		for (int i = 0; i < indices.length; i++) {
-			list.add(model.getTestElementAt(indices[i]));
+		for (int i = 0; i < selection.length; i++) {
+			list.add(model.getTestElementAt(selection[i]));
 		}
 		setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 		executeTest(list);
@@ -420,17 +470,31 @@ public class SwingRunner extends JFrame {
 		lstSuite.setSelectedIndices(indices);
 	}
 
+	private void showPopupMenu(MouseEvent evt) {
+		if (evt.isPopupTrigger()) {
+			if (tblTestResult.getSelectionModel().isSelectionEmpty()) {
+				tblTestResult.setComponentPopupMenu(null);
+			} else {
+				popmnuTestSelected.show(evt.getComponent(), evt.getX(), evt.getY());
+			}
+		}
+	}
+
 	private void resultTableMouseClicked(MouseEvent evt) {
-		Point p = evt.getPoint();
-		int row = tblTestResult.rowAtPoint(p);
-		int col = tblTestResult.columnAtPoint(p);
-		ResultTableModel model = (ResultTableModel) tblTestResult.getModel();
-		String message = model.getMessage(row, col);
-		if (message != null) {
-			setEnabled(false);
-			dlgTestResult.setTitle("Test Report");
-			messageArea.setText(message);
-			dlgTestResult.setVisible(true);
+		if (isLeftMouseButton(evt) && evt.getClickCount() == 2 && !evt.isConsumed()) {
+			evt.consume();
+
+			Point p = evt.getPoint();
+			int row = tblTestResult.rowAtPoint(p);
+			int col = tblTestResult.columnAtPoint(p);
+			ResultTableModel model = (ResultTableModel) tblTestResult.getModel();
+			String message = model.getMessage(row, col);
+			if (message != null) {
+				setEnabled(false);
+				dlgTestResult.setTitle("Test Report");
+				messageArea.setText(message);
+				dlgTestResult.setVisible(true);
+			}
 		}
 	}
 
@@ -454,10 +518,38 @@ public class SwingRunner extends JFrame {
 	}
 
 	/**
-	 * Execute method.
+	 * Execute test methods.
+	 *
+	 * @param descriptions
+	 *            of test to execute.
+	 */
+	private void executeTestDescription(final List<Description> descriptions) {
+		progressBar.setIndeterminate(true);
+
+		ResultTableModel model = (ResultTableModel) tblTestResult.getModel();
+		model.clear();
+
+		Runnable thread = new TestRunnable<Description>(descriptions) {
+
+			@Override
+			protected String getTestMethod(Description test) {
+				return test.getMethodName();
+			}
+
+			@Override
+			protected Class<?> getTestClass(Description test) {
+				return test.getTestClass();
+			}
+		};
+
+		new Thread(thread).start();
+	}
+
+	/**
+	 * Execute test suites.
 	 *
 	 * @param tests
-	 *            of test to execute.
+	 *            bean OSGi wrapper of test suite class to execute.
 	 */
 	private void executeTest(final List<TestBean> tests) {
 		progressBar.setIndeterminate(true);
@@ -465,46 +557,31 @@ public class SwingRunner extends JFrame {
 		ResultTableModel model = (ResultTableModel) tblTestResult.getModel();
 		model.clear();
 
-		Runnable thread = new Runnable() {
+		Runnable thread = new TestRunnable<TestBean>(tests) {
 			@Override
-			public void run() {
+			protected String getTestMethod(TestBean test) {
+				return null;
+			}
 
-				JUnitCore core = new JUnitCore();
-				core.addListener(new MyTestListener());
-
-				Iterator<TestBean> testIt = tests.iterator();
-				while (!stopped && testIt.hasNext()) {
-					TestBean bean = testIt.next();
-					ClassLoader ccl = Thread.currentThread().getContextClassLoader();
-					try {
-						Class<?> testClass = bean.getTestClass();
-
-						// force bundle classloader when run test
-						Thread.currentThread().setContextClassLoader(testClass.getClassLoader());
-
-						core.run(testClass);
-					} catch (ClassNotFoundException e) {
-						// skip test
-					} finally {
-						Thread.currentThread().setContextClassLoader(ccl);
+			@Override
+			protected Class<?> getTestClass(TestBean test) {
+				try {
+					return test.getTestClass();
+				} catch (ClassNotFoundException e) {
+					// skip test
+					if (logService != null) {
+						logService.log(LogService.LOG_ERROR, "Skip test " + test.getName(), e);
+					}
+				} catch (NoClassDefFoundError e) {
+					// skip test
+					if (logService != null) {
+						logService.log(LogService.LOG_ERROR, "Skip test " + test.getName(), e);
 					}
 				}
-
-				progressBar.setIndeterminate(false);
-				progressBar.setMaximum(100);
-				progressBar.setValue(100);
-
-				btnExecute.setText("Execute");
-				btnExecute.setEnabled(true);
-				btnStop.setText("Stop");
-				btnStop.setEnabled(false);
-				running = false;
-				stopped = false;
-
-				computeExecutedTest();
-				setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+				return null;
 			}
 		};
+
 		new Thread(thread).start();
 	}
 
@@ -515,7 +592,7 @@ public class SwingRunner extends JFrame {
 		ResultTableModel results = (ResultTableModel) tblTestResult.getModel();
 		String m = " \t ";
 		m += results.getTestCount() + " tests executed / ";
-		m += results.getSucess() + " success / ";
+		m += results.getSuccess() + " success / ";
 		m += results.getFailures() + " failures / ";
 		m += results.getErrors() + " errors ";
 		lblExecutedResults.setText(m);
@@ -526,11 +603,93 @@ public class SwingRunner extends JFrame {
 		registry.addTestRegistryListener(registryListener);
 	}
 
+	public void setLog(LogService logService) {
+		if (logService == this.logService) {
+			this.logService = null;
+		} else {
+			this.logService = logService;
+		}
+	}
+
+    /**
+     * Returns true if the mouse event specifies the left mouse button.
+     *
+     * @param anEvent  a MouseEvent object
+     * @return true if the left mouse button was active
+     */
+    public static boolean isLeftMouseButton(MouseEvent anEvent) {
+         return ((anEvent.getModifiers() & InputEvent.BUTTON1_MASK) != 0);
+    }
+
+    /**
+     * Returns true if the mouse event specifies the right mouse button.
+     *
+     * @param anEvent  a MouseEvent object
+     * @return true if the right mouse button was active
+     */
+    public static boolean isRightMouseButton(MouseEvent anEvent) {
+        return ((anEvent.getModifiers() & InputEvent.BUTTON3_MASK) == InputEvent.BUTTON3_MASK);
+    }
+
+	private abstract class TestRunnable<T> implements Runnable {
+		private List<T> tests;
+
+		public TestRunnable(List<T> tests) {
+			this.tests = tests;
+		}
+
+		@Override
+		public void run() {
+			JUnitCore core = new JUnitCore();
+			core.addListener(new MyTestListener());
+
+			Iterator<T> testIt = tests.iterator();
+			while (!stopped && testIt.hasNext()) {
+				T test = testIt.next();
+				ClassLoader ccl = Thread.currentThread().getContextClassLoader();
+				try {
+					Class<?> testClass = getTestClass(test);
+					String methodName = getTestMethod(test);
+					// force bundle classloader when run test
+					Thread.currentThread().setContextClassLoader(testClass.getClassLoader());
+
+					if (testClass != null) {
+						if (methodName == null) {
+							core.run(testClass);
+						} else {
+							core.run(Request.method(testClass, methodName));
+						}
+					}
+				} finally {
+					Thread.currentThread().setContextClassLoader(ccl);
+				}
+			}
+
+			progressBar.setIndeterminate(false);
+			progressBar.setMaximum(100);
+			progressBar.setValue(100);
+
+			btnExecute.setText("Execute");
+			btnExecute.setEnabled(true);
+			btnStop.setText("Stop");
+			btnStop.setEnabled(false);
+			running = false;
+			stopped = false;
+
+			computeExecutedTest();
+			setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+		}
+
+		protected abstract String getTestMethod(T test);
+
+		protected abstract Class<?> getTestClass(T test);
+	};
+
 	private class MyTestListener extends RunListener {
 		/**
 		 * Table model.
 		 */
-		ResultTableModel tblModel = (ResultTableModel) tblTestResult.getModel();
+		private ResultTableModel tblModel = (ResultTableModel) tblTestResult.getModel();
 
 		@Override
 		public void testIgnored(Description description) throws Exception {

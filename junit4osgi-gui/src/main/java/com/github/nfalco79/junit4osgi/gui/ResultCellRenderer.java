@@ -1,9 +1,6 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
+ * Copyright 2017 Nikolas Falco
+ * Licensed under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
@@ -23,6 +20,8 @@ import java.awt.Component;
 
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
+
+import com.github.nfalco79.junit4osgi.gui.ResultTableModel.TestResultValue;
 
 /**
  * Test result cell renderer.
@@ -53,22 +52,27 @@ public class ResultCellRenderer extends DefaultTableCellRenderer {
 	@Override
 	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
 			int row, int column) {
-		ResultCellRenderer c = (ResultCellRenderer) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+		ResultCellRenderer c = (ResultCellRenderer) super.getTableCellRendererComponent(table, value, isSelected,
+				hasFocus, row, column);
 
 		ResultTableModel results = (ResultTableModel) table.getModel();
-		String status = c.getText();
-		if (status.equals(ResultTableModel.SUCCESS)) {
+		switch (TestResultValue.valueOf(c.getText())) {
+		case SUCCESS:
 			c.setForeground(Color.GREEN);
 			c.setToolTipText(results.getToolTip(row, column));
-		} else if (status.equals(ResultTableModel.FAILURE)) {
-			c.setForeground(Color.BLUE);
+			break;
+		case FAILURE:
+			c.setForeground(Color.ORANGE);
 			c.setToolTipText(results.getToolTip(row, column));
-		} else if (status.equals(ResultTableModel.ERROR)) {
+			break;
+		case ERROR:
 			c.setForeground(Color.RED);
 			c.setToolTipText(results.getToolTip(row, column));
-		} else if (status.equals(ResultTableModel.SKIPPED)) {
+			break;
+		case SKIPPED:
 			c.setForeground(Color.GRAY);
 			c.setToolTipText(results.getToolTip(row, column));
+			break;
 		}
 
 		return c;

@@ -1,9 +1,6 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
+ * Copyright 2017 Nikolas Falco
+ * Licensed under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
@@ -33,25 +30,9 @@ import org.junit.runner.Description;
  */
 public class ResultTableModel extends AbstractTableModel {
 
-	/**
-	 * Success String.
-	 */
-	public static final String SUCCESS = "success";
-
-	/**
-	 * Failure String.
-	 */
-	public static final String FAILURE = "failure";
-
-	/**
-	 * Error String.
-	 */
-	public static final String ERROR = "error";
-
-	/**
-	 * Skipped String.
-	 */
-	public static final String SKIPPED = "skip";
+	public static enum TestResultValue {
+		SUCCESS, FAILURE, ERROR, SKIPPED
+	}
 
 	private static final long serialVersionUID = 1L;
 
@@ -139,7 +120,7 @@ public class ResultTableModel extends AbstractTableModel {
 	 *
 	 * @return the number of success
 	 */
-	public int getSucess() {
+	public int getSuccess() {
 		int count = 0;
 		for (TestRecord test : results) {
 			if (test.isSucess()) {
@@ -221,16 +202,16 @@ public class ResultTableModel extends AbstractTableModel {
 		if (columnIndex == 1) {
 			TestRecord tr = results.get(rowIndex);
 			if (tr.isSucess()) {
-				return SUCCESS;
+				return TestResultValue.SUCCESS;
 			}
 			if (tr instanceof FailureTestRecord) {
-				return FAILURE;
+				return TestResultValue.FAILURE;
 			}
 			if (tr instanceof ErrorTestRecord) {
-				return ERROR;
+				return TestResultValue.ERROR;
 			}
 			if (tr instanceof SkippedTestRecord) {
-				return SKIPPED;
+				return TestResultValue.SKIPPED;
 			}
 		}
 		return null;
@@ -287,6 +268,22 @@ public class ResultTableModel extends AbstractTableModel {
 			return message;
 		}
 		return "";
+	}
+
+	/**
+	 * Gets the message.
+	 *
+	 * @param row
+	 *            the row
+	 * @param column
+	 *            the column
+	 * @return the message for this cell
+	 */
+	public Description getTest(int index) {
+		if (index == -1 || index > results.size()) {
+			return null;
+		}
+		return results.get(index).getTest();
 	}
 
 	/**
