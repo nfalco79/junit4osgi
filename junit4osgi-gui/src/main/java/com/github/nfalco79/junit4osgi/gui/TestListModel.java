@@ -94,13 +94,12 @@ public class TestListModel extends AbstractListModel {
 				if (t.getTest().equals(test)) {
 					index = list.indexOf(t);
 					list.remove(t);
-					return;
 				}
 			}
 		}
 
 		if (index != -1) {
-			fireContentsChanged(this, index, index);
+			fireIntervalRemoved(this, index, index);
 		}
 	}
 
@@ -109,6 +108,7 @@ public class TestListModel extends AbstractListModel {
 	 */
 	public void clear() {
 		list.clear();
+		fireContentsChanged(this, 0, 0);
 	}
 
 	/**

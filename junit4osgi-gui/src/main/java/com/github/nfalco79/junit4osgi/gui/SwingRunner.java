@@ -297,11 +297,12 @@ public class SwingRunner extends JFrame {
 		tblTestResult.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mousePressed(MouseEvent evt) {
-				showPopupMenu(evt);
+//				showPopupMenu(evt);
 			}
 
 			@Override
 			public void mouseClicked(MouseEvent evt) {
+			    showPopupMenu(evt);
 				resultTableMouseClicked(evt);
 			}
 		});
@@ -471,7 +472,7 @@ public class SwingRunner extends JFrame {
 	}
 
 	private void showPopupMenu(MouseEvent evt) {
-		if (evt.isPopupTrigger()) {
+		if (evt.isPopupTrigger() || isRightMouseButton(evt)) {
 			if (tblTestResult.getSelectionModel().isSelectionEmpty()) {
 				tblTestResult.setComponentPopupMenu(null);
 			} else {
@@ -614,21 +615,23 @@ public class SwingRunner extends JFrame {
     /**
      * Returns true if the mouse event specifies the left mouse button.
      *
-     * @param anEvent  a MouseEvent object
+     * @param anEvent
+     *            a MouseEvent object
      * @return true if the left mouse button was active
      */
     public static boolean isLeftMouseButton(MouseEvent anEvent) {
-         return ((anEvent.getModifiers() & InputEvent.BUTTON1_MASK) != 0);
+        return ((anEvent.getModifiersEx() & InputEvent.BUTTON1_DOWN_MASK) != 0 || anEvent.getButton() == MouseEvent.BUTTON1);
     }
 
     /**
      * Returns true if the mouse event specifies the right mouse button.
      *
-     * @param anEvent  a MouseEvent object
+     * @param anEvent
+     *            a MouseEvent object
      * @return true if the right mouse button was active
      */
     public static boolean isRightMouseButton(MouseEvent anEvent) {
-        return ((anEvent.getModifiers() & InputEvent.BUTTON3_MASK) == InputEvent.BUTTON3_MASK);
+        return ((anEvent.getModifiersEx() & InputEvent.BUTTON3_DOWN_MASK) != 0 || anEvent.getButton() == MouseEvent.BUTTON3);
     }
 
 	private abstract class TestRunnable<T> implements Runnable {
@@ -683,7 +686,7 @@ public class SwingRunner extends JFrame {
 		protected abstract String getTestMethod(T test);
 
 		protected abstract Class<?> getTestClass(T test);
-	};
+	}
 
 	private class MyTestListener extends RunListener {
 		/**

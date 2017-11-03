@@ -22,6 +22,10 @@ public class SearchPattern {
 	public SearchPattern(final String pattern) {
 		if (pattern != null && !"".equals(pattern.trim())) {
 			patterns = pattern.split(" ");
+
+			for (int i = 0; i < patterns.length; i++) {
+			    patterns[i] = patterns[i].toLowerCase();
+			}
 		}
 	}
 
