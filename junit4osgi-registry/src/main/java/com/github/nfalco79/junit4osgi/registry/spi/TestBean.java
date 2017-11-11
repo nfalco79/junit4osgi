@@ -15,7 +15,6 @@
  */
 package com.github.nfalco79.junit4osgi.registry.spi;
 
-import java.io.Serializable;
 import java.net.URL;
 
 import org.osgi.framework.Bundle;
@@ -28,9 +27,7 @@ import org.osgi.framework.Bundle;
  *
  * @author nikolasfalco
  */
-public class TestBean implements Serializable {
-	private static final long serialVersionUID = 8098443707075835172L;
-
+public class TestBean {
 	private String className;
 	private transient Bundle bundle;
 
