@@ -20,10 +20,13 @@ import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 /**
  * Wrapper to render a TestBean on UI.
  */
-public class TestRecord {
+public class TestModel {
 	private TestBean test;
 
-	public TestRecord(final TestBean test) {
+	public TestModel(final TestBean test) {
+		if (test == null) {
+			throw new IllegalArgumentException("test bean is null");
+		}
 		this.test = test;
 	}
 
@@ -33,20 +36,17 @@ public class TestRecord {
 
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((test == null) ? 0 : test.hashCode());
-		return result;
+		return test.hashCode();
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		return test == obj;
+		return test.equals(obj);
 	}
 
 	@Override
 	public String toString() {
-		return test == null ? "No test" : test.getName();
+		return test.getName();
 	}
 
 }
