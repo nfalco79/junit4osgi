@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.nfalco79</groupId>
 	<artifactId>junit4osgi-parent</artifactId>
-	<version>1.2.2-SNAPSHOT</version>
+	<version>1.2.2</version>
 	<packaging>pom</packaging>
 	<name>JUnit4 for OSGi Parent</name>
 	<description>These bundles enable to run JUnit 4 into a OSGi running system.</description>
@@ -29,7 +29,7 @@
 		<url>https://github.com/nfalco79/junit4osgi</url>
 		<connection>scm:git:git@github.com:nfalco79/junit4osgi.git</connection>
 		<developerConnection>scm:git:git@github.com:nfalco79/junit4osgi.git</developerConnection>
-		<tag>HEAD</tag>
+		<tag>junit4osgi-parent-1.2.2</tag>
 	</scm>
 	<ciManagement>
 		<system>Travis CI</system>
