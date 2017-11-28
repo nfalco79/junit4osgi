@@ -15,7 +15,7 @@
  */
 package com.github.nfalco79.junit4osgi.runner.internal;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.io.File;
@@ -38,6 +38,7 @@ import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent.TestRegistryEventType;
+import com.github.nfalco79.junit4osgi.runner.internal.jmx.JMXServer;
 
 public class JUnitRunnerListenerTest {
 
@@ -59,7 +60,7 @@ public class JUnitRunnerListenerTest {
 			}
 		}).when(registry).addTestRegistryListener(any(TestRegistryChangeListener.class));
 
-		JUnitRunner runner = spy(new JUnitRunner());
+		JUnitRunner runner = spy(new JUnitRunnerNoJMXServer());
 		when(runner.getRepeatTime()).thenReturn(1l);
 		when(runner.getInfiniteRunnable(any(File.class), any(Queue.class))).thenReturn(mock(Runnable.class));
 
@@ -102,7 +103,7 @@ public class JUnitRunnerListenerTest {
 			}
 		}).when(registry).addTestRegistryListener(any(TestRegistryChangeListener.class));
 
-		JUnitRunner runner = spy(new JUnitRunner());
+		JUnitRunner runner = spy(new JUnitRunnerNoJMXServer());
 		when(runner.getRepeatTime()).thenReturn(1l);
 		when(runner.getInfiniteRunnable(any(File.class), any(Queue.class))).thenReturn(mock(Runnable.class));
 
@@ -144,7 +145,7 @@ public class JUnitRunnerListenerTest {
 			}
 		}).when(registry).addTestRegistryListener(any(TestRegistryChangeListener.class));
 
-		JUnitRunner runner = spy(new JUnitRunner());
+		JUnitRunner runner = spy(new JUnitRunnerNoJMXServer());
 		when(runner.getRepeatTime()).thenReturn(1l);
 		when(runner.getInfiniteRunnable(any(File.class), any(Queue.class))).thenReturn(mock(Runnable.class));
 
@@ -165,5 +166,12 @@ public class JUnitRunnerListenerTest {
 		when(test2.getId()).thenReturn("id2");
 
 		return new TestBean[] { test1, test2 };
+	}
+
+	private class JUnitRunnerNoJMXServer extends JUnitRunner {
+		@Override
+		protected JMXServer newJMXServer() {
+			return new JMXServerMock();
+		}
 	}
 }

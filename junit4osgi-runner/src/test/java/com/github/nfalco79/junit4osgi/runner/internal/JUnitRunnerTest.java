@@ -15,9 +15,9 @@
  */
 package com.github.nfalco79.junit4osgi.runner.internal;
 
-import static java.util.Arrays.asList;
+import static java.util.Arrays.*;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.io.File;
@@ -48,6 +48,7 @@ import org.osgi.service.log.LogService;
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
+import com.github.nfalco79.junit4osgi.runner.internal.jmx.JMXServer;
 import com.github.nfalco79.junit4osgi.runner.spi.TestRunnerNotifier;
 
 public class JUnitRunnerTest {
@@ -66,7 +67,7 @@ public class JUnitRunnerTest {
 
 		final CountDownLatch latch = new CountDownLatch(2);
 
-		JUnitRunner runner = spy(new JUnitRunner());
+		JUnitRunner runner = spy(new JUnitRunnerNoJMXServer());
 		when(runner.getRepeatTime()).thenReturn(1l);
 		when(runner.getInfiniteRunnable(any(File.class), any(Queue.class))).thenAnswer(new Answer<Runnable>() {
 			@Override
@@ -111,7 +112,7 @@ public class JUnitRunnerTest {
 
 		final AtomicInteger counter = new AtomicInteger(0);
 
-		JUnitRunner runner = spy(new JUnitRunner());
+		JUnitRunner runner = spy(new JUnitRunnerNoJMXServer());
 		when(runner.getRepeatTime()).thenReturn(1l);
 		when(runner.getSingleRunnable(any(File.class), any(Queue.class), any(TestRunnerNotifier.class))).thenAnswer(new Answer<Runnable>() {
 			@Override
@@ -165,7 +166,7 @@ public class JUnitRunnerTest {
 		TestRegistry registry = mock(TestRegistry.class);
 		when(registry.getTests(any(String[].class))).thenReturn(Sets.newSet(testToRun));
 
-		JUnitRunner runner = spy(new JUnitRunner());
+		JUnitRunner runner = spy(new JUnitRunnerNoJMXServer());
 		runner.setLog(null);
 		runner.setRegistry(registry);
 		runner.start();
@@ -290,7 +291,14 @@ public class JUnitRunnerTest {
 		return tests;
 	}
 
-	private class StartAndStopJUnitRunner extends JUnitRunner {
+	private class JUnitRunnerNoJMXServer extends JUnitRunner {
+		@Override
+		protected JMXServer newJMXServer() {
+			return new JMXServerMock();
+		}
+	}
+
+	private class StartAndStopJUnitRunner extends JUnitRunnerNoJMXServer {
 		private final CountDownLatch latch = new CountDownLatch(1);
 
 		@Override

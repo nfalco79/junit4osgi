@@ -121,6 +121,7 @@ public class JUnitRunner implements TestRunner {
 
 		if (properties == null || defaultRegistry.equals(properties.get("discovery"))) {
 			this.registry = registry;
+			jmxServer.register(registry);
 		}
 	}
 
@@ -134,6 +135,7 @@ public class JUnitRunner implements TestRunner {
 	public void unbindRegistry(final TestRegistry registry) {
 		if (this.registry == registry) {
 			this.registry = null;
+			jmxServer.unregister(registry);
 		}
 	}
 
@@ -367,12 +369,15 @@ public class JUnitRunner implements TestRunner {
 
 	public void activate() {
 		jmxServer.start();
-		jmxServer.register(registry);
 		jmxServer.register(this);
 
 		if (Boolean.getBoolean(RUNNER_AUTOSTART)) {
 			start();
 		}
+	}
+
+	protected JMXServer getJMXServer() {
+		return jmxServer;
 	}
 
 	public void deactivate() {

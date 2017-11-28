@@ -24,13 +24,17 @@ import com.j256.simplejmx.server.JmxServer;
 
 public class JMXServer {
 
-	private JmxServer jmxServer;
-	private boolean jmxSupportEnabled;
+	private Logger logger;
+
+	protected boolean jmxSupportEnabled;
+	protected JmxServer jmxServer;
 
 	public JMXServer() {
 		try {
 			Class.forName("com.j256.simplejmx.server.JmxServer");
 			jmxSupportEnabled = true;
+
+			jmxServer = new JmxServer(true);
 		} catch (ClassNotFoundException e) {
 			getLog().log(Level.INFO, "simplejmx is not installed, JUnit registry and runner will not be present in the MBeanService");
 		}
@@ -38,8 +42,8 @@ public class JMXServer {
 
 	public void start() {
 		if (jmxSupportEnabled) {
-			jmxServer = new JmxServer(true);
 			try {
+				getLog().log(Level.FINE, "Starting JMX Server");
 				jmxServer.start();
 			} catch (JMException e) {
 				getLog().log(Level.WARNING, "Cannot start the server", e);
@@ -49,6 +53,7 @@ public class JMXServer {
 
 	public void stop() {
 		if (jmxSupportEnabled && jmxServer != null) {
+			getLog().log(Level.FINE, "Stopping JMX Server");
 			jmxServer.stop();
 		}
 	}
@@ -57,6 +62,7 @@ public class JMXServer {
 		if (jmxSupportEnabled && jmxServer != null && obj != null) {
 			try {
 				jmxServer.register(obj);
+				getLog().log(Level.FINE, "Register JMX object " + obj.getClass().getName());
 			} catch (JMException e) {
 				getLog().log(Level.WARNING, "Cannot register the " + obj.toString() + " as mbean", e);
 			}
@@ -66,10 +72,14 @@ public class JMXServer {
 	public void unregister(Object obj) {
 		if (jmxSupportEnabled && jmxServer != null && obj != null) {
 			jmxServer.unregister(obj);
+			getLog().log(Level.FINE, "Unregister JMX object " + obj.getClass().getName());
 		}
 	}
 
 	private Logger getLog() {
-		return Logger.getLogger(JMXServer.class.getName());
+		if (logger == null) {
+			logger = Logger.getLogger(JMXServer.class.getName());
+		}
+		return logger;
 	}
 }
