@@ -91,6 +91,7 @@ public final class ManifestRegistry extends AbstractTestRegistry {
 			final String value = mf.getMainAttributes().getValue(TEST_ENTRY);
 			if (value != null && !"".equals(value)) {
 				BundleTestClassVisitor visitor = new BundleTestClassVisitor(bundle);
+				visitor.setLog(getLog());
 
 				StringTokenizer st = new StringTokenizer(value, ",");
 				while (st.hasMoreTokens()) {

@@ -93,7 +93,7 @@ public abstract class AbstractTestRegistry implements TestRegistry {
 		final String className = bean.getName();
 
 		boolean isTest = false;
-		if (bundle.getState() == Bundle.ACTIVE) {
+		if (/*bundle.getState() == Bundle.RESOLVED || */bundle.getState() == Bundle.ACTIVE) {
 
 			final String symbolicName = bundle.getSymbolicName();
 

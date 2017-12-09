@@ -28,12 +28,14 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.wiring.BundleRevision;
 import org.osgi.framework.wiring.BundleWire;
 import org.osgi.framework.wiring.BundleWiring;
+import org.osgi.service.log.LogService;
 
 public class BundleTestClassVisitor extends ClassVisitor {
 
 	private Set<String> cache;
 	private boolean testClass;
 	private Bundle bundle;
+	private LogService log;
 
 	public BundleTestClassVisitor(Bundle bundle) {
 		super(Opcodes.ASM6);
@@ -61,13 +63,16 @@ public class BundleTestClassVisitor extends ClassVisitor {
 	public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
 		if (cache.contains(superName)) {
 			if (isAbstract(access)) {
+				// add the hierarchy, but not mark it as test class because is abstract
 				cache.add(name);
 			} else {
 				testClass = !isInterface(access);
 			}
 		} else if (superName != null && !superName.startsWith("java/") && !superName.startsWith("junit/")) {
+			// look up the superclass in the same bundle of test class
 			URL entry = bundle.getEntry("/" + superName + ".class");
 			if (entry == null) {
+				// look up the superclass in a wired bundle
 				entry = findInWiredBundle(superName);
 			}
 			if (entry != null) {
@@ -90,15 +95,21 @@ public class BundleTestClassVisitor extends ClassVisitor {
 		String packageName = superClassName.substring(0, superClassName.lastIndexOf('.'));
 
 		BundleWiring wiring = bundle.adapt(BundleWiring.class);
-		Iterator<BundleWire> requiredWires = wiring.getRequiredWires(BundleRevision.PACKAGE_NAMESPACE).iterator();
+		if (wiring == null && log != null) {
+			log.log(LogService.LOG_INFO, "No wiring for the bundle " + bundle.getSymbolicName() + "["
+					+ bundle.getBundleId() + "] state: " + bundle.getState() + " to look up " + superClassName);
+		}
+		if (wiring != null) {
+			Iterator<BundleWire> requiredWires = wiring.getRequiredWires(BundleRevision.PACKAGE_NAMESPACE).iterator();
 
-		while (!testClass && requiredWires.hasNext()) {
-			final BundleWire wire = requiredWires.next();
+			while (!testClass && requiredWires.hasNext()) {
+				final BundleWire wire = requiredWires.next();
 
-			final String filter = wire.getRequirement().getDirectives().get("filter");
-			if (filter != null && filter.contains(packageName)) {
-				final Bundle bundle = wire.getProviderWiring().getBundle();
-				return bundle.getEntry("/" + superName + ".class");
+				final String filter = wire.getRequirement().getDirectives().get("filter");
+				if (filter != null && filter.contains(packageName)) {
+					final Bundle bundle = wire.getProviderWiring().getBundle();
+					return bundle.getEntry("/" + superName + ".class");
+				}
 			}
 		}
 		return null;
@@ -110,6 +121,10 @@ public class BundleTestClassVisitor extends ClassVisitor {
 
 	public void reset() {
 		testClass = false;
+	}
+
+	public void setLog(LogService log) {
+		this.log = log;
 	}
 
 }

@@ -46,12 +46,12 @@ public class JUnit4BundleListener implements BundleListener {
 	public void bundleChanged(BundleEvent event) {
 		Bundle bundle = event.getBundle();
 		switch (event.getType()) {
-			case BundleEvent.INSTALLED:
+			case BundleEvent.RESOLVED:
 			case BundleEvent.STARTED:
 				registerTestCase(bundle);
 				break;
 			case BundleEvent.STOPPED:
-			case BundleEvent.UNINSTALLED:
+			case BundleEvent.UNRESOLVED:
 				unregisterTestCase(bundle);
 				break;
 			default:

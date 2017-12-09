@@ -69,6 +69,7 @@ public final class AutoDiscoveryRegistry extends AbstractTestRegistry {
 		tests.put(bundle, bundleTest);
 
 		BundleTestClassVisitor visitor = new BundleTestClassVisitor(bundle);
+		visitor.setLog(getLog());
 
 		Enumeration<URL> entries = bundle.findEntries("/", "*.class", true);
 		while (entries != null && entries.hasMoreElements()) {
