@@ -76,7 +76,7 @@ public class TestBean {
 		if (obj == null) {
 			return false;
 		}
-		if (getClass() != obj.getClass()) {
+		if (!(obj instanceof TestBean)) {
 			return false;
 		}
 		TestBean other = (TestBean) obj;

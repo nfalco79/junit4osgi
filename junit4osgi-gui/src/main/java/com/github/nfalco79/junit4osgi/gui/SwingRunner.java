@@ -492,8 +492,8 @@ public class SwingRunner extends JFrame {
 			evt.consume();
 
 			Point p = evt.getPoint();
-			int row = tblTestResult.rowAtPoint(p);
-			int col = tblTestResult.columnAtPoint(p);
+			int row = tblTestResult.convertRowIndexToModel(tblTestResult.rowAtPoint(p));
+			int col = tblTestResult.convertColumnIndexToModel(tblTestResult.columnAtPoint(p));
 			ResultTableModel model = (ResultTableModel) tblTestResult.getModel();
 			String message = model.getMessage(row, col);
 			if (message != null) {
@@ -662,12 +662,10 @@ public class SwingRunner extends JFrame {
 					// force bundle classloader when run test
 					Thread.currentThread().setContextClassLoader(testClass.getClassLoader());
 
-					if (testClass != null) {
-						if (methodName == null) {
-							core.run(testClass);
-						} else {
-							core.run(Request.method(testClass, methodName));
-						}
+					if (methodName == null) {
+						core.run(testClass);
+					} else {
+						core.run(Request.method(testClass, methodName));
 					}
 				} finally {
 					Thread.currentThread().setContextClassLoader(ccl);

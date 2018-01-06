@@ -41,7 +41,11 @@ public class TestModel {
 
 	@Override
 	public boolean equals(Object obj) {
-		return test.equals(obj);
+		if (obj instanceof TestModel) {
+			TestModel tm = (TestModel) obj;
+		    return test.equals(tm.test);
+		}
+		return false;
 	}
 
 	@Override

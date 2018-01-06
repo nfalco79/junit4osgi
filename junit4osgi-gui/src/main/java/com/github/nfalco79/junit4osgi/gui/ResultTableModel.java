@@ -490,5 +490,9 @@ public class ResultTableModel extends AbstractTableModel {
 			return false;
 		}
 
+		@Override
+		public String toString() {
+		    return test.toString();
+		}
 	}
 }
