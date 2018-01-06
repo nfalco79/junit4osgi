@@ -76,8 +76,11 @@ public class BundleTestClassVisitor extends ClassVisitor {
 				entry = findInWiredBundle(superName);
 			}
 			if (entry != null) {
+				// analyse the superclass and add it to cache
 				ASMUtils.analyseByteCode(entry, this);
-				testClass = testClass || cache.contains(superName);
+				if (isConcreteClass(access)) {
+					testClass = testClass || cache.contains(superName);
+				}
 			}
 		}
 	}
@@ -88,6 +91,10 @@ public class BundleTestClassVisitor extends ClassVisitor {
 
 	private boolean isAbstract(int access) {
 		return (access & Opcodes.ACC_ABSTRACT) == Opcodes.ACC_ABSTRACT;
+	}
+
+	private boolean isConcreteClass(int access) {
+		return !isInterface(access) && !isAbstract(access);
 	}
 
 	private URL findInWiredBundle(final String superName) {
