@@ -287,6 +287,7 @@ public class JUnitRunner implements TestRunner {
 	private void runTest(JUnitCore core, Class<?> testClass) {
 		ClassLoader ccl = Thread.currentThread().getContextClassLoader();
 		try {
+			// use the bundle classloader
 			Thread.currentThread().setContextClassLoader(testClass.getClassLoader());
 			core.run(testClass);
 		} finally {

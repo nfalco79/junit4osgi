@@ -19,10 +19,30 @@ import org.junit.runner.notification.RunListener;
 
 public interface TestRunnerNotifier {
 
+	/**
+	 * This method is invoked before the runner start the execution of the
+	 * tests.
+	 * <p>
+	 * In case of infinite run this method is invoked each time a the test
+	 * runner job is scheduled.
+	 */
 	void start();
 
+	/**
+	 * This method is invoked after the runner end the execution of the tests,
+	 * also in case of exception.
+	 * <p>
+	 * In case of infinite run this method is invoked each time the scheduled
+	 * test runner job ends.
+	 */
 	void stop();
 
+	/**
+	 * Gets the RunListener implementation used for each single test execution
+	 * to be notified of its event.
+	 *
+	 * @return the implementation of {@link RunListener}
+	 */
 	RunListener getRunListener();
 
 }

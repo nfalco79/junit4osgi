@@ -192,7 +192,7 @@ public abstract class AbstractTestRegistry implements TestRegistry {
 			for (Set<TestBean> bundleTests : tests.values()) {
 				for (TestBean test : bundleTests) {
 					for (String testId : testIds) {
-						if (testId.equals(test.getId())) {
+						if (testId != null && testId.equals(test.getId())) {
 							testBucket.add(test);
 							break;
 						}
