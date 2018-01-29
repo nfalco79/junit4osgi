@@ -17,6 +17,7 @@ package com.github.nfalco79.junit4osgi.runner.internal;
 
 import java.io.File;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -95,8 +96,21 @@ public class JUnitRunner implements TestRunner {
 		defaultReportsDirectory = new File(System.getProperty(REPORT_PATH, "surefire-reports"));
 		reRunCount = Integer.getInteger(RERUN_COUNT, 5);
 		stop = true;
-		setIncludes(new LinkedHashSet<String>());
-		setExcludes(new LinkedHashSet<String>());
+
+		setIncludes(getPatterns(PATH_INCLUDES));
+		setExcludes(getPatterns(PATH_EXCLUDE));
+	}
+
+	private Set<String> getPatterns(final String property) {
+		Set<String> patterns = new LinkedHashSet<String>();
+		String propertyValue = System.getProperty(property, "");
+		if (!"".equals(propertyValue)) {
+			String[] pattern = propertyValue.split(",| ");
+			if (pattern.length > 0) {
+				patterns.addAll(Arrays.asList(pattern));
+			}
+		}
+		return patterns;
 	}
 
 	/* (non-Javadoc)
