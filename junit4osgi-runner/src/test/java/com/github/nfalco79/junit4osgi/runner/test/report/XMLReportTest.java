@@ -15,7 +15,7 @@
  */
 package com.github.nfalco79.junit4osgi.runner.test.report;
 
-import static com.github.nfalco79.junit4osgi.runner.internal.SurefireConstants.DEFAULT_NAME;
+import static com.github.nfalco79.junit4osgi.runner.internal.SurefireConstants.*;
 import static org.junit.Assert.*;
 
 import java.io.File;
@@ -32,6 +32,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.JUnitCore;
 
+import com.github.nfalco79.junit4osgi.runner.internal.Report;
 import com.github.nfalco79.junit4osgi.runner.internal.ReportListener;
 import com.github.nfalco79.junit4osgi.runner.internal.XMLReport;
 
@@ -42,13 +43,13 @@ public class XMLReportTest {
 
 	@Test
 	public void simple_junit4() throws Exception {
-		XMLReport report = runTest(SimpleTestCase.class);
+		Report report = runTest(SimpleTestCase.class);
 
 		String testName = SimpleTestCase.class.getName();
 
 		// write test result
 		File testFolder = folder.newFolder();
-		report.generateReport(testFolder);
+		new XMLReport(testFolder).generateReport(report);
 
 		// check its name
 		File xml = getReport(testFolder);
@@ -68,13 +69,13 @@ public class XMLReportTest {
 
 	@Test
 	public void ignored() throws Exception {
-		XMLReport report = runTest(ErrorTest.class);
+		Report report = runTest(ErrorTest.class);
 
 		String testName = ErrorTest.class.getName();
 
 		// write test result
 		File testFolder = folder.newFolder();
-		report.generateReport(testFolder);
+		new XMLReport(testFolder).generateReport(report);
 
 		// checks the content
 		File xml = getReport(testFolder);
@@ -91,13 +92,13 @@ public class XMLReportTest {
 
 	@Test
 	public void failure() throws Exception {
-		XMLReport report = runTest(ErrorTest.class);
+		Report report = runTest(ErrorTest.class);
 
 		String testName = ErrorTest.class.getName();
 
 		// write test result
 		File testFolder = folder.newFolder();
-		report.generateReport(testFolder);
+		new XMLReport(testFolder).generateReport(report);
 
 		// checks the content
 		File xml = getReport(testFolder);
@@ -115,13 +116,13 @@ public class XMLReportTest {
 
 	@Test
 	public void error() throws Exception {
-		XMLReport report = runTest(ErrorTest.class);
+		Report report = runTest(ErrorTest.class);
 
 		String testName = ErrorTest.class.getName();
 
 		// write test result
 		File testFolder = folder.newFolder();
-		report.generateReport(testFolder);
+		new XMLReport(testFolder).generateReport(report);
 
 		// checks the content
 		File xml = getReport(testFolder);
@@ -140,11 +141,11 @@ public class XMLReportTest {
 		String propertyValue = "my value!";
 		System.setProperty(propertyKey, propertyValue);
 		try {
-			XMLReport report = runTest(PropertyTest.class);
+			Report report = runTest(PropertyTest.class);
 
 			// write test result
 			File testFolder = folder.newFolder();
-			report.generateReport(testFolder);
+			new XMLReport(testFolder).generateReport(report);
 
 			// checks the content
 			File xml = getReport(testFolder);
@@ -158,13 +159,13 @@ public class XMLReportTest {
 
 	@Test
 	public void test_suite() throws Exception {
-		XMLReport report = runTest(SimpleSuiteTest.class);
+		Report report = runTest(SimpleSuiteTest.class);
 
 		String testName = SimpleSuiteTest.class.getName();
 
 		// write test result
 		File testFolder = folder.newFolder();
-		report.generateReport(testFolder);
+		new XMLReport(testFolder).generateReport(report);
 
 		// checks the content
 		File xml = getReport(testFolder);
@@ -195,12 +196,12 @@ public class XMLReportTest {
 		helper.verifyTestCase(testName, "test_time", 0.5d);
 	}
 
-	private XMLReport runTest(Class<?>... testClass) {
+	private Report runTest(Class<?>... testClass) {
 		JUnitCore core = new JUnitCore();
-		XMLReport report = new XMLReport();
-		core.addListener(new ReportListener(report));
+		ReportListener listener = new ReportListener();
+		core.addListener(listener);
 		core.run(testClass);
-		return report;
+		return listener.getReport();
 	}
 
 	private File[] getReports(File testFolder) {
