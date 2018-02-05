@@ -25,6 +25,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.junit.Ignore;
@@ -231,20 +232,21 @@ public class ReportListener extends RunListener {
 	}
 
 	public Report getReport() {
-		Set<Description> tests = executions.keySet();
+		Set<Entry<Description,Deque<Report>>> tests = executions.entrySet();
 
 		Map<Description, Report> executionMap = new HashMap<Description, Report>(tests.size());
 
-		for (Description test : tests) {
-			Deque<Report> runs = new ArrayDeque<Report>(executions.get(test));
+		for (Entry<Description, Deque<Report>> test : tests) {
+			Deque<Report> runs = new ArrayDeque<Report>(test.getValue());
 			Report report = null;
 			// check if last run was success
 			if (runs.peekLast().isSuccess()) {
 				report = runs.pollLast();
 			} else {
+				// otherwise take the first failure
 				report = runs.poll();
 			}
-			executionMap.put(test, report);
+			executionMap.put(test.getKey(), report);
 			while (!runs.isEmpty()) {
 				report.addRun(runs.poll());
 			}

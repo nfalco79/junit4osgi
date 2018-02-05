@@ -52,7 +52,6 @@ import org.osgi.service.log.LogService;
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
-import com.github.nfalco79.junit4osgi.runner.internal.jmx.JMXServer;
 import com.github.nfalco79.junit4osgi.runner.spi.TestRunnerNotifier;
 
 public class JUnitRunnerTest {
@@ -316,40 +315,6 @@ public class JUnitRunnerTest {
 		tests.add(test1);
 		tests.add(test2);
 		return tests;
-	}
-
-	private class JUnitRunnerNoJMXServer extends JUnitRunner {
-		@Override
-		protected JMXServer newJMXServer() {
-			return new JMXServerMock();
-		}
-	}
-
-	private class StartAndStopJUnitRunner extends JUnitRunnerNoJMXServer {
-		private final CountDownLatch latch = new CountDownLatch(1);
-
-		@Override
-		protected Runnable getSingleRunnable(File reportsDirectory, java.util.Queue<TestBean> tests, TestRunnerNotifier notifier) {
-			final Runnable realRunnable = super.getSingleRunnable(reportsDirectory, tests, notifier);
-			return new Runnable() {
-				@Override
-				public void run() {
-					realRunnable.run();
-					// needed to know when test has ran and stop the executor
-					latch.countDown();
-				}
-			};
-		}
-
-		@Override
-		public void stop() {
-			try {
-				latch.await();
-			} catch (InterruptedException e) {
-				fail(e.getMessage());
-			}
-			super.stop();
-		}
 	}
 
 }
