@@ -24,6 +24,7 @@ import org.example.MainClassTest;
 import org.example.PackageRetrieverUtils;
 import org.example.SimpleTestCase;
 import org.example.TooManyConstructors;
+import org.example.suite.MyTestSuite;
 import org.junit.Test;
 
 
@@ -62,6 +63,11 @@ public class TestRegistryUtilsTest {
 	@Test
 	public void no_constructor_not_available() throws Exception {
 		assertFalse("this class has not public visibility and must be skipped", TestRegistryUtils.isValid(PackageRetrieverUtils.getPackageTestClass()));
+	}
+
+	@Test
+	public void consider_testsuite() throws Exception {
+		assertFalse("this class has not public visibility and must be skipped", TestRegistryUtils.isValidTestClass(MyTestSuite.class));
 	}
 
 }

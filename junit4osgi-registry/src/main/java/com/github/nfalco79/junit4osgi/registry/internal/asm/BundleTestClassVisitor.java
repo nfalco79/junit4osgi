@@ -44,6 +44,8 @@ public class BundleTestClassVisitor extends ClassVisitor {
 		// cache is for bundle, if bundle is stopped and started, byte code could be changed
 		cache = new HashSet<String>();
 		cache.add("junit/framework/TestCase");
+		cache.add("junit/framework/TestSuite");
+		cache.add("junit/framework/Test");
 	}
 
 	@Override
