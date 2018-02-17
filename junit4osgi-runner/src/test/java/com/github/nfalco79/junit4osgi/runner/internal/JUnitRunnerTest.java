@@ -15,9 +15,9 @@
  */
 package com.github.nfalco79.junit4osgi.runner.internal;
 
-import static java.util.Arrays.*;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.io.File;
@@ -162,6 +162,8 @@ public class JUnitRunnerTest {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
 	public void run_a_flaky_tests() throws Exception {
+		FlakyJUnit4Test.reset();
+
 		final TestBean testToRun = mock(TestBean.class);
 		when(testToRun.getId()).thenReturn("id1");
 		when(testToRun.getTestClass()).thenReturn((Class) FlakyJUnit4Test.class);

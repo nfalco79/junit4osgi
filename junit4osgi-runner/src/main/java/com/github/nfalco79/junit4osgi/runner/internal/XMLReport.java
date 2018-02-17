@@ -17,11 +17,8 @@ package com.github.nfalco79.junit4osgi.runner.internal;
 
 import static com.github.nfalco79.junit4osgi.runner.internal.SurefireConstants.*;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.text.MessageFormat;
@@ -32,10 +29,12 @@ import java.util.Properties;
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringUtils;
+import org.codehaus.plexus.util.WriterFactory;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
-import org.codehaus.plexus.util.xml.Xpp3DomWriter;
 import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
+
+import com.github.nfalco79.junit4osgi.runner.internal.xml.util.Xpp3DomWriter;
 
 /**
  * This class generates test result as XML files compatible with Surefire.
@@ -133,10 +132,8 @@ public class XMLReport {
 	/**
 	 * Generates the XML reports.
 	 *
-	 * @param map2
-	 *
-	 * @param reportsDirectory
-	 *            the directory in which reports are created.
+	 * @param report
+	 *            generated as result of a {@link ReportListener}
 	 * @throws IOException
 	 *             if reportsDirectory does not exists or could not be create
 	 *             the folder structure
@@ -158,20 +155,12 @@ public class XMLReport {
 
 		Writer writer = null;
 		try {
-			OutputStreamWriter osw = null;
 			try {
-				osw = new OutputStreamWriter(new FileOutputStream(reportFile), "UTF-8"); // NOSONAR
-																							// close
-																							// by
-																							// writer
-			} catch (UnsupportedEncodingException e) { // NOSONAR fallback
-				osw = new OutputStreamWriter(new FileOutputStream(reportFile)); // NOSONAR
-																				// close
-																				// by
-																				// writer
+				writer = WriterFactory.newWriter(reportFile, WriterFactory.UTF_8);
+			} catch (UnsupportedEncodingException e) {
+				writer = WriterFactory.newPlatformWriter(reportFile);
 			}
-			writer = new BufferedWriter(osw);
-			writer.write(MessageFormat.format(XML_HEADER, osw.getEncoding()) + NL);
+			writer.write(MessageFormat.format(XML_HEADER, WriterFactory.UTF_8) + NL);
 
 			Xpp3DomWriter.write(writer, dom);
 			writer.flush();
@@ -180,6 +169,15 @@ public class XMLReport {
 		}
 	}
 
+	/**
+	 * Creates the whole XML tree for the given report.
+	 *
+	 * @param dom
+	 *            the DOM root element
+	 * @param report
+	 *            the test report
+	 * @return the XML element describing the given test.
+	 */
 	private Xpp3Dom createDOM(Xpp3Dom dom, Report report) {
 		Description description = report.getDescription();
 		if (description.getTestClass() == null) {
@@ -227,7 +225,6 @@ public class XMLReport {
 	 *            the DOM parent element
 	 * @param report
 	 *            the test report
-	 * @return
 	 * @return the XML element describing the given test.
 	 */
 	private Xpp3Dom createTestIgnoreElement(Xpp3Dom parent, Report report) {
@@ -297,7 +294,7 @@ public class XMLReport {
 	 *            the DOM parent element
 	 * @param report
 	 *            the test report
-	 * @return
+	 * @return the XML element describing the given test.
 	 */
 	private Xpp3Dom createTestErrorElement(Xpp3Dom parent, Report report) {
 		final Xpp3Dom element = createTestElement(parent, report);
@@ -385,11 +382,10 @@ public class XMLReport {
 	}
 
 	/**
-	 * Adds system properties to the XML report. This method also adds installed
-	 * bundles.
+	 * Adds system properties to the XML report.
 	 *
-	 * @param testSuite
-	 *            the XML element.
+	 * @param parent
+	 *            element under that adds properties element
 	 */
 	private void addProperties(Xpp3Dom parent) {
 		Xpp3Dom properties = createElement(parent, PROPERTIES_ELEMENT);
@@ -417,12 +413,12 @@ public class XMLReport {
 	/**
 	 * Adds messages written during the test execution in the XML tree.
 	 *
+	 * @param parent
+	 *            the parent element
 	 * @param stdOut
 	 *            the messages
 	 * @param name
 	 *            the name of the stream (out, error, log)
-	 * @param testCase
-	 *            the XML tree
 	 */
 	protected void addOutputStreamElement(Xpp3Dom parent, String stdOut, String name) {
 		if (stdOut != null && stdOut.trim().length() > 0) {

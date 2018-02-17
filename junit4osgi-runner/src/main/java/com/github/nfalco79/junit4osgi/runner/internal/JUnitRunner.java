@@ -258,7 +258,7 @@ public class JUnitRunner implements TestRunner {
 	private void runTests(final Queue<TestBean> tests, final File reportsDirectory, TestRunnerNotifier notifier) {
 		TestBean testBean;
 		try {
-			RunListener customListener = notifier.getRunListener();
+			RunListener customListener = null;
 			ReportListener reportListener = null;
 			JUnitCore core = new JUnitCore();
 
@@ -274,6 +274,7 @@ public class JUnitRunner implements TestRunner {
 					reportListener = new ReportListener();
 					core.addListener(reportListener);
 
+					customListener = notifier.getRunListener();
 					if (customListener != null) {
 						core.addListener(customListener);
 					}
@@ -283,9 +284,6 @@ public class JUnitRunner implements TestRunner {
 					Result result = core.run(request);
 
 					if (isRerunFailingTests() && !result.wasSuccessful()) {
-						// remove the report listener in case of rerun, will be
-						// used a custom listener to avoid reset statistics
-						core.removeListener(reportListener);
 						rerunTests(core, reportListener);
 					}
 
@@ -311,6 +309,10 @@ public class JUnitRunner implements TestRunner {
 	}
 
 	protected void rerunTests(final JUnitCore core, final ReportListener listener) {
+		// remove the report listener in case of rerun, will be
+		// used a custom listener to avoid reset statistics
+		core.removeListener(listener);
+
 		RerunListenerWrapper reportListener = new RerunListenerWrapper(listener);
 		try {
 			core.addListener(reportListener);

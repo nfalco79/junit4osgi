@@ -52,10 +52,10 @@ public class SurefireHelper {
 		assertEquals("Unexpected tests value", tests, getLong(suite, SUITE_TESTS_ATTRIBUTE));
 	}
 
-	public void verifySuite(String className, long tests, long failures, long errors, long ignored, double seconds) {
+	public void verifySuite(String className, long tests, long failures, long errors, long ignored, double minElapsedSeconds) {
 		verifySuite(className, tests, failures, errors, ignored);
 		Xpp3Dom suite = xml;
-		assertThat("Unexpected " + TEST_TIME_ATTRIBUTE + " value", getDouble(suite, TEST_TIME_ATTRIBUTE), greaterThanOrEqualTo(seconds));
+		assertThat("Unexpected " + TEST_TIME_ATTRIBUTE + " value", getDouble(suite, TEST_TIME_ATTRIBUTE), greaterThanOrEqualTo(minElapsedSeconds));
 	}
 
 	public boolean hasTestCase() {
@@ -67,12 +67,12 @@ public class SurefireHelper {
 		return xml.getChildren(TEST_ELEMENT).length;
 	}
 
-	public Xpp3Dom verifyTestCase(String className, String name, double seconds) {
+	public Xpp3Dom verifyTestCase(String className, String name, double minElapsedSeconds) {
 		Xpp3Dom testcase = getTestCase(name);
 		assertNotNull("Testcase " + name + " not found", testcase);
 		assertEquals("Unexpected " + TEST_NAME_ATTRIBUTE + " value", name, testcase.getAttribute(TEST_NAME_ATTRIBUTE));
 		assertEquals("Unexpected " + TEST_CLASSNAME_ATTRIBUTE + " value", className, testcase.getAttribute(TEST_CLASSNAME_ATTRIBUTE));
-		assertThat("Unexpected " + TEST_TIME_ATTRIBUTE + " value", getDouble(testcase, TEST_TIME_ATTRIBUTE), greaterThanOrEqualTo(seconds));
+		assertThat("Unexpected " + TEST_TIME_ATTRIBUTE + " value", getDouble(testcase, TEST_TIME_ATTRIBUTE), greaterThanOrEqualTo(minElapsedSeconds));
 
 		return testcase;
 	}
@@ -95,6 +95,30 @@ public class SurefireHelper {
 		assertEquals("Unexpected " + TEST_FAILURE_MESSAGE_ATTRIBUTE + " value", message, failure.getAttribute(TEST_FAILURE_MESSAGE_ATTRIBUTE));
 
 		return failure;
+	}
+
+	public Xpp3Dom[] verifyFlakyFailure(Xpp3Dom element, Class<? extends Throwable> cause, int runs, String...messages) {
+		Xpp3Dom[] failures = element.getChildren(TEST_FLAKY_FAILURE_ELEMENT);
+		assertThat("Too or no " + TEST_FLAKY_FAILURE_ELEMENT + " element found", failures.length, greaterThanOrEqualTo(runs));
+
+		for (int i = 0; i < messages.length; i++) {
+			Xpp3Dom failure = failures[i];
+			assertEquals("Unexpected " + TEST_FAILURE_TYPE_ATTRIBUTE + " value", cause.getName(), failure.getAttribute(TEST_FAILURE_TYPE_ATTRIBUTE));
+			assertThat("Unexpected " + TEST_FAILURE_MESSAGE_ATTRIBUTE + " value", failure.getAttribute(TEST_FAILURE_MESSAGE_ATTRIBUTE), isOneOf(messages));
+		}
+		return failures;
+	}
+
+	public Xpp3Dom[] verifyFlakyError(Xpp3Dom element, Class<? extends Throwable> cause, int runs, String...messages) {
+		Xpp3Dom[] failures = element.getChildren(TEST_FLAKY_ERROR_ELEMENT);
+		assertThat("Too or no " + TEST_FLAKY_ERROR_ELEMENT + " element found", failures.length, greaterThanOrEqualTo(runs));
+
+		for (int i = 0; i < messages.length; i++) {
+			Xpp3Dom failure = failures[i];
+			assertEquals("Unexpected " + TEST_ERROR_TYPE_ATTRIBUTE + " value", cause.getName(), failure.getAttribute(TEST_ERROR_TYPE_ATTRIBUTE));
+			assertThat("Unexpected " + TEST_ERROR_MESSAGE_ATTRIBUTE + " value", failure.getAttribute(TEST_ERROR_MESSAGE_ATTRIBUTE), isOneOf(messages));
+		}
+		return failures;
 	}
 
 	public Xpp3Dom verifySkipedTestCase(String className, String name) {
@@ -139,7 +163,7 @@ public class SurefireHelper {
 
 	public void verifyStdOutMessage(Xpp3Dom element, String value) {
 		Xpp3Dom[] stdoutElement = element.getChildren(TEST_STDOUT_ELEMENT);
-		assertNotNull("No " + TEST_STDOUT_ELEMENT + " element found", stdoutElement);
+		assertThat("No " + TEST_STDOUT_ELEMENT + " element found", stdoutElement, not(arrayWithSize(0)));
 		assertThat("Too many "+ TEST_STDOUT_ELEMENT + " elements", stdoutElement, arrayWithSize(1));
 
 		Xpp3Dom stdout = stdoutElement[0];

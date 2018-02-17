@@ -15,7 +15,7 @@
  */
 package com.github.nfalco79.junit4osgi.runner.test.report;
 
-import static com.github.nfalco79.junit4osgi.runner.internal.SurefireConstants.*;
+import static com.github.nfalco79.junit4osgi.runner.internal.SurefireConstants.DEFAULT_NAME;
 import static org.junit.Assert.*;
 
 import java.io.File;
@@ -24,6 +24,7 @@ import java.text.MessageFormat;
 
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.example.ErrorTest;
+import org.example.FlakyJUnit4Test;
 import org.example.PropertyTest;
 import org.example.SimpleSuiteTest;
 import org.example.SimpleTestCase;
@@ -32,6 +33,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.JUnitCore;
 
+import com.github.nfalco79.junit4osgi.runner.internal.JUnitRunner;
 import com.github.nfalco79.junit4osgi.runner.internal.Report;
 import com.github.nfalco79.junit4osgi.runner.internal.ReportListener;
 import com.github.nfalco79.junit4osgi.runner.internal.XMLReport;
@@ -196,11 +198,83 @@ public class XMLReportTest {
 		helper.verifyTestCase(testName, "test_time", 0.5d);
 	}
 
+	@Test
+	public void test_flakyFailure() throws Exception {
+		FlakyJUnit4Test.reset();
+
+		Report report = rerunTest(5, FlakyJUnit4Test.class);
+
+		String testName = FlakyJUnit4Test.class.getName();
+
+		// write test result
+		File testFolder = folder.newFolder();
+		new XMLReport(testFolder).generateReport(report);
+
+		// checks the content
+		File xml = getReport(testFolder);
+		SurefireHelper helper = new SurefireHelper(xml);
+		helper.verifySuite(testName, 2, 0, 0, 0);
+
+		assertNotNull("No testcase element found", helper.hasTestCase());
+		assertEquals("Unexpected testcase element found", 2, helper.countTestCase());
+
+		Xpp3Dom testcase = helper.verifyTestCase(testName, "test1", 0d);
+		Xpp3Dom[] failures = helper.verifyFlakyFailure(testcase, AssertionError.class, 3, "test 1 failures 3", "test 1 failures 2", "test 1 failures 1", "test 1 failures 0");
+		for (Xpp3Dom failure : failures) {
+			helper.verifyStdOutMessage(failure, "test1");
+		}
+	}
+
+	@Test
+	public void test_flakyError() throws Exception {
+		FlakyJUnit4Test.reset();
+
+		Report report = rerunTest(5, FlakyJUnit4Test.class);
+
+		String testName = FlakyJUnit4Test.class.getName();
+
+		// write test result
+		File testFolder = folder.newFolder();
+		new XMLReport(testFolder).generateReport(report);
+
+		// checks the content
+		File xml = getReport(testFolder);
+		SurefireHelper helper = new SurefireHelper(xml);
+		helper.verifySuite(testName, 2, 0, 0, 0);
+
+		assertNotNull("No testcase element found", helper.hasTestCase());
+		assertEquals("Unexpected testcase element found", 2, helper.countTestCase());
+
+		Xpp3Dom testcase = helper.verifyTestCase(testName, "test2", 0d);
+		Xpp3Dom[] failures = helper.verifyFlakyError(testcase, NullPointerException.class, 2);
+		for (Xpp3Dom failure : failures) {
+			helper.verifyStdOutMessage(failure, "test2");
+		}
+	}
+
 	private Report runTest(Class<?>... testClass) {
 		JUnitCore core = new JUnitCore();
 		ReportListener listener = new ReportListener();
 		core.addListener(listener);
 		core.run(testClass);
+
+		return listener.getReport();
+	}
+
+	private Report rerunTest(final int rerunCount, Class<?>... testClass) {
+		JUnitCore core = new JUnitCore();
+		ReportListener listener = new ReportListener();
+		core.addListener(listener);
+		core.run(testClass);
+
+		new JUnitRunner() {
+			@Override
+			public void rerunTests(JUnitCore core, ReportListener listener) {
+				setRerunFailingTests(rerunCount);
+				super.rerunTests(core, listener);
+			};
+		}.rerunTests(core, listener);
+
 		return listener.getReport();
 	}
 
