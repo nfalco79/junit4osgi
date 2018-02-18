@@ -50,12 +50,16 @@ public final class SurefireConstants {
 	 * Test element and its children and attributes
 	 */
 	public static final String TEST_ELEMENT = "testcase";
+	public static final String TEST_FLAKY_FAILURE_ELEMENT = "flakyFailure";
+	public static final String TEST_FLAKY_ERROR_ELEMENT = "flakyError";
 	public static final String TEST_STDERR_ELEMENT = "system-err";
 	public static final String TEST_STDOUT_ELEMENT = "system-out";
 	public static final String TEST_ERROR_ELEMENT = "error";
+	public static final String TEST_ERROR_RERUN_ELEMENT = "rerunError";
 	public static final String TEST_ERROR_MESSAGE_ATTRIBUTE = "message";
 	public static final String TEST_ERROR_TYPE_ATTRIBUTE = "type";
 	public static final String TEST_FAILURE_ELEMENT = "failure";
+	public static final String TEST_FAILURE_RERUN_ELEMENT = "rerunFailure";
 	public static final String TEST_FAILURE_MESSAGE_ATTRIBUTE = "message";
 	public static final String TEST_FAILURE_TYPE_ATTRIBUTE = "type";
 	public static final String TEST_FAILURE_TIME_ATTRIBUTE = "time";

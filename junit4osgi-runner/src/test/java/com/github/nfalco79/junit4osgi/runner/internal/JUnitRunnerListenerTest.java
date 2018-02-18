@@ -38,7 +38,6 @@ import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent.TestRegistryEventType;
-import com.github.nfalco79.junit4osgi.runner.internal.jmx.JMXServer;
 
 public class JUnitRunnerListenerTest {
 
@@ -168,10 +167,4 @@ public class JUnitRunnerListenerTest {
 		return new TestBean[] { test1, test2 };
 	}
 
-	private class JUnitRunnerNoJMXServer extends JUnitRunner {
-		@Override
-		protected JMXServer newJMXServer() {
-			return new JMXServerMock();
-		}
-	}
 }

@@ -24,6 +24,7 @@ import java.text.MessageFormat;
 
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.example.ErrorTest;
+import org.example.FlakyJUnit4Test;
 import org.example.PropertyTest;
 import org.example.SimpleSuiteTest;
 import org.example.SimpleTestCase;
@@ -32,6 +33,8 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.JUnitCore;
 
+import com.github.nfalco79.junit4osgi.runner.internal.JUnitRunner;
+import com.github.nfalco79.junit4osgi.runner.internal.Report;
 import com.github.nfalco79.junit4osgi.runner.internal.ReportListener;
 import com.github.nfalco79.junit4osgi.runner.internal.XMLReport;
 
@@ -42,13 +45,13 @@ public class XMLReportTest {
 
 	@Test
 	public void simple_junit4() throws Exception {
-		XMLReport report = runTest(SimpleTestCase.class);
+		Report report = runTest(SimpleTestCase.class);
 
 		String testName = SimpleTestCase.class.getName();
 
 		// write test result
 		File testFolder = folder.newFolder();
-		report.generateReport(testFolder);
+		new XMLReport(testFolder).generateReport(report);
 
 		// check its name
 		File xml = getReport(testFolder);
@@ -68,13 +71,13 @@ public class XMLReportTest {
 
 	@Test
 	public void ignored() throws Exception {
-		XMLReport report = runTest(ErrorTest.class);
+		Report report = runTest(ErrorTest.class);
 
 		String testName = ErrorTest.class.getName();
 
 		// write test result
 		File testFolder = folder.newFolder();
-		report.generateReport(testFolder);
+		new XMLReport(testFolder).generateReport(report);
 
 		// checks the content
 		File xml = getReport(testFolder);
@@ -91,13 +94,13 @@ public class XMLReportTest {
 
 	@Test
 	public void failure() throws Exception {
-		XMLReport report = runTest(ErrorTest.class);
+		Report report = runTest(ErrorTest.class);
 
 		String testName = ErrorTest.class.getName();
 
 		// write test result
 		File testFolder = folder.newFolder();
-		report.generateReport(testFolder);
+		new XMLReport(testFolder).generateReport(report);
 
 		// checks the content
 		File xml = getReport(testFolder);
@@ -115,13 +118,13 @@ public class XMLReportTest {
 
 	@Test
 	public void error() throws Exception {
-		XMLReport report = runTest(ErrorTest.class);
+		Report report = runTest(ErrorTest.class);
 
 		String testName = ErrorTest.class.getName();
 
 		// write test result
 		File testFolder = folder.newFolder();
-		report.generateReport(testFolder);
+		new XMLReport(testFolder).generateReport(report);
 
 		// checks the content
 		File xml = getReport(testFolder);
@@ -140,11 +143,11 @@ public class XMLReportTest {
 		String propertyValue = "my value!";
 		System.setProperty(propertyKey, propertyValue);
 		try {
-			XMLReport report = runTest(PropertyTest.class);
+			Report report = runTest(PropertyTest.class);
 
 			// write test result
 			File testFolder = folder.newFolder();
-			report.generateReport(testFolder);
+			new XMLReport(testFolder).generateReport(report);
 
 			// checks the content
 			File xml = getReport(testFolder);
@@ -158,13 +161,13 @@ public class XMLReportTest {
 
 	@Test
 	public void test_suite() throws Exception {
-		XMLReport report = runTest(SimpleSuiteTest.class);
+		Report report = runTest(SimpleSuiteTest.class);
 
 		String testName = SimpleSuiteTest.class.getName();
 
 		// write test result
 		File testFolder = folder.newFolder();
-		report.generateReport(testFolder);
+		new XMLReport(testFolder).generateReport(report);
 
 		// checks the content
 		File xml = getReport(testFolder);
@@ -195,12 +198,84 @@ public class XMLReportTest {
 		helper.verifyTestCase(testName, "test_time", 0.5d);
 	}
 
-	private XMLReport runTest(Class<?>... testClass) {
+	@Test
+	public void test_flakyFailure() throws Exception {
+		FlakyJUnit4Test.reset();
+
+		Report report = rerunTest(5, FlakyJUnit4Test.class);
+
+		String testName = FlakyJUnit4Test.class.getName();
+
+		// write test result
+		File testFolder = folder.newFolder();
+		new XMLReport(testFolder).generateReport(report);
+
+		// checks the content
+		File xml = getReport(testFolder);
+		SurefireHelper helper = new SurefireHelper(xml);
+		helper.verifySuite(testName, 2, 0, 0, 0);
+
+		assertNotNull("No testcase element found", helper.hasTestCase());
+		assertEquals("Unexpected testcase element found", 2, helper.countTestCase());
+
+		Xpp3Dom testcase = helper.verifyTestCase(testName, "test1", 0d);
+		Xpp3Dom[] failures = helper.verifyFlakyFailure(testcase, AssertionError.class, 3, "test 1 failures 3", "test 1 failures 2", "test 1 failures 1", "test 1 failures 0");
+		for (Xpp3Dom failure : failures) {
+			helper.verifyStdOutMessage(failure, "test1");
+		}
+	}
+
+	@Test
+	public void test_flakyError() throws Exception {
+		FlakyJUnit4Test.reset();
+
+		Report report = rerunTest(5, FlakyJUnit4Test.class);
+
+		String testName = FlakyJUnit4Test.class.getName();
+
+		// write test result
+		File testFolder = folder.newFolder();
+		new XMLReport(testFolder).generateReport(report);
+
+		// checks the content
+		File xml = getReport(testFolder);
+		SurefireHelper helper = new SurefireHelper(xml);
+		helper.verifySuite(testName, 2, 0, 0, 0);
+
+		assertNotNull("No testcase element found", helper.hasTestCase());
+		assertEquals("Unexpected testcase element found", 2, helper.countTestCase());
+
+		Xpp3Dom testcase = helper.verifyTestCase(testName, "test2", 0d);
+		Xpp3Dom[] failures = helper.verifyFlakyError(testcase, NullPointerException.class, 2);
+		for (Xpp3Dom failure : failures) {
+			helper.verifyStdOutMessage(failure, "test2");
+		}
+	}
+
+	private Report runTest(Class<?>... testClass) {
 		JUnitCore core = new JUnitCore();
-		XMLReport report = new XMLReport();
-		core.addListener(new ReportListener(report));
+		ReportListener listener = new ReportListener();
+		core.addListener(listener);
 		core.run(testClass);
-		return report;
+
+		return listener.getReport();
+	}
+
+	private Report rerunTest(final int rerunCount, Class<?>... testClass) {
+		JUnitCore core = new JUnitCore();
+		ReportListener listener = new ReportListener();
+		core.addListener(listener);
+		core.run(testClass);
+
+		new JUnitRunner() {
+			@Override
+			public void rerunTests(JUnitCore core, ReportListener listener) {
+				setRerunFailingTests(rerunCount);
+				super.rerunTests(core, listener);
+			};
+		}.rerunTests(core, listener);
+
+		return listener.getReport();
 	}
 
 	private File[] getReports(File testFolder) {

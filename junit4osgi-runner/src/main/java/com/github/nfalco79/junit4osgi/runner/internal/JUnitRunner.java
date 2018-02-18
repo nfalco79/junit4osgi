@@ -18,6 +18,7 @@ package com.github.nfalco79.junit4osgi.runner.internal;
 import java.io.File;
 import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -27,7 +28,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.runner.Description;
 import org.junit.runner.JUnitCore;
+import org.junit.runner.Request;
+import org.junit.runner.Result;
 import org.junit.runner.notification.RunListener;
 import org.osgi.service.log.LogService;
 
@@ -89,12 +93,12 @@ public class JUnitRunner implements TestRunner {
 	private Set<IncludeExcludePattern> excludes;
 	private TestRegistryChangeListener testListener;
 	private ScheduledThreadPoolExecutor executor;
-	private final Integer reRunCount;
+	private Integer reRunCount;
 	private final File defaultReportsDirectory;
 
 	public JUnitRunner() {
 		defaultReportsDirectory = new File(System.getProperty(REPORT_PATH, "surefire-reports"));
-		reRunCount = Integer.getInteger(RERUN_COUNT, 5);
+		reRunCount = Integer.getInteger(RERUN_COUNT, 0);
 		stop = true;
 
 		setIncludes(getPatterns(PATH_INCLUDES));
@@ -254,8 +258,8 @@ public class JUnitRunner implements TestRunner {
 	private void runTests(final Queue<TestBean> tests, final File reportsDirectory, TestRunnerNotifier notifier) {
 		TestBean testBean;
 		try {
-			RunListener customListener = notifier.getRunListener();
-			ReportListener listener = null;
+			RunListener customListener = null;
+			ReportListener reportListener = null;
 			JUnitCore core = new JUnitCore();
 
 			while (!isStopped() && (testBean = tests.poll()) != null) {
@@ -267,19 +271,25 @@ public class JUnitRunner implements TestRunner {
 					}
 
 					// initialise the report listener
-					XMLReport report = new XMLReport();
-					listener = new ReportListener(report);
-					core.addListener(listener);
+					reportListener = new ReportListener();
+					core.addListener(reportListener);
 
+					customListener = notifier.getRunListener();
 					if (customListener != null) {
-						core.addListener(listener);
+						core.addListener(customListener);
 					}
 
 					logger.log(LogService.LOG_INFO, "Running test " + testBean.getId());
-					runTest(core, testClass);
+					Request request = Request.classes(testClass);
+					Result result = core.run(request);
+
+					if (isRerunFailingTests() && !result.wasSuccessful()) {
+						rerunTests(core, reportListener);
+					}
 
 					// write test result
-					report.generateReport(reportsDirectory);
+					final XMLReport xmlReport = new XMLReport(reportsDirectory);
+					xmlReport.generateReport(reportListener.getReport());
 				} catch (ClassNotFoundException e) {
 					logger.log(LogService.LOG_ERROR, "Cannot load class " + testBean.getId(), e);
 				} catch (NoClassDefFoundError e) {
@@ -288,8 +298,8 @@ public class JUnitRunner implements TestRunner {
 					if (customListener != null) {
 						core.removeListener(customListener);
 					}
-					if (listener != null) {
-						core.removeListener(listener);
+					if (reportListener != null) {
+						core.removeListener(reportListener);
 					}
 				}
 			}
@@ -298,14 +308,28 @@ public class JUnitRunner implements TestRunner {
 		}
 	}
 
-	private void runTest(JUnitCore core, Class<?> testClass) {
-		ClassLoader ccl = Thread.currentThread().getContextClassLoader();
+	protected void rerunTests(final JUnitCore core, final ReportListener listener) {
+		// remove the report listener in case of rerun, will be
+		// used a custom listener to avoid reset statistics
+		core.removeListener(listener);
+
+		RerunListenerWrapper reportListener = new RerunListenerWrapper(listener);
 		try {
-			// use the bundle classloader
-			Thread.currentThread().setContextClassLoader(testClass.getClassLoader());
-			core.run(testClass);
+			core.addListener(reportListener);
+
+			Collection<Description> failedTests = listener.getFailures();
+			for (Description test : failedTests) {
+				final Class<?> testClass = test.getTestClass();
+				int runCount = reRunCount;
+				Result rerunResult = null;
+				while (runCount > 0 && (rerunResult == null || !rerunResult.wasSuccessful())) {
+					Request request = Request.classes(testClass).filterWith(test);
+					runCount--;
+					rerunResult = core.run(request);
+				}
+			}
 		} finally {
-			Thread.currentThread().setContextClassLoader(ccl);
+			core.removeListener(reportListener);
 		}
 	}
 
@@ -374,6 +398,14 @@ public class JUnitRunner implements TestRunner {
 			}
 		}
 		return matches;
+	}
+
+	public void setRerunFailingTests(Integer count) {
+		this.reRunCount = count;
+	}
+
+	public boolean isRerunFailingTests() {
+		return reRunCount > 0;
 	}
 
 	private JMXServer jmxServer = newJMXServer();

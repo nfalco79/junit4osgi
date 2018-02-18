@@ -15,9 +15,9 @@
  */
 package com.github.nfalco79.junit4osgi.runner.internal;
 
-import static java.util.Arrays.*;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.io.File;
@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.example.AbstractTest;
 import org.example.ErrorTest;
+import org.example.FlakyJUnit4Test;
 import org.example.JUnit3Test;
 import org.example.MainClassTest;
 import org.example.SimpleSuiteTest;
@@ -40,6 +41,9 @@ import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.Description;
+import org.junit.runner.notification.Failure;
+import org.junit.runner.notification.RunListener;
 import org.mockito.internal.util.collections.Sets;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -48,7 +52,6 @@ import org.osgi.service.log.LogService;
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
-import com.github.nfalco79.junit4osgi.runner.internal.jmx.JMXServer;
 import com.github.nfalco79.junit4osgi.runner.spi.TestRunnerNotifier;
 
 public class JUnitRunnerTest {
@@ -158,6 +161,25 @@ public class JUnitRunnerTest {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
+	public void run_a_flaky_tests() throws Exception {
+		FlakyJUnit4Test.reset();
+
+		final TestBean testToRun = mock(TestBean.class);
+		when(testToRun.getId()).thenReturn("id1");
+		when(testToRun.getTestClass()).thenReturn((Class) FlakyJUnit4Test.class);
+
+		File tmpFolder = folder.newFolder();
+
+		JUnitRunner runner = new StartAndStopJUnitRunner();
+		runner.setRerunFailingTests(2);
+		final RunListener listener = runTest(runner, tmpFolder, testToRun);
+
+		verify(listener, times(6)).testStarted(any(Description.class));
+		verify(listener, times(5)).testFailure(any(Failure.class));
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
 	public void verify_that_runner_does_not_start_without_a_log_service() throws Exception {
 		final TestBean testToRun = mock(TestBean.class);
 		when(testToRun.getId()).thenReturn("id1");
@@ -210,7 +232,7 @@ public class JUnitRunnerTest {
 	/*
 	 * Runs real test using a configured runner.
 	 */
-	private void runTest(JUnitRunner runner, File destination, TestBean... testsToRun) throws Exception {
+	private RunListener runTest(JUnitRunner runner, File destination, TestBean... testsToRun) throws Exception {
 		LogService logService = mock(LogService.class);
 
 		TestRegistry registry = mock(TestRegistry.class);
@@ -228,8 +250,14 @@ public class JUnitRunnerTest {
 			ids[i] = testsToRun[i].getId();
 		}
 
-		runner.start(ids, destination.toString(), new SafeTestRunnerNotifier(null, logService));
+		TestRunnerNotifier notifier = spy(new SafeTestRunnerNotifier(null, logService));
+		final RunListener listener = mock(RunListener.class);
+		when(notifier.getRunListener()).thenReturn(listener);
+
+		runner.start(ids, destination.toString(), notifier);
 		runner.stop();
+
+		return listener;
 	}
 
 	@Test
@@ -289,40 +317,6 @@ public class JUnitRunnerTest {
 		tests.add(test1);
 		tests.add(test2);
 		return tests;
-	}
-
-	private class JUnitRunnerNoJMXServer extends JUnitRunner {
-		@Override
-		protected JMXServer newJMXServer() {
-			return new JMXServerMock();
-		}
-	}
-
-	private class StartAndStopJUnitRunner extends JUnitRunnerNoJMXServer {
-		private final CountDownLatch latch = new CountDownLatch(1);
-
-		@Override
-		protected Runnable getSingleRunnable(File reportsDirectory, java.util.Queue<TestBean> tests, TestRunnerNotifier notifier) {
-			final Runnable realRunnable = super.getSingleRunnable(reportsDirectory, tests, notifier);
-			return new Runnable() {
-				@Override
-				public void run() {
-					realRunnable.run();
-					// needed to know when test has ran and stop the executor
-					latch.countDown();
-				}
-			};
-		}
-
-		@Override
-		public void stop() {
-			try {
-				latch.await();
-			} catch (InterruptedException e) {
-				fail(e.getMessage());
-			}
-			super.stop();
-		}
 	}
 
 }
