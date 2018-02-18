@@ -67,7 +67,7 @@ public class TestRegistryUtilsTest {
 
 	@Test
 	public void consider_testsuite() throws Exception {
-		assertFalse("this class has not public visibility and must be skipped", TestRegistryUtils.isValidTestClass(MyTestSuite.class));
+		assertTrue("this class is extebds junit.framework.TestSuite and must not be skipped", TestRegistryUtils.isValidTestClass(MyTestSuite.class));
 	}
 
 }
