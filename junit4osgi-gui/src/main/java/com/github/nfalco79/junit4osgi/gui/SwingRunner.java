@@ -655,20 +655,13 @@ public class SwingRunner extends JFrame {
 			Iterator<T> testIt = tests.iterator();
 			while (!stopped && testIt.hasNext()) {
 				T test = testIt.next();
-				ClassLoader ccl = Thread.currentThread().getContextClassLoader();
-				try {
-					Class<?> testClass = getTestClass(test);
-					String methodName = getTestMethod(test);
-					// force bundle classloader when run test
-					Thread.currentThread().setContextClassLoader(testClass.getClassLoader());
+				Class<?> testClass = getTestClass(test);
+				String methodName = getTestMethod(test);
 
-					if (methodName == null) {
-						core.run(testClass);
-					} else {
-						core.run(Request.method(testClass, methodName));
-					}
-				} finally {
-					Thread.currentThread().setContextClassLoader(ccl);
+				if (methodName == null) {
+					core.run(testClass);
+				} else {
+					core.run(Request.method(testClass, methodName));
 				}
 			}
 
