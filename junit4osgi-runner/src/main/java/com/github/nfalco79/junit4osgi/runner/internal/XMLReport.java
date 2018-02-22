@@ -180,10 +180,7 @@ public class XMLReport {
 	 */
 	private Xpp3Dom createDOM(Xpp3Dom dom, Report report) {
 		Description description = report.getDescription();
-		if (description.getTestClass() == null) {
-			// for unknown reason the root description it's void
-			return createDOM(dom, report.getChildren().get(0));
-		} else if (dom == null && description.isSuite()) {
+		if (dom == null && description.isSuite()) {
 			// suite gather all test methods of all test classes ignoring their
 			// class container
 			dom = createTestSuiteElement(null, report);
@@ -194,19 +191,19 @@ public class XMLReport {
 			switch (report.getType()) {
 			case ERROR:
 				errorsCount++;
-				createTestErrorElement(dom, report);
+				dom = createTestErrorElement(dom, report);
 				break;
 			case FAILURE:
 				failuresCount++;
-				createTestFailureElement(dom, report);
+				dom = createTestFailureElement(dom, report);
 				break;
 			case IGNORE:
 				ignoredCount++;
-				createTestIgnoreElement(dom, report);
+				dom = createTestIgnoreElement(dom, report);
 				break;
 			case SUCCESS:
 				// it's a normal success test
-				createTestSuccessElement(dom, report);
+				dom = createTestSuccessElement(dom, report);
 				break;
 			}
 		}

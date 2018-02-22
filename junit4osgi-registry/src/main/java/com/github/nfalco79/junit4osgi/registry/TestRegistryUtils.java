@@ -25,6 +25,9 @@ import java.lang.reflect.Modifier;
 import org.junit.Test;
 import org.junit.runners.model.TestClass;
 
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
 public final class TestRegistryUtils {
 
 	private TestRegistryUtils() {
@@ -39,8 +42,9 @@ public final class TestRegistryUtils {
 	 */
 	public static boolean hasTests(Class<?> testClass) {
 		try {
-			return testClass != null && (junit.framework.Test.class.isAssignableFrom(testClass)
-				|| !new TestClass(testClass).getAnnotatedMethods(Test.class).isEmpty());
+			return testClass != null && testClass != TestCase.class && testClass != TestSuite.class
+					&& (junit.framework.Test.class.isAssignableFrom(testClass)
+							|| !new TestClass(testClass).getAnnotatedMethods(Test.class).isEmpty());
 		} catch (Exception e) {
 			// catch exception raised by TestClass
 			return false;

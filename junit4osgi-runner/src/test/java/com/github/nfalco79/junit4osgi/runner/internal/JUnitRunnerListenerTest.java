@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Queue;
 
 import org.codehaus.plexus.util.ReflectionUtils;
+import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -40,6 +41,15 @@ import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent.TestRegistryEventType;
 
 public class JUnitRunnerListenerTest {
+
+	@Test
+	public void test_empty_report() throws Exception {
+		ReportListener listener = new ReportListener();
+		Report report = listener.getReport();
+
+		Assert.assertNotNull("Expected an empty report not null", report);
+		Assert.assertEquals(report.getRunCount(), 0);
+	}
 
 	@SuppressWarnings("unchecked")
 	@Test

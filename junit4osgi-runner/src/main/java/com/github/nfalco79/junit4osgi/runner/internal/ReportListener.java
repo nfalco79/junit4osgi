@@ -269,6 +269,10 @@ public class ReportListener extends RunListener {
 	 * @return the generated report
 	 */
 	public Report getReport() {
+		if (executions.isEmpty()) {
+			return new Report(Description.createSuiteDescription("no test execution"));
+		}
+
 		Set<Entry<Description,Deque<Report>>> tests = executions.entrySet();
 
 		Map<Description, Report> executionMap = new HashMap<Description, Report>(tests.size());
