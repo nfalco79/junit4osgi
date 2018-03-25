@@ -2,7 +2,7 @@ package org.example.hierarchy;
 
 import junit.framework.TestCase;
 
-public abstract class AbstractHierarchyTestCase extends TestCase {
+public abstract class AbstractJUnit3HierarchyTestCase extends TestCase {
 
 	@Override
 	protected void setUp() throws Exception {

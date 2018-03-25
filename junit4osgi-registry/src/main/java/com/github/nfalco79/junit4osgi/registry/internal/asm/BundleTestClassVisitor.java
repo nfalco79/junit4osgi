@@ -34,6 +34,7 @@ public class BundleTestClassVisitor extends ClassVisitor {
 
 	private Set<String> cache;
 	private boolean testClass;
+	private boolean concreteClass;
 	private Bundle bundle;
 	private LogService log;
 
@@ -63,9 +64,9 @@ public class BundleTestClassVisitor extends ClassVisitor {
 
 	@Override
 	public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-		if (cache.contains(superName)) {
+		if (cache.contains(superName) /*|| cache contains interfaces*/) {
 			if (isAbstract(access)) {
-				// add the hierarchy, but not mark it as test class because is abstract
+				// add to the hierarchy, but not mark it as test class because it is abstract
 				cache.add(name);
 			} else {
 				testClass = !isInterface(access);
@@ -78,13 +79,18 @@ public class BundleTestClassVisitor extends ClassVisitor {
 				entry = findInWiredBundle(superName);
 			}
 			if (entry != null) {
-				// analyse the superclass and add it to cache
+				// analyse the superclass and add it to the cache only if super class has TestCase in the hierarchy
 				ASMUtils.analyseByteCode(entry, this);
-				if (isConcreteClass(access)) {
-					testClass = testClass || cache.contains(superName);
+				// marks all subclasses of this as JUnit3 test case
+				if (cache.contains(superName)) {
+					cache.add(name);
+					testClass = true;
 				}
 			}
 		}
+
+		// do this at the end of class visit to avoid value is overwritten during a super class visit
+		concreteClass = isConcreteClass(access);
 	}
 
 	private boolean isInterface(int access) {
@@ -117,6 +123,7 @@ public class BundleTestClassVisitor extends ClassVisitor {
 				final String filter = wire.getRequirement().getDirectives().get("filter");
 				if (filter != null && filter.contains(packageName)) {
 					final Bundle bundle = wire.getProviderWiring().getBundle();
+					// TODO in case the bundle is active use loadClass instead bytecode
 					return bundle.getEntry("/" + superName + ".class");
 				}
 			}
@@ -125,11 +132,12 @@ public class BundleTestClassVisitor extends ClassVisitor {
 	}
 
 	public boolean isTestClass() {
-		return testClass;
+		return testClass && concreteClass;
 	}
 
 	public void reset() {
 		testClass = false;
+		concreteClass = false;
 	}
 
 	public void setLog(LogService log) {

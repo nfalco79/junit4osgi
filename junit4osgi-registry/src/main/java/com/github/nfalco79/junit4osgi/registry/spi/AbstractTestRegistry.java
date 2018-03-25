@@ -114,9 +114,9 @@ public abstract class AbstractTestRegistry implements TestRegistry {
 			URL entry = bundle.getEntry('/' + className.replace('.', '/') + ".class");
 			assert entry != null; // checked by TestBean constructor
 
-			// to not trigger the bundle activation, just analyse the class byte code
 			visitor.reset();
 
+			// to avoid triggering of the bundle activation, we will analyse the class byte code
 			ASMUtils.analyseByteCode(entry, visitor);
 			isTest = visitor.isTestClass();
 		}

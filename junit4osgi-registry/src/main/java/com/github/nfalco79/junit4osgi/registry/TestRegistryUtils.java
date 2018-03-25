@@ -42,9 +42,9 @@ public final class TestRegistryUtils {
 	 */
 	public static boolean hasTests(Class<?> testClass) {
 		try {
-			return testClass != null && testClass != TestCase.class && testClass != TestSuite.class
-					&& (junit.framework.Test.class.isAssignableFrom(testClass)
-							|| !new TestClass(testClass).getAnnotatedMethods(Test.class).isEmpty());
+			return testClass != null && ((junit.framework.Test.class.isAssignableFrom(testClass)
+					&& testClass != TestCase.class && testClass != TestSuite.class /* it's a JUnit3 */)
+					|| /* it's JUnit4 */ !new TestClass(testClass).getAnnotatedMethods(Test.class).isEmpty());
 		} catch (Exception e) {
 			// catch exception raised by TestClass
 			return false;

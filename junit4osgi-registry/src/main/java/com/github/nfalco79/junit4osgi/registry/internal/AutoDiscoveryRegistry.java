@@ -68,8 +68,6 @@ public final class AutoDiscoveryRegistry extends AbstractTestRegistry {
 		Set<TestBean> bundleTest = new LinkedHashSet<TestBean>();
 		tests.put(bundle, bundleTest);
 
-		BundleTestClassVisitor visitor = new BundleTestClassVisitor(bundle);
-		visitor.setLog(getLog());
 
 		Enumeration<URL> entries = bundle.findEntries("/", "*.class", true);
 		while (entries != null && entries.hasMoreElements()) {
@@ -78,6 +76,9 @@ public final class AutoDiscoveryRegistry extends AbstractTestRegistry {
 			String simpleClassName = toClassSimpleName(className);
 			if (isTestCase(simpleClassName) || isIntegrationTest(simpleClassName)) {
 				TestBean bean = new TestBean(bundle, className);
+
+				BundleTestClassVisitor visitor = new BundleTestClassVisitor(bundle);
+				visitor.setLog(getLog());
 
 				if (isTestClass(bundle, bean, visitor)) {
 					bundleTest.add(bean);

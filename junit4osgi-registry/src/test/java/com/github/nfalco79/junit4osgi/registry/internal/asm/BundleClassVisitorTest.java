@@ -23,9 +23,11 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import org.example.hierarchy.AbstractHierarchyTestCase;
-import org.example.hierarchy.HierarchyBaseTestCase;
-import org.example.hierarchy.HierarchyTestCase;
+import org.example.hierarchy.AbstractJUnit3HierarchyTestCase;
+import org.example.hierarchy.AbstractJUnit4HierarchyTest;
+import org.example.hierarchy.JUnit3HierarchyBaseTestCase;
+import org.example.hierarchy.JUnit3HierarchyTestCase;
+import org.example.hierarchy.JUnit4HierarchyTest;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,10 +44,11 @@ public class BundleClassVisitorTest {
 	@Parameters(name = "{0} {2}")
 	public static Collection<Object[]> data() {
 		return Arrays.asList(
-				new Object[][] { { HierarchyTestCase.class, true, "hierarchy extends TestCase it's a JUnit3" },
-						{ HierarchyBaseTestCase.class, true, "hierarchy extends TestCase it's a JUnit3" },
-						{ AbstractHierarchyTestCase.class, false,
-								"it's an abstract class that extends TestCase, it's not a JUnit3" } });
+				new Object[][] { { JUnit3HierarchyTestCase.class, true, "hierarchy extends TestCase it's a JUnit3" },
+						{ JUnit3HierarchyBaseTestCase.class, true, "hierarchy extends TestCase it's a JUnit3" },
+						{ AbstractJUnit3HierarchyTestCase.class, false, "it's an abstract class that extends TestCase, it's not a JUnit3" },
+						{ AbstractJUnit4HierarchyTest.class, false, "it's an abstract class that contains @Test annotation, it's not a JUnit4 concrete class" },
+						{ JUnit4HierarchyTest.class, true, "hierarchy extends an abstract class that contains @Test annotation, it's a JUnit4 class" }});
 	}
 
 	private Class<?> testClass;
@@ -59,7 +62,7 @@ public class BundleClassVisitorTest {
 	}
 
 	@Test
-	public void asm_visit_hierarchy_of_junit3_class() throws Exception {
+	public void asm_visit_hierarchy_of_junit_class() throws Exception {
 		Bundle bundle = getMockBundle(testClass);
 		URL resource = getClass().getResource(BundleBuilder.toResource(testClass));
 

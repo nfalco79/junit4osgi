@@ -1,6 +1,6 @@
 package org.example.hierarchy;
 
-public class HierarchyBaseTestCase extends AbstractHierarchyTestCase {
+public class JUnit3HierarchyBaseTestCase extends AbstractJUnit3HierarchyTestCase {
 
 	public void test_base() {
 	}
