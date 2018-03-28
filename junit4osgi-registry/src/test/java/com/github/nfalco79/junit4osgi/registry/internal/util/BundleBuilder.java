@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -66,6 +67,7 @@ public final class BundleBuilder {
 
 	private Bundle bundle;
 	private List<Class<?>> bundleClasses;
+	private Hashtable<String, String> manifestEntries;
 	private Map<String, File> bundleResources;
 	private URLStrategy strategy;
 	private Map<String, BundleWire> wires;
@@ -78,6 +80,7 @@ public final class BundleBuilder {
 		strategy = new DefaultURLStrategy();
 		wires = new HashMap<String, BundleWire>();
 		bundleState = Bundle.RESOLVED;
+		manifestEntries = new Hashtable<String, String>();
 	}
 
 	public static BundleBuilder newBuilder() {
@@ -86,8 +89,23 @@ public final class BundleBuilder {
 
 	public BundleBuilder symbolicName(String symbolicName) {
 		Assert.assertNotNull(symbolicName);
+		manifestEntries.put("BundleSymbolicName", symbolicName);
 
 		when(bundle.getSymbolicName()).thenReturn(symbolicName);
+		return this;
+	}
+
+	public BundleBuilder manifest(Map<String, String> entries) {
+		Assert.assertNotNull(entries);
+
+		manifestEntries.putAll(entries);
+		return this;
+	}
+
+	public BundleBuilder manifestEntry(String header, String value) {
+		Assert.assertNotNull(header);
+
+		manifestEntries.put(header, value);
 		return this;
 	}
 
@@ -156,6 +174,7 @@ public final class BundleBuilder {
 	public Bundle build() throws Exception {
 		when(bundle.findEntries("/", "*.class", true)).thenReturn(toURLs(bundleClasses));
 		when(bundle.getState()).thenReturn(bundleState);
+		when(bundle.getHeaders()).thenReturn(manifestEntries);
 
 		for (Class<?> clazz : bundleClasses) {
 			when(bundle.getEntry(toResource(clazz))).thenReturn(strategy.resolveURL(clazz));

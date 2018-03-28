@@ -15,9 +15,9 @@
  */
 package com.github.nfalco79.junit4osgi.runner.internal;
 
-import static java.util.Arrays.asList;
+import static java.util.Arrays.*;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.io.File;
@@ -116,7 +116,6 @@ public class JUnitRunnerTest {
 		final AtomicInteger counter = new AtomicInteger(0);
 
 		JUnitRunner runner = spy(new JUnitRunnerNoJMXServer());
-		when(runner.getRepeatTime()).thenReturn(1l);
 		when(runner.getSingleRunnable(any(File.class), any(Queue.class), any(TestRunnerNotifier.class))).thenAnswer(new Answer<Runnable>() {
 			@Override
 			public Runnable answer(InvocationOnMock invocation) throws Throwable {
@@ -135,7 +134,7 @@ public class JUnitRunnerTest {
 		runner.setLog(logService);
 		runner.setRegistry(registry);
 		runner.start(new String[] { testToRun.getId() }, null, new SafeTestRunnerNotifier(null, logService));
-		Thread.sleep(runner.getRepeatTime() * 4);
+		Thread.sleep(100l);
 		runner.stop();
 
 		verify(registry).getTests(new String[] { testToRun.getId() });

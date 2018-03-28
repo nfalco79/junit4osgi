@@ -15,7 +15,7 @@
  */
 package com.github.nfalco79.junit4osgi.registry.internal;
 
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -210,6 +210,7 @@ public class AutoDiscoveryRegistryTest {
 		return BundleBuilder.newBuilder() //
 				.symbolicName("acme") //
 				.addClasses(classes) //
+				.manifestEntry("Bundle-ActivationPolicy", "lazy") //
 				.urlStrategy(new URLStrategy() {
 					@Override
 					public URL resolveURL(Class<?> resource) throws MalformedURLException {
