@@ -44,26 +44,29 @@ public class BundleClassVisitorTest {
 	@Parameters(name = "{0} {2}")
 	public static Collection<Object[]> data() {
 		return Arrays.asList(
-				new Object[][] { { JUnit3HierarchyTestCase.class, true, "hierarchy extends TestCase it's a JUnit3" },
-						{ JUnit3HierarchyBaseTestCase.class, true, "hierarchy extends TestCase it's a JUnit3" },
-						{ AbstractJUnit3HierarchyTestCase.class, false, "it's an abstract class that extends TestCase, it's not a JUnit3" },
-						{ AbstractJUnit4HierarchyTest.class, false, "it's an abstract class that contains @Test annotation, it's not a JUnit4 concrete class" },
-						{ JUnit4HierarchyTest.class, true, "hierarchy extends an abstract class that contains @Test annotation, it's a JUnit4 class" }});
+				new Object[][] { { JUnit3HierarchyTestCase.class, true, false, "hierarchy extends TestCase it's a JUnit3" },
+						{ JUnit3HierarchyBaseTestCase.class, true, false, "hierarchy extends TestCase it's a JUnit3" },
+						{ AbstractJUnit3HierarchyTestCase.class, false, false, "it's an abstract class that extends TestCase, it's not a JUnit3" },
+						{ AbstractJUnit4HierarchyTest.class, false, false, "it's an abstract class that contains @Test annotation, it's not a JUnit4 concrete class" },
+						{ JUnit4HierarchyTest.class, true, false, "hierarchy extends an abstract class that contains @Test annotation, it's a JUnit4 class" },
+						{ JUnit4HierarchyTest.class, true, true, "hierarchy extends an abstract class loaded by bundle classloader since bundle state ACTIVE, it's a JUnit4 class" }});
 	}
 
 	private Class<?> testClass;
 	private boolean isTestCase;
+	private boolean useClassloaderForWiredBundle;
 	private String reason;
 
-	public BundleClassVisitorTest(Class<?> testClass, boolean isTestCase, String assertMessage) {
+	public BundleClassVisitorTest(Class<?> testClass, boolean isTestCase, boolean useClassloaderForWiredBundle, String assertMessage) {
 		this.testClass = testClass;
 		this.isTestCase = isTestCase;
 		this.reason = assertMessage;
+		this.useClassloaderForWiredBundle = useClassloaderForWiredBundle;
 	}
 
 	@Test
 	public void asm_visit_hierarchy_of_junit_class() throws Exception {
-		Bundle bundle = getMockBundle(testClass);
+		Bundle bundle = buildBundleFor(testClass);
 		URL resource = getClass().getResource(BundleBuilder.toResource(testClass));
 
 		BundleTestClassVisitor visitor = new BundleTestClassVisitor(bundle);
@@ -72,17 +75,15 @@ public class BundleClassVisitorTest {
 		assertThat(reason, visitor.isTestClass(), Matchers.is(isTestCase));
 	}
 
-	private Bundle getMockBundle(Class<?>... classes) throws Exception {
-		Set<Class<?>> superClasses = new LinkedHashSet<Class<?>>();
-		for (Class<?> clazz : classes) {
-			Class<?> superclass = clazz.getSuperclass();
-			while (superclass != Object.class && superclass != TestCase.class) {
-				superClasses.add(superclass);
-				superclass = superclass.getSuperclass();
-			}
+	private Bundle buildBundleFor(Class<?>... classes) throws Exception {
+		Set<Class<?>> superClasses = classesInHierarchy(classes);
+		BundleBuilder wiredBuilder = BundleBuilder.newBuilder();
+		if (!useClassloaderForWiredBundle) {
+			wiredBuilder.manifestEntry(BundleTestClassVisitor.BUNDLE_ACTIVATION_POLICY, "lazy");
+		} else {
+			wiredBuilder.state(Bundle.ACTIVE);
 		}
-		Bundle wiredBundle = BundleBuilder.newBuilder() //
-				.symbolicName("acme.wired") //
+		Bundle wiredBundle = wiredBuilder.symbolicName("acme.wired") //
 				.addClasses(superClasses.toArray(new Class<?>[0])) //
 				.build();
 
@@ -95,6 +96,18 @@ public class BundleClassVisitorTest {
 		}
 
 		return builder.build();
+	}
+
+	private Set<Class<?>> classesInHierarchy(Class<?>... classes) {
+		Set<Class<?>> superClasses = new LinkedHashSet<Class<?>>();
+		for (Class<?> clazz : classes) {
+			Class<?> superclass = clazz.getSuperclass();
+			while (superclass != Object.class && superclass != TestCase.class) {
+				superClasses.add(superclass);
+				superclass = superclass.getSuperclass();
+			}
+		}
+		return superClasses;
 	}
 
 }

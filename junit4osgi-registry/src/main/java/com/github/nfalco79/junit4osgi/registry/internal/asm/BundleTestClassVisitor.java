@@ -30,7 +30,11 @@ import org.osgi.framework.wiring.BundleWire;
 import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.service.log.LogService;
 
+import com.github.nfalco79.junit4osgi.registry.TestRegistryUtils;
+
 public class BundleTestClassVisitor extends ClassVisitor {
+
+	public static final String BUNDLE_ACTIVATION_POLICY = "Bundle-ActivationPolicy";
 
 	private Set<String> cache;
 	private boolean testClass;
@@ -76,7 +80,24 @@ public class BundleTestClassVisitor extends ClassVisitor {
 			URL entry = bundle.getEntry("/" + superName + ".class");
 			if (entry == null) {
 				// look up the superclass in a wired bundle
-				entry = findInWiredBundle(superName);
+//				entry = findInWiredBundle(superName);
+				Bundle wiredBundle = findInWiredBundle(superName);
+
+				boolean isLazy = "lazy".equals(wiredBundle.getHeaders().get(BUNDLE_ACTIVATION_POLICY));
+				if ((wiredBundle.getState() == Bundle.RESOLVED && !isLazy) || wiredBundle.getState() == Bundle.ACTIVE) {
+					// use classloader to introspect class
+					try {
+						Class<?> clazz = wiredBundle.loadClass(superName.replace('/', '.'));
+						if (TestRegistryUtils.hasTests(clazz)) {
+							cache.add(superName);
+							testClass = true;
+						}
+					} catch (ClassNotFoundException e) {
+						throw new RuntimeException("Can not load class " + superName + " using bundle classloader", e);
+					}
+				} else {
+					entry = wiredBundle.getEntry("/" + superName + ".class");
+				}
 			}
 			if (entry != null) {
 				// analyse the superclass and add it to the cache only if super class has TestCase in the hierarchy
@@ -105,7 +126,7 @@ public class BundleTestClassVisitor extends ClassVisitor {
 		return !isInterface(access) && !isAbstract(access);
 	}
 
-	private URL findInWiredBundle(final String superName) {
+	private Bundle findInWiredBundle(final String superName) {
 		String superClassName = superName.replace('/', '.');
 		String packageName = superClassName.substring(0, superClassName.lastIndexOf('.'));
 
@@ -123,8 +144,8 @@ public class BundleTestClassVisitor extends ClassVisitor {
 				final String filter = wire.getRequirement().getDirectives().get("filter");
 				if (filter != null && filter.contains(packageName)) {
 					final Bundle bundle = wire.getProviderWiring().getBundle();
-					// TODO in case the bundle is active use loadClass instead bytecode
-					return bundle.getEntry("/" + superName + ".class");
+					return bundle;
+//					return bundle.getEntry("/" + superName + ".class");
 				}
 			}
 		}

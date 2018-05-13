@@ -118,8 +118,20 @@ public abstract class AbstractTestRegistry implements TestRegistry {
 			visitor.reset();
 
 			// to avoid triggering of the bundle activation, we will analyse the class byte code
-			ASMUtils.analyseByteCode(entry, visitor);
-			isTest = visitor.isTestClass();
+			final String symbolicName = bundle.getSymbolicName();
+
+			// use classloader to introspect class
+			try {
+				ASMUtils.analyseByteCode(entry, visitor);
+				isTest = visitor.isTestClass();
+			} catch (RuntimeException e) {
+				// could happen if some static code in the class fails
+				getLog().log(LogService.LOG_ERROR, "Test class '" + className + "' could not be found in the bundle " + symbolicName, e.getCause());
+			} catch (NoClassDefFoundError e) {
+				// happen when miss some import package in MANIFEST.MF
+				getLog().log(LogService.LOG_ERROR, "Test class '" + className
+						+ "' could not be loaded by its bundle " + symbolicName + " classloader: ", e);
+			}
 		}
 
 		return isTest;
