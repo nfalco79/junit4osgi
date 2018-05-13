@@ -38,6 +38,8 @@ public final class SurefireConstants {
 	 * Suite element and its children and attributes
 	 */
 	public static final String SUITE_ELEMENT = "testsuite";
+	public static final String SUITE_XSI_ATTRIBUTE = "xmlns:xsi";
+	public static final String SUITE_XSD_ATTRIBUTE = "xsi:schemaLocation";
 	public static final String SUITE_NAME_ATTRIBUTE = "name";
 	public static final String SUITE_TIME_ATTRIBUTE = "time";
 	public static final String SUITE_TESTS_ATTRIBUTE = "tests";

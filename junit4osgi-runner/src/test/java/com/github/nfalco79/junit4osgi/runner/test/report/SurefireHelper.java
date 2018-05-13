@@ -22,11 +22,13 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.hamcrest.CoreMatchers;
 
 public class SurefireHelper {
 
@@ -45,6 +47,9 @@ public class SurefireHelper {
 		Xpp3Dom suite = xml;
 		assertNotNull("No suite element found", suite);
 		assertEquals("No suite element found", SUITE_ELEMENT, suite.getName());
+		assertThat("No testsuite attribute found", Arrays.asList(suite.getAttributeNames()), CoreMatchers.hasItems(SUITE_XSI_ATTRIBUTE, SUITE_XSD_ATTRIBUTE));
+		assertEquals("Unexpected xsi attribute found", "http://www.w3.org/2001/XMLSchema-instance", suite.getAttribute(SUITE_XSI_ATTRIBUTE));
+		assertEquals("Unexpected xsd attribute found", "https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd", suite.getAttribute(SUITE_XSD_ATTRIBUTE));
 		assertEquals("Unexpected suite name value", className, suite.getAttribute(SUITE_NAME_ATTRIBUTE));
 		assertEquals("Unexpected ignored value", ignored, getLong(suite, SUITE_SKIPPED_ATTRIBUTE));
 		assertEquals("Unexpected failures value", failures, getLong(suite, SUITE_FAILURES_ATTRIBUTE));

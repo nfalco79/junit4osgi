@@ -355,6 +355,9 @@ public class XMLReport {
 	private Xpp3Dom createTestSuiteElement(Xpp3Dom parent, Report report) {
 		Xpp3Dom testSuite = createElement(parent, SUITE_ELEMENT);
 
+		testSuite.setAttribute(SUITE_XSI_ATTRIBUTE, "http://www.w3.org/2001/XMLSchema-instance");
+		testSuite.setAttribute(SUITE_XSD_ATTRIBUTE, "https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd");
+
 		testSuite.setAttribute(SUITE_NAME_ATTRIBUTE, getReportName(report.getDescription()));
 		testSuite.setAttribute(SUITE_TIME_ATTRIBUTE, formatNumber(report.getElapsedTime()));
 
