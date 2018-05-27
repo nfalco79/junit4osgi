@@ -28,6 +28,8 @@ import org.example.hierarchy.AbstractJUnit4HierarchyTest;
 import org.example.hierarchy.JUnit3HierarchyBaseTestCase;
 import org.example.hierarchy.JUnit3HierarchyTestCase;
 import org.example.hierarchy.JUnit4HierarchyTest;
+import org.example.suite.MyJUnit4SuiteTest;
+import org.example.suite.MyJUnit3SuiteTest;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,7 +42,7 @@ import com.github.nfalco79.junit4osgi.registry.internal.util.BundleBuilder;
 import junit.framework.TestCase;
 
 @RunWith(Parameterized.class)
-public class BundleClassVisitorTest {
+public class BundleTestClassVisitorTest {
 	@Parameters(name = "{0} {2}")
 	public static Collection<Object[]> data() {
 		return Arrays.asList(
@@ -49,7 +51,9 @@ public class BundleClassVisitorTest {
 						{ AbstractJUnit3HierarchyTestCase.class, false, false, "it's an abstract class that extends TestCase, it's not a JUnit3" },
 						{ AbstractJUnit4HierarchyTest.class, false, false, "it's an abstract class that contains @Test annotation, it's not a JUnit4 concrete class" },
 						{ JUnit4HierarchyTest.class, true, false, "hierarchy extends an abstract class that contains @Test annotation, it's a JUnit4 class" },
-						{ JUnit4HierarchyTest.class, true, true, "hierarchy extends an abstract class loaded by bundle classloader since bundle state ACTIVE, it's a JUnit4 class" }});
+						{ JUnit4HierarchyTest.class, true, true, "hierarchy extends an abstract class loaded by bundle classloader since bundle state ACTIVE, it's a JUnit4 class" },
+						{ MyJUnit3SuiteTest.class, true, true, "JUnit3 test suite" },
+						{ MyJUnit4SuiteTest.class, true, true, "JUnit4 test suite" }});
 	}
 
 	private Class<?> testClass;
@@ -57,7 +61,7 @@ public class BundleClassVisitorTest {
 	private boolean useClassloaderForWiredBundle;
 	private String reason;
 
-	public BundleClassVisitorTest(Class<?> testClass, boolean isTestCase, boolean useClassloaderForWiredBundle, String assertMessage) {
+	public BundleTestClassVisitorTest(Class<?> testClass, boolean isTestCase, boolean useClassloaderForWiredBundle, String assertMessage) {
 		this.testClass = testClass;
 		this.isTestCase = isTestCase;
 		this.reason = assertMessage;

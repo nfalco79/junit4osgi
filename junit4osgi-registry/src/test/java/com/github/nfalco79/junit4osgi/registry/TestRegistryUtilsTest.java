@@ -24,7 +24,8 @@ import org.example.MainClassTest;
 import org.example.PackageRetrieverUtils;
 import org.example.SimpleTestCase;
 import org.example.TooManyConstructors;
-import org.example.suite.MyTestSuite;
+import org.example.suite.MyJUnit4SuiteTest;
+import org.example.suite.MyJUnit3SuiteTest;
 import org.junit.Test;
 
 
@@ -67,7 +68,12 @@ public class TestRegistryUtilsTest {
 
 	@Test
 	public void consider_testsuite() throws Exception {
-		assertTrue("this class is extebds junit.framework.TestSuite and must not be skipped", TestRegistryUtils.isValidTestClass(MyTestSuite.class));
+		assertTrue("this class is extends junit.framework.TestSuite and must not be skipped", TestRegistryUtils.isValidTestClass(MyJUnit3SuiteTest.class));
+	}
+
+	@Test
+	public void consider_junit4_testsuite() throws Exception {
+		assertTrue("this class is annoted with SuiteClasses and must not be skipped", TestRegistryUtils.isValidTestClass(MyJUnit4SuiteTest.class));
 	}
 
 }

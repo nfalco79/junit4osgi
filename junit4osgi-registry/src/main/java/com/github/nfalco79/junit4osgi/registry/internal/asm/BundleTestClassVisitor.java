@@ -54,6 +54,14 @@ public class BundleTestClassVisitor extends ClassVisitor {
 	}
 
 	@Override
+	public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+		if (visible && desc.contains("org/junit/runners/Suite$SuiteClasses")) {
+			testClass = true;
+		}
+		return super.visitAnnotation(desc, visible);
+	}
+
+	@Override
 	public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
 		return new MethodVisitor(this.api) {
 			@Override

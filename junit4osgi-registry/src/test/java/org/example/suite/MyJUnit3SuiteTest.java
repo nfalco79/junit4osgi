@@ -6,10 +6,10 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
-public class MyTestSuite extends TestSuite {
+public class MyJUnit3SuiteTest extends TestSuite {
 
 	public static Test suite() {
-		MyTestSuite suite = new MyTestSuite();
+		MyJUnit3SuiteTest suite = new MyJUnit3SuiteTest();
 		suite.addTestSuite(JUnit3Test.class);
 
 		return new TestSetup(suite);

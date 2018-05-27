@@ -23,6 +23,7 @@ import java.lang.reflect.Modifier;
  * @author Nikolas Falco
  */
 import org.junit.Test;
+import org.junit.runners.Suite.SuiteClasses;
 import org.junit.runners.model.TestClass;
 
 import junit.framework.TestCase;
@@ -42,13 +43,19 @@ public final class TestRegistryUtils {
 	 */
 	public static boolean hasTests(Class<?> testClass) {
 		try {
-			return testClass != null && ((junit.framework.Test.class.isAssignableFrom(testClass)
-					&& testClass != TestCase.class && testClass != TestSuite.class /* it's a JUnit3 */)
-					|| /* it's JUnit4 */ !new TestClass(testClass).getAnnotatedMethods(Test.class).isEmpty());
+			return testClass != null && (isJUnit3(testClass) || isJUnit4(testClass));
 		} catch (Exception e) {
 			// catch exception raised by TestClass
 			return false;
 		}
+	}
+
+	private static boolean isJUnit4(Class<?> testClass) {
+		return !new TestClass(testClass).getAnnotatedMethods(Test.class).isEmpty() || testClass.getAnnotation(SuiteClasses.class) != null;
+	}
+
+	private static boolean isJUnit3(Class<?> testClass) {
+		return junit.framework.Test.class.isAssignableFrom(testClass) && testClass != TestCase.class && testClass != TestSuite.class;
 	}
 
 	/**
