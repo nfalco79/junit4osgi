@@ -1,5 +1,6 @@
 package com.github.nfalco79.junit4osgi.gui;
 
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.List;
 
@@ -15,7 +16,7 @@ import com.sun.tools.attach.VirtualMachineDescriptor;
 @SuppressWarnings("restriction")
 public class VMs {
 
-    public static void main(String[] args) {
+	public static void main(String[] args) {
         List<VirtualMachineDescriptor> descriptors = VirtualMachine.list();
         for (VirtualMachineDescriptor descriptor : descriptors) {
             System.out.println("Found JVM: " + descriptor.displayName());
@@ -27,7 +28,7 @@ public class VMs {
 
                 String connectorAddress = vm.getAgentProperties().getProperty("com.sun.management.jmxremote.localConnectorAddress");
                 if (connectorAddress == null) {
-//                    vm.startLocalManagementAgent();
+//                    return vm.startLocalManagementAgent();
                     connectorAddress = vm.getAgentProperties().getProperty("com.sun.management.jmxremote.localConnectorAddress");
                 }
                 if (connectorAddress == null) {
@@ -42,11 +43,12 @@ public class VMs {
                 Integer threadCount = (Integer) mbs.getAttribute(threadName, "ThreadCount");
                 System.out.println("    Thread count: " + threadCount);
             } catch (Exception e) {
-                // ...
-            } finally {
-                if (vm != null) {
-                    vm.detach();
-                }
+			} finally {
+				try {
+	                if (vm != null) {
+                		vm.detach();
+	                }
+				} catch (IOException e) {}
             }
         }
     }

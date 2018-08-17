@@ -35,6 +35,8 @@ import javax.swing.DefaultListModel;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -51,6 +53,8 @@ import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 import org.osgi.service.log.LogService;
 
+import com.github.nfalco79.junit4osgi.gui.runner.remote.JVMUtils;
+import com.github.nfalco79.junit4osgi.gui.runner.remote.VirtualMachineDetails;
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
@@ -86,12 +90,14 @@ public class SwingRunner extends JFrame {
 	private javax.swing.JTable tblTestResult;
 	private javax.swing.JList lstSuite;
 	private javax.swing.JTextField txtSearchTest;
-	private JPopupMenu popmnuTestSelected;
+	private javax.swing.JMenuBar menuBar;
+	private javax.swing.JPopupMenu popmnuTestSelected;
 	private DefaultListModel/*<TestModel>*/ lstModel = new DefaultListModel/*<TestModel>*/();
 
 	private transient SwingTestRegistryChangeListener registryListener = new SwingTestRegistryChangeListener();
 	private transient TestRegistry registry;
 	private transient LogService logService;
+
 
 	public SwingRunner() {
 		running = false;
@@ -170,6 +176,7 @@ public class SwingRunner extends JFrame {
 	 * Generated code.
 	 */
 	private void initComponents() {
+		menuBar = new JMenuBar();
 		dlgTestResult = new javax.swing.JDialog();
 		JScrollPane srcMessage = new javax.swing.JScrollPane();
 		messageArea = new javax.swing.JTextArea();
@@ -195,6 +202,47 @@ public class SwingRunner extends JFrame {
 		txtSearchTest = new javax.swing.JTextField();
 		btnSearch = new javax.swing.JButton();
 		btnRefresh = new javax.swing.JButton();
+
+		JMenu mnuConnectTo = new JMenu("Connect to");
+		mnuConnectTo.getAccessibleContext().setAccessibleDescription("Allow to connect a JVM where a juni4osgi runner is started");
+		menuBar.add(mnuConnectTo);
+
+		JMenuItem mnuLocalJVM = new JMenuItem("Local JMV");
+		mnuLocalJVM.getAccessibleContext().setAccessibleDescription("Connect the same JVM of this runner by declarative OSGi service");
+		mnuLocalJVM.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// get OSGi declared services
+			}
+		});
+		mnuConnectTo.add(mnuLocalJVM);
+
+		JMenu mnuRemoteJVM = new JMenu("Remote JVM");
+		mnuRemoteJVM.getAccessibleContext().setAccessibleDescription("Allow to connect a JVM by JMX");
+		mnuConnectTo.add(mnuRemoteJVM);
+
+		JMenuItem mnuItmLocalJVM = new JMenuItem("localhost");
+		mnuItmLocalJVM.getAccessibleContext().setAccessibleDescription("Allow to connect a JVM on localhost by JMX");
+		mnuItmLocalJVM.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				List<VirtualMachineDetails> listVMs = JVMUtils.listVMs();
+				// show a dialog where choose which JVM on localhost to connect
+			}
+		});
+		mnuRemoteJVM.add(mnuItmLocalJVM);
+
+		JMenuItem mnuItmURLJVM = new JMenuItem("JMX URL");
+		mnuItmURLJVM.getAccessibleContext().setAccessibleDescription("Allow to connect JVM by a JMX url");
+		mnuItmURLJVM.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// show a dialog to insert the JMX URL to connect to
+			}
+		});
+		mnuRemoteJVM.add(mnuItmURLJVM);
+
+		setJMenuBar(menuBar);
 
 		dlgTestResult.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 		dlgTestResult.setMinimumSize(new Dimension(320, 250));
