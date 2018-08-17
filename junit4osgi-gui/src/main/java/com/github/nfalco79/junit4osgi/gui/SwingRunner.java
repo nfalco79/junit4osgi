@@ -26,6 +26,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -40,6 +41,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.table.TableColumn;
 
 import org.junit.runner.Description;
@@ -127,6 +129,9 @@ public class SwingRunner extends JFrame {
 	 * Stop method.
 	 */
 	public void stop() {
+		if (registry != null && registryListener != null) {
+			registry.removeTestRegistryListener(registryListener);
+		}
 		setVisible(false);
 		dispose();
 	}
@@ -135,16 +140,29 @@ public class SwingRunner extends JFrame {
 	 * Refresh the list of available test suites.
 	 */
 	private void refreshSuites() {
+		List<Object> selection = Arrays.asList(lstSuite.getSelectedValues());
+		List<Integer> selectionIndexes = new ArrayList<Integer>(selection.size());
+
 		SearchPattern searchPattern = new SearchPattern(txtSearchTest.getText());
 		Set<TestBean> tests = registry.getTests();
 
 		lstModel.clear();
 
+		int index = 0;
 		for (TestBean test : tests) {
 			String text = test.getName().toLowerCase();
 			if (searchPattern.matches(text)) {
-				lstModel.addElement(new TestModel(test));
+				TestModel testModel = new TestModel(test);
+				lstModel.addElement(testModel);
+				if (selection.contains(testModel)) {
+					selectionIndexes.add(index);
+				}
+				index++;
 			}
+		}
+
+		for (Integer idx : selectionIndexes) {
+			lstSuite.addSelectionInterval(idx, idx);
 		}
 	}
 
@@ -195,6 +213,8 @@ public class SwingRunner extends JFrame {
 		srcMessage.setBorder(null);
 		srcMessage.setMinimumSize(new Dimension(300, 202));
 		srcMessage.setPreferredSize(new Dimension(300, 202));
+		srcMessage.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		srcMessage.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 
 		messageArea.setBackground(javax.swing.UIManager.getDefaults().getColor("Panel.background"));
 		messageArea.setColumns(20);
@@ -202,8 +222,6 @@ public class SwingRunner extends JFrame {
 		messageArea.setLineWrap(true);
 		messageArea.setRows(5);
 		messageArea.setWrapStyleWord(true);
-		messageArea.setMinimumSize(new Dimension(300, 250));
-		messageArea.setPreferredSize(new Dimension(250, 200));
 		srcMessage.setViewportView(messageArea);
 
 		dlgTestResult.getContentPane().add(srcMessage, java.awt.BorderLayout.CENTER);
@@ -738,7 +756,8 @@ public class SwingRunner extends JFrame {
 			switch (event.getType()) {
 			case ADD:
 				SearchPattern searchPattern = new SearchPattern(txtSearchTest.getText());
-				if (searchPattern.matches(testModel.toString())) {
+				String testName = testModel.toString().toLowerCase();
+				if (searchPattern.matches(testName)) {
 					lstModel.addElement(testModel);
 				}
 				break;
