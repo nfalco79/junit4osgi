@@ -173,7 +173,11 @@ public class JUnitRunner implements TestRunner {
 		start(null, null, null);
 	}
 
-	@JmxOperation(description = "Start the runner that execute the test with the specified id collected by the JUnit registry", operationAction = OperationAction.ACTION)
+	@JmxOperation(description = "Start the runner that execute tests with the specified id collected by the JUnit registry", //
+			operationAction = OperationAction.ACTION, //
+			parameterDescriptions = { //
+					"an array of test ids to execute, a test id is composed by <bundle symbolic name>@<FQN of test class>", //
+					"path on disk where save surefire reports" })
 	public void start(String[] testIds, String reportsPath) {
 	    start(testIds, reportsPath, null);
 	}
