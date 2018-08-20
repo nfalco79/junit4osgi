@@ -16,6 +16,12 @@
 			<artifactId>junit4osgi-registry</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.j256.simplejmx</groupId>
+			<artifactId>simplejmx</artifactId>
+			<version>1.15</version>
+			<optional>true</optional>
+		</dependency>
 	</dependencies>
 	<build>
 		<pluginManagement>
@@ -23,12 +29,20 @@
 				<plugin>
 					<groupId>org.apache.felix</groupId>
 					<artifactId>maven-bundle-plugin</artifactId>
-					<configuration>
-						<instructions>
-							<Bundle-SymbolicName>${maven-symbolicname};singleton:=true</Bundle-SymbolicName>
-							<Service-Component>OSGI-INF/*.xml</Service-Component>
-						</instructions>
-					</configuration>
+					<executions>
+						<execution>
+							<id>bundle-manifest</id>
+							<goals>
+								<goal>manifest</goal>
+							</goals>
+							<configuration>
+								<instructions>
+									<Bundle-SymbolicName>${maven-symbolicname};singleton:=true</Bundle-SymbolicName>
+									<Service-Component>OSGI-INF/*.xml</Service-Component>
+								</instructions>
+							</configuration>
+						</execution>
+					</executions>
 				</plugin>
 			</plugins>
 		</pluginManagement>

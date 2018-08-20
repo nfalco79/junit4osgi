@@ -1,29 +1,33 @@
-package com.github.nfalco79.junit4osgi.gui.runner.remote;
+package com.github.nfalco79.junit4osgi.gui.internal.runner.remote;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-import javax.management.JMException;
-import javax.management.MBeanServerConnection;
-import javax.management.ObjectName;
-import javax.management.remote.JMXConnector;
-import javax.management.remote.JMXConnectorFactory;
-import javax.management.remote.JMXServiceURL;
-
+import com.j256.simplejmx.client.JmxClient;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 
 @SuppressWarnings("restriction")
-public class JVMUtils {
+public final class RemoteUtils {
 	private static final String JAVA_RUNTIME_VERSION = "java.runtime.version";
 	private static final String JMX_LOCAL_CONNECTOR_ADDRESS = "com.sun.management.jmxremote.localConnectorAddress";
 
+	private static boolean toolsAvailable = isToolsAvailable();
 	private static int javaVersion = getJavaVersion();
 	private static Method startLocalJMX = getStartLocalJMXMethod();
 
+	public static boolean isRemoteEnabled() {
+		return toolsAvailable;
+	}
+
 	public static List<VirtualMachineDetails> listVMs() {
+		if (!toolsAvailable) {
+			return Collections.emptyList();
+		}
+
 		List<VirtualMachineDetails> vms = new ArrayList<VirtualMachineDetails>();
 
 		for (VirtualMachineDescriptor descriptor : VirtualMachine.list()) {
@@ -42,6 +46,7 @@ public class JVMUtils {
 				}
 				if (hasJUnit4OSGi(connectorAddress)) {
 					vms.add(new VirtualMachineDetails(connectorAddress, jvmDescription));
+					System.out.println(connectorAddress);
 				}
 			} catch (Exception e) {
 				e.printStackTrace(System.err);
@@ -58,24 +63,35 @@ public class JVMUtils {
 		return vms;
 	}
 
-	public static boolean hasJUnit4OSGi(String connectorAddress) {
+	private static boolean isToolsAvailable() {
 		try {
-			JMXServiceURL url = new JMXServiceURL(connectorAddress);
-			JMXConnector connector = JMXConnectorFactory.connect(url);
-			MBeanServerConnection mbs = connector.getMBeanServerConnection();
+			Class.forName("com.sun.tools.attach.VirtualMachine");
+			return true;
+		} catch (ClassNotFoundException e) {
+			// tools.jar not in classpath
+		} catch (NoClassDefFoundError e) {
+			// tools.jar in classpath but some issue on load class (are in OSGi)
+		}
+		return false;
+	}
 
-			ObjectName registry = new ObjectName("org.osgi.junit4osgi:name=AutoDiscoveryRegistry,type=registry");
-			return mbs.getMBeanInfo(registry) != null;
-		} catch (JMException e) {
-			return false;
-		} catch (IOException e) {
+	public static boolean hasJUnit4OSGi(String connectorAddress) {
+		JmxClient client = null;
+		try {
+			client = new JmxClient(connectorAddress);
+			return !client.getBeanNames("org.osgi.junit4osgi").isEmpty();
+		} catch (Exception e) {
 			e.printStackTrace(System.err);
+		} finally {
+			if (client != null) {
+				client.close();
+			}
 		}
 		return false;
 	}
 
 	private static Method getStartLocalJMXMethod() {
-		if (javaVersion >= 8) {
+		if (toolsAvailable && javaVersion >= 8) {
 			try {
 				return VirtualMachine.class.getDeclaredMethod("startLocalManagementAgent");
 			} catch (NoSuchMethodException e) {
@@ -102,7 +118,6 @@ public class JVMUtils {
 		return javaVersion;
 	}
 
-	public static void main(String[] args) {
-		listVMs();
+	private RemoteUtils() {
 	}
 }

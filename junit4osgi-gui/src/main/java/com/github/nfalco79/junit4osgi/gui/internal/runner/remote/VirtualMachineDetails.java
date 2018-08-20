@@ -1,4 +1,4 @@
-package com.github.nfalco79.junit4osgi.gui.runner.remote;
+package com.github.nfalco79.junit4osgi.gui.internal.runner.remote;
 
 public class VirtualMachineDetails {
 

@@ -27,7 +27,9 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -38,6 +40,7 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
@@ -53,16 +56,20 @@ import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 import org.osgi.service.log.LogService;
 
-import com.github.nfalco79.junit4osgi.gui.runner.remote.JVMUtils;
-import com.github.nfalco79.junit4osgi.gui.runner.remote.VirtualMachineDetails;
+import com.github.nfalco79.junit4osgi.gui.internal.runner.DummyExecutor;
+import com.github.nfalco79.junit4osgi.gui.internal.runner.TestExecutor;
+import com.github.nfalco79.junit4osgi.gui.internal.runner.local.LocalRunner;
+import com.github.nfalco79.junit4osgi.gui.internal.runner.local.LocalUtils;
+import com.github.nfalco79.junit4osgi.gui.internal.runner.remote.RemoteRunner;
+import com.github.nfalco79.junit4osgi.gui.internal.runner.remote.RemoteUtils;
+import com.github.nfalco79.junit4osgi.gui.internal.runner.remote.VirtualMachineDetails;
 import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
-import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
-import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
 
 /**
  * Swing Runner for JUnit4OSGi registry.
  */
+@SuppressWarnings("rawtypes")
 public class SwingRunner extends JFrame {
 
 	private static final long serialVersionUID = 1L;
@@ -92,15 +99,16 @@ public class SwingRunner extends JFrame {
 	private javax.swing.JTextField txtSearchTest;
 	private javax.swing.JMenuBar menuBar;
 	private javax.swing.JPopupMenu popmnuTestSelected;
-	private DefaultListModel/*<TestModel>*/ lstModel = new DefaultListModel/*<TestModel>*/();
+	private DefaultListModel/* <TestModel> */ lstModel;
 
-	private transient SwingTestRegistryChangeListener registryListener = new SwingTestRegistryChangeListener();
-	private transient TestRegistry registry;
+	private transient SwingTestRegistryChangeListener registryListener;
+	private transient TestExecutor testExecutor;
 	private transient LogService logService;
-
 
 	public SwingRunner() {
 		running = false;
+		lstModel = new DefaultListModel/* <TestModel> */();
+		registryListener = new SwingTestRegistryChangeListener(lstModel, null);
 	}
 
 	private void internalInitComponents() {
@@ -135,8 +143,9 @@ public class SwingRunner extends JFrame {
 	 * Stop method.
 	 */
 	public void stop() {
-		if (registry != null && registryListener != null) {
-			registry.removeTestRegistryListener(registryListener);
+		// testQualcosa.dispose();
+		if (testExecutor != null && registryListener != null) {
+			testExecutor.removeTestRegistryListener(registryListener);
 		}
 		setVisible(false);
 		dispose();
@@ -150,15 +159,15 @@ public class SwingRunner extends JFrame {
 		List<Integer> selectionIndexes = new ArrayList<Integer>(selection.size());
 
 		SearchPattern searchPattern = new SearchPattern(txtSearchTest.getText());
-		Set<TestBean> tests = registry.getTests();
+		String[] testsId = testExecutor.getTestsId();
 
 		lstModel.clear();
 
 		int index = 0;
-		for (TestBean test : tests) {
-			String text = test.getName().toLowerCase();
-			if (searchPattern.matches(text)) {
-				TestModel testModel = new TestModel(test);
+		for (String testId : testsId) {
+			TestModel testModel = new TestModel(testId);
+			String testName = testModel.toString();
+			if (searchPattern.matches(testName)) {
 				lstModel.addElement(testModel);
 				if (selection.contains(testModel)) {
 					selectionIndexes.add(index);
@@ -200,25 +209,38 @@ public class SwingRunner extends JFrame {
 		};
 		lblExecutedResults = new javax.swing.JLabel();
 		txtSearchTest = new javax.swing.JTextField();
+		txtSearchTest.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				registryListener.setFilter(txtSearchTest.getText());
+			}
+		});
 		btnSearch = new javax.swing.JButton();
 		btnRefresh = new javax.swing.JButton();
 
 		JMenu mnuConnectTo = new JMenu("Connect to");
-		mnuConnectTo.getAccessibleContext().setAccessibleDescription("Allow to connect a JVM where a juni4osgi runner is started");
+		mnuConnectTo.getAccessibleContext()
+				.setAccessibleDescription("Allow to connect a JVM where a juni4osgi runner is started");
 		menuBar.add(mnuConnectTo);
 
-		JMenuItem mnuLocalJVM = new JMenuItem("Local JMV");
-		mnuLocalJVM.getAccessibleContext().setAccessibleDescription("Connect the same JVM of this runner by declarative OSGi service");
+		JMenuItem mnuLocalJVM = new JMenuItem("Local JVM");
+		mnuLocalJVM.getAccessibleContext()
+				.setAccessibleDescription("Connect the same JVM of this runner by declarative OSGi service");
 		mnuLocalJVM.addActionListener(new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
-				// get OSGi declared services
+			public void actionPerformed(ActionEvent evt) {
+				try {
+					testExecutor = LocalUtils.getExecutor();
+				} catch (Exception e) {
+					JOptionPane.showMessageDialog(SwingRunner.this, e.getMessage(), "JUni4OSGi not found on local JVM", JOptionPane.OK_OPTION);
+				}
 			}
 		});
 		mnuConnectTo.add(mnuLocalJVM);
 
 		JMenu mnuRemoteJVM = new JMenu("Remote JVM");
 		mnuRemoteJVM.getAccessibleContext().setAccessibleDescription("Allow to connect a JVM by JMX");
+		mnuRemoteJVM.setEnabled(RemoteUtils.isRemoteEnabled());
 		mnuConnectTo.add(mnuRemoteJVM);
 
 		JMenuItem mnuItmLocalJVM = new JMenuItem("localhost");
@@ -226,7 +248,7 @@ public class SwingRunner extends JFrame {
 		mnuItmLocalJVM.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				List<VirtualMachineDetails> listVMs = JVMUtils.listVMs();
+				List<VirtualMachineDetails> listVMs = RemoteUtils.listVMs();
 				// show a dialog where choose which JVM on localhost to connect
 			}
 		});
@@ -236,8 +258,8 @@ public class SwingRunner extends JFrame {
 		mnuItmURLJVM.getAccessibleContext().setAccessibleDescription("Allow to connect JVM by a JMX url");
 		mnuItmURLJVM.addActionListener(new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
-				// show a dialog to insert the JMX URL to connect to
+			public void actionPerformed(ActionEvent evt) {
+				connectToRemoteAction(evt);
 			}
 		});
 		mnuRemoteJVM.add(mnuItmURLJVM);
@@ -361,12 +383,12 @@ public class SwingRunner extends JFrame {
 		tblTestResult.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mousePressed(MouseEvent evt) {
-//				showPopupMenu(evt);
+				// showPopupMenu(evt);
 			}
 
 			@Override
 			public void mouseClicked(MouseEvent evt) {
-			    showPopupMenu(evt);
+				showPopupMenu(evt);
 				resultTableMouseClicked(evt);
 			}
 		});
@@ -501,13 +523,13 @@ public class SwingRunner extends JFrame {
 		}
 
 		Object[] selection = lstSuite.getSelectedValues();
-//		List selection = lstSuite.getSelectedValuesList(); java 7
+		// List selection = lstSuite.getSelectedValuesList(); java 7
 
 		// Collect selected test.
-		List<TestBean> list = new ArrayList<TestBean>(selection.length);
+		Set<String> list = new LinkedHashSet<String>(selection.length);
 		for (Object selected : selection) {
 			if (selected != null) {
-				list.add(((TestModel) selected).getTest());
+				list.add(selected.toString());
 			}
 		}
 
@@ -587,7 +609,14 @@ public class SwingRunner extends JFrame {
 
 	private void btnSearchActionPerformed(ActionEvent evt) {
 		refreshSuites();
+	}
 
+	private void connectToRemoteAction(ActionEvent evt) {
+		String jmxURL = JOptionPane.showInputDialog(SwingRunner.this, "JMX URL", "service:jmx:<protocol>:<sap>");
+		if (jmxURL != null) {
+			testExecutor = new RemoteRunner(jmxURL.trim());
+			refreshSuites();
+		}
 	}
 
 	/**
@@ -624,12 +653,13 @@ public class SwingRunner extends JFrame {
 	 * @param tests
 	 *            bean OSGi wrapper of test suite class to execute.
 	 */
-	private void executeTest(final List<TestBean> tests) {
+	private void executeTest(final Set<String> testsId) {
 		progressBar.setIndeterminate(true);
 
 		ResultTableModel model = (ResultTableModel) tblTestResult.getModel();
 		model.clear();
 
+		Set<TestBean> tests = testExecutor.getTests(testsId);
 		Runnable thread = new TestRunnable<TestBean>(tests) {
 			@Override
 			protected String getTestMethod(TestBean test) {
@@ -671,8 +701,14 @@ public class SwingRunner extends JFrame {
 		lblExecutedResults.setText(m);
 	}
 
+	/**
+	 * Set the {@link TestRegistry}, called by declarative services.
+	 *
+	 * @param registry
+	 *            present on
+	 */
 	public void setRegistry(TestRegistry registry) {
-		this.registry = registry;
+		this.testExecutor = new LocalRunner(registry);
 		registry.addTestRegistryListener(registryListener);
 	}
 
@@ -684,32 +720,34 @@ public class SwingRunner extends JFrame {
 		}
 	}
 
-    /**
-     * Returns true if the mouse event specifies the left mouse button.
-     *
-     * @param anEvent
-     *            a MouseEvent object
-     * @return true if the left mouse button was active
-     */
-    public static boolean isLeftMouseButton(MouseEvent anEvent) {
-        return ((anEvent.getModifiersEx() & InputEvent.BUTTON1_DOWN_MASK) != 0 || anEvent.getButton() == MouseEvent.BUTTON1);
-    }
+	/**
+	 * Returns true if the mouse event specifies the left mouse button.
+	 *
+	 * @param anEvent
+	 *            a MouseEvent object
+	 * @return true if the left mouse button was active
+	 */
+	public static boolean isLeftMouseButton(MouseEvent anEvent) {
+		return ((anEvent.getModifiersEx() & InputEvent.BUTTON1_DOWN_MASK) != 0
+				|| anEvent.getButton() == MouseEvent.BUTTON1);
+	}
 
-    /**
-     * Returns true if the mouse event specifies the right mouse button.
-     *
-     * @param anEvent
-     *            a MouseEvent object
-     * @return true if the right mouse button was active
-     */
-    public static boolean isRightMouseButton(MouseEvent anEvent) {
-        return ((anEvent.getModifiersEx() & InputEvent.BUTTON3_DOWN_MASK) != 0 || anEvent.getButton() == MouseEvent.BUTTON3);
-    }
+	/**
+	 * Returns true if the mouse event specifies the right mouse button.
+	 *
+	 * @param anEvent
+	 *            a MouseEvent object
+	 * @return true if the right mouse button was active
+	 */
+	public static boolean isRightMouseButton(MouseEvent anEvent) {
+		return ((anEvent.getModifiersEx() & InputEvent.BUTTON3_DOWN_MASK) != 0
+				|| anEvent.getButton() == MouseEvent.BUTTON3);
+	}
 
 	private abstract class TestRunnable<T> implements Runnable {
-		private List<T> tests;
+		private Collection<T> tests;
 
-		public TestRunnable(List<T> tests) {
+		public TestRunnable(final Collection<T> tests) {
 			this.tests = tests;
 		}
 
@@ -796,25 +834,9 @@ public class SwingRunner extends JFrame {
 		}
 	}
 
-	private class SwingTestRegistryChangeListener implements TestRegistryChangeListener {
-		@Override
-		public void registryChanged(TestRegistryEvent event) {
-			TestModel testModel = new TestModel(event.getTest());
-
-			switch (event.getType()) {
-			case ADD:
-				SearchPattern searchPattern = new SearchPattern(txtSearchTest.getText());
-				String testName = testModel.toString().toLowerCase();
-				if (searchPattern.matches(testName)) {
-					lstModel.addElement(testModel);
-				}
-				break;
-			case REMOVE:
-				lstModel.removeElement(testModel);
-				break;
-			default:
-				break;
-			}
-		}
+	public static void main(String[] args) {
+		SwingRunner swingRunner = new SwingRunner();
+		swingRunner.testExecutor = new DummyExecutor();
+		swingRunner.start();
 	}
 }

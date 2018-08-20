@@ -137,9 +137,9 @@ public abstract class AbstractTestRegistry implements TestRegistry {
 		return isTest;
 	}
 
-	@Override
 	public void dispose() {
 		tests.clear();
+		listeners.clear();
 	}
 
 	/*

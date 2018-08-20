@@ -82,10 +82,4 @@ public interface TestRegistry {
 	 */
 	void removeTestRegistryListener(TestRegistryChangeListener listener);
 
-	/**
-	 * Performs the operation to dispose this registry instance and clear its
-	 * internal state.
-	 */
-	void dispose();
-
 }

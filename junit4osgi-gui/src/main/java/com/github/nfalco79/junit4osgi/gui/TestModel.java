@@ -15,42 +15,42 @@
  */
 package com.github.nfalco79.junit4osgi.gui;
 
-import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
-
 /**
  * Wrapper to render a TestBean on UI.
  */
 public class TestModel {
-	private TestBean test;
+	private String testId;
+	private String testName;
 
-	public TestModel(final TestBean test) {
-		if (test == null) {
+	public TestModel(final String testId) {
+		if (testId == null) {
 			throw new IllegalArgumentException("test bean is null");
 		}
-		this.test = test;
+		this.testId = testId;
+		this.testName = testId.substring(testId.indexOf('@') + 1);
 	}
 
-	public TestBean getTest() {
-		return test;
+	public String getTest() {
+		return testId;
 	}
 
 	@Override
 	public int hashCode() {
-		return test.hashCode();
+		return testId.hashCode();
 	}
 
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof TestModel) {
 			TestModel tm = (TestModel) obj;
-		    return test.equals(tm.test);
+		    return testId.equals(tm.testId);
 		}
 		return false;
 	}
 
 	@Override
 	public String toString() {
-		return test.getName();
+		return testName;
 	}
 
 }
