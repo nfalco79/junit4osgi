@@ -12,4 +12,6 @@ public interface TestExecutor {
 	Set<TestBean> getTests(final Set<String> testsId);
 
 	void removeTestRegistryListener(final TestRegistryChangeListener registryListener);
+
+	<T> void runTest(T test) throws Exception;
 }

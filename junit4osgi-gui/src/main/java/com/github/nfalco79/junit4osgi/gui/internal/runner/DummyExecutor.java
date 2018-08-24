@@ -22,4 +22,8 @@ public class DummyExecutor implements TestExecutor {
 	public void removeTestRegistryListener(TestRegistryChangeListener registryListener) {
 	}
 
+    @Override
+    public <T> void runTest(T test) throws ClassNotFoundException {
+    }
+
 }

@@ -3,7 +3,6 @@ package com.github.nfalco79.junit4osgi.gui.internal.runner.remote;
 import java.util.Set;
 
 import javax.management.JMException;
-import javax.management.MBeanInfo;
 import javax.management.ObjectName;
 
 import com.github.nfalco79.junit4osgi.gui.internal.runner.TestExecutor;
@@ -13,13 +12,9 @@ import com.j256.simplejmx.client.JmxClient;
 
 public class RemoteRunner implements TestExecutor {
 
-	private final String connectorAddress;
-	private MBeanInfo mBeanInfo;
 	private JmxClient jmxClient;
 
 	public RemoteRunner(final String jmxURL) {
-		this.connectorAddress = jmxURL;
-
 		try {
 			jmxClient = new JmxClient(jmxURL);
 		} catch (JMException e) {
@@ -38,16 +33,22 @@ public class RemoteRunner implements TestExecutor {
 		return new String[0];
 	}
 
-	@Override
-	public Set<TestBean> getTests(Set<String> testsId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Set<TestBean> getTests(Set<String> testsId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public void removeTestRegistryListener(TestRegistryChangeListener registryListener) {
-		// TODO Auto-generated method stub
+    @Override
+    public void removeTestRegistryListener(TestRegistryChangeListener registryListener) {
+        // TODO Auto-generated method stub
 
-	}
+    }
+
+    @Override
+    public <T> void runTest(T testId) throws Exception {
+        ObjectName objectName = new ObjectName("org.osgi.junit4osgi:name=JUnitRunner,type=runner");
+        jmxClient.invokeOperation(objectName, "start", new String[] { (String) testId }, "d:\\");
+    }
 
 }

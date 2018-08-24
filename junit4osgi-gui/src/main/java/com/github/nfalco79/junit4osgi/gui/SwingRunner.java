@@ -25,6 +25,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -50,8 +51,6 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.table.TableColumn;
 
 import org.junit.runner.Description;
-import org.junit.runner.JUnitCore;
-import org.junit.runner.Request;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 import org.osgi.service.log.LogService;
@@ -63,7 +62,6 @@ import com.github.nfalco79.junit4osgi.gui.internal.runner.local.LocalUtils;
 import com.github.nfalco79.junit4osgi.gui.internal.runner.remote.RemoteRunner;
 import com.github.nfalco79.junit4osgi.gui.internal.runner.remote.RemoteUtils;
 import com.github.nfalco79.junit4osgi.gui.internal.runner.remote.VirtualMachineDetails;
-import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
 
 /**
@@ -529,7 +527,7 @@ public class SwingRunner extends JFrame {
 		Set<String> list = new LinkedHashSet<String>(selection.length);
 		for (Object selected : selection) {
 			if (selected != null) {
-				list.add(selected.toString());
+				list.add(((TestModel) selected).getTest());
 			}
 		}
 
@@ -631,18 +629,7 @@ public class SwingRunner extends JFrame {
 		ResultTableModel model = (ResultTableModel) tblTestResult.getModel();
 		model.clear();
 
-		Runnable thread = new TestRunnable<Description>(descriptions) {
-
-			@Override
-			protected String getTestMethod(Description test) {
-				return test.getMethodName();
-			}
-
-			@Override
-			protected Class<?> getTestClass(Description test) {
-				return test.getTestClass();
-			}
-		};
+		Runnable thread = new SwingTestRunnable<Description>(descriptions, testExecutor);
 
 		new Thread(thread).start();
 	}
@@ -659,31 +646,7 @@ public class SwingRunner extends JFrame {
 		ResultTableModel model = (ResultTableModel) tblTestResult.getModel();
 		model.clear();
 
-		Set<TestBean> tests = testExecutor.getTests(testsId);
-		Runnable thread = new TestRunnable<TestBean>(tests) {
-			@Override
-			protected String getTestMethod(TestBean test) {
-				return null;
-			}
-
-			@Override
-			protected Class<?> getTestClass(TestBean test) {
-				try {
-					return test.getTestClass();
-				} catch (ClassNotFoundException e) {
-					// skip test
-					if (logService != null) {
-						logService.log(LogService.LOG_ERROR, "Skip test " + test.getName(), e);
-					}
-				} catch (NoClassDefFoundError e) {
-					// skip test
-					if (logService != null) {
-						logService.log(LogService.LOG_ERROR, "Skip test " + test.getName(), e);
-					}
-				}
-				return null;
-			}
-		};
+		Runnable thread = new SwingTestRunnable<String>(testsId, testExecutor);
 
 		new Thread(thread).start();
 	}
@@ -744,29 +707,28 @@ public class SwingRunner extends JFrame {
 				|| anEvent.getButton() == MouseEvent.BUTTON3);
 	}
 
-	private abstract class TestRunnable<T> implements Runnable {
+	private class SwingTestRunnable<T> implements Runnable {
 		private Collection<T> tests;
+        private TestExecutor testExecutor;
 
-		public TestRunnable(final Collection<T> tests) {
+		public SwingTestRunnable(final Collection<T> tests, TestExecutor testExecutor) {
 			this.tests = tests;
+			this.testExecutor = testExecutor;
 		}
 
 		@Override
 		public void run() {
-			JUnitCore core = new JUnitCore();
-			core.addListener(new MyTestListener());
-
 			Iterator<T> testIt = tests.iterator();
 			while (!stopped && testIt.hasNext()) {
 				T test = testIt.next();
-				Class<?> testClass = getTestClass(test);
-				String methodName = getTestMethod(test);
-
-				if (methodName == null) {
-					core.run(testClass);
-				} else {
-					core.run(Request.method(testClass, methodName));
-				}
+				try {
+				    testExecutor.<T> runTest(test);
+		        } catch (Exception e) {
+		            // skip test
+		            if (logService != null) {
+		                logService.log(LogService.LOG_ERROR, "Skip test " + test, e);
+		            }
+		        }
 			}
 
 			progressBar.setIndeterminate(false);
@@ -783,14 +745,12 @@ public class SwingRunner extends JFrame {
 			computeExecutedTest();
 			setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 		}
-
-		protected abstract String getTestMethod(T test);
-
-		protected abstract Class<?> getTestClass(T test);
 	}
 
-	private class MyTestListener extends RunListener {
-		/**
+	private class MyTestListener extends RunListener implements Serializable {
+        private static final long serialVersionUID = -3104542616583076288L;
+
+        /**
 		 * Table model.
 		 */
 		private ResultTableModel tblModel = (ResultTableModel) tblTestResult.getModel();
