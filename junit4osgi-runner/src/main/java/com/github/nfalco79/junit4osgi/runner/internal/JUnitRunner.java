@@ -16,6 +16,9 @@
 package com.github.nfalco79.junit4osgi.runner.internal;
 
 import java.io.File;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collection;
@@ -173,9 +176,17 @@ public class JUnitRunner implements TestRunner {
 		start(null, null, null);
 	}
 
-	@JmxOperation(description = "Start the runner that execute the test with the specified id collected by the JUnit registry", operationAction = OperationAction.ACTION)
-	public void start(String[] testIds, String reportsPath) {
-	    start(testIds, reportsPath, null);
+	@JmxOperation(description = "Start the runner that execute the test with the specified id collected by the JUnit registry", //
+			operationAction = OperationAction.ACTION, //
+			parameterDescriptions = {
+					"An array of test identifier to run. An identifier is composed by <bundle symbolic name>@<FQN of the JUnit class>",
+					"Path where generate surefire reports" })
+//	public void start(String[] testIds, String reportsPath) {
+//		start(testIds, reportsPath, null);
+//	}
+	public OutputStream start(String[] testIds, TestRunnerNotifier notifier) {
+		StringWriter out = new StringWriter();
+		return new PrintWriter(out);
 	}
 
 	@Override

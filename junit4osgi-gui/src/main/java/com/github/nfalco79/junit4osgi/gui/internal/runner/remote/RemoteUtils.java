@@ -19,7 +19,7 @@ public final class RemoteUtils {
 	private static int javaVersion = getJavaVersion();
 	private static Method startLocalJMX = getStartLocalJMXMethod();
 
-	public static boolean isRemoteEnabled() {
+	public static boolean isAutodetectEnabled() {
 		return toolsAvailable;
 	}
 
@@ -46,7 +46,6 @@ public final class RemoteUtils {
 				}
 				if (hasJUnit4OSGi(connectorAddress)) {
 					vms.add(new VirtualMachineDetails(connectorAddress, jvmDescription));
-					System.out.println(connectorAddress);
 				}
 			} catch (Exception e) {
 				e.printStackTrace(System.err);

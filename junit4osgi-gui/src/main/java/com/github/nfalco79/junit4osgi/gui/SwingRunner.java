@@ -182,6 +182,7 @@ public class SwingRunner extends JFrame {
 	/*
 	 * Generated code.
 	 */
+	@SuppressWarnings("serial")
 	private void initComponents() {
 		menuBar = new JMenuBar();
 		dlgTestResult = new javax.swing.JDialog();
@@ -217,11 +218,13 @@ public class SwingRunner extends JFrame {
 		btnRefresh = new javax.swing.JButton();
 
 		JMenu mnuConnectTo = new JMenu("Connect to");
+		mnuConnectTo.setToolTipText("Allow to connect a JVM where a juni4osgi runner is started");
 		mnuConnectTo.getAccessibleContext()
 				.setAccessibleDescription("Allow to connect a JVM where a juni4osgi runner is started");
 		menuBar.add(mnuConnectTo);
 
 		JMenuItem mnuLocalJVM = new JMenuItem("Local JVM");
+		mnuLocalJVM.setToolTipText("Connect the same JVM of this runner by declarative OSGi service");
 		mnuLocalJVM.getAccessibleContext()
 				.setAccessibleDescription("Connect the same JVM of this runner by declarative OSGi service");
 		mnuLocalJVM.addActionListener(new ActionListener() {
@@ -237,27 +240,30 @@ public class SwingRunner extends JFrame {
 		mnuConnectTo.add(mnuLocalJVM);
 
 		JMenu mnuRemoteJVM = new JMenu("Remote JVM");
+		mnuRemoteJVM.setToolTipText("Allow to connect a JVM by JMX");
 		mnuRemoteJVM.getAccessibleContext().setAccessibleDescription("Allow to connect a JVM by JMX");
-		mnuRemoteJVM.setEnabled(RemoteUtils.isRemoteEnabled());
 		mnuConnectTo.add(mnuRemoteJVM);
 
 		JMenuItem mnuItmLocalJVM = new JMenuItem("localhost");
+		mnuItmLocalJVM.setToolTipText("Allow to connect a JVM on localhost by JMX"
+				+ (RemoteUtils.isAutodetectEnabled() ? "" : ". To enable this menù add the tools.jar to the classpath"));
 		mnuItmLocalJVM.getAccessibleContext().setAccessibleDescription("Allow to connect a JVM on localhost by JMX");
+		mnuItmLocalJVM.setEnabled(RemoteUtils.isAutodetectEnabled());
 		mnuItmLocalJVM.addActionListener(new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
-				List<VirtualMachineDetails> listVMs = RemoteUtils.listVMs();
-				// show a dialog where choose which JVM on localhost to connect
+			public void actionPerformed(ActionEvent evt) {
+				connecToLocalhost();
 			}
 		});
 		mnuRemoteJVM.add(mnuItmLocalJVM);
 
 		JMenuItem mnuItmURLJVM = new JMenuItem("JMX URL");
+		mnuItmURLJVM.setToolTipText("Allow to connect JVM by a JMX url");
 		mnuItmURLJVM.getAccessibleContext().setAccessibleDescription("Allow to connect JVM by a JMX url");
 		mnuItmURLJVM.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent evt) {
-				connectToRemoteAction(evt);
+				connectToRemoteAction();
 			}
 		});
 		mnuRemoteJVM.add(mnuItmURLJVM);
@@ -609,7 +615,31 @@ public class SwingRunner extends JFrame {
 		refreshSuites();
 	}
 
-	private void connectToRemoteAction(ActionEvent evt) {
+	private void connecToLocalhost() {
+		List<VirtualMachineDetails> listVMs = RemoteUtils.listVMs();
+
+		String title = "Choose the JVM to connect to";
+		if (listVMs.isEmpty()) {
+			JOptionPane.showMessageDialog(SwingRunner.this, "No JUnit runner registered detected on JMX for localhost",
+					title, JOptionPane.INFORMATION_MESSAGE);
+		} else {
+			// show a dialog where choose which JVM on localhost to connect
+			ListDialog<VirtualMachineDetails> dialog = new ListDialog<VirtualMachineDetails>();
+			dialog.setModal(true);
+			dialog.setSize(450, 100);
+			dialog.setLocationRelativeTo(SwingRunner.this);
+			dialog.setTitle(title);
+			dialog.fillWith(listVMs);
+			dialog.setVisible(true);
+			VirtualMachineDetails vmDetails = dialog.getSelection();
+			if (vmDetails != null) {
+				testExecutor = new RemoteRunner(vmDetails.getJmxURL());
+				refreshSuites();
+			}
+		}
+	}
+
+	private void connectToRemoteAction() {
 		String jmxURL = JOptionPane.showInputDialog(SwingRunner.this, "JMX URL", "service:jmx:<protocol>:<sap>");
 		if (jmxURL != null) {
 			testExecutor = new RemoteRunner(jmxURL.trim());
