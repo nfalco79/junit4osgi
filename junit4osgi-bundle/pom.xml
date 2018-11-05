@@ -61,9 +61,9 @@
 						<instructions>
 							<Embed-Dependency>hamcrest-core;inline=true,hamcrest-library;inline=true,junit;inline=true</Embed-Dependency>
 							<Export-Package>
-								junit*;version="3.8.1",
-								org.junit*;version="${junit.version}",
-								org.hamcrest*;version="${hamcrest.version}"
+								junit*;version="3.8.1";-noimport:=true,
+								org.junit*;version="${junit.version}";-noimport:=true,
+								org.hamcrest*;version="${hamcrest.version}";-noimport:=true
 							</Export-Package>
 						</instructions>
 					</configuration>
