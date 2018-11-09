@@ -15,7 +15,7 @@
  */
 package com.github.nfalco79.junit4osgi.registry.internal.util;
 
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.io.File;
@@ -23,12 +23,14 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.SortedSet;
+import java.util.StringTokenizer;
+import java.util.TreeSet;
 import java.util.Vector;
 
 import org.hamcrest.Matchers;
@@ -172,7 +174,6 @@ public final class BundleBuilder {
 	}
 
 	public Bundle build() throws Exception {
-		when(bundle.findEntries("/", "*.class", true)).thenReturn(toURLs(bundleClasses));
 		when(bundle.getState()).thenReturn(bundleState);
 		when(bundle.getHeaders()).thenReturn(manifestEntries);
 
@@ -188,6 +189,11 @@ public final class BundleBuilder {
 					return strategy.resolveURL(entry);
 				}
 			});
+		} else {
+			Map<String, SortedSet<String>> entries = asEntryPaths(bundleClasses);
+			for (String path : entries.keySet()) {
+				when(bundle.getEntryPaths(path)).thenReturn(new Vector<String>(entries.get(path)).elements());
+			}
 		}
 
 		for (Entry<String, File> resEntry : bundleResources.entrySet()) {
@@ -206,12 +212,36 @@ public final class BundleBuilder {
 		return '/' + clazz.getName().replace('.', '/') + ".class";
 	}
 
-	private Enumeration<URL> toURLs(Collection<Class<?>> testsClass) throws MalformedURLException {
-		Vector<URL> resources = new Vector<URL>(bundleClasses.size());
-		for (Class<?> testClass : bundleClasses) {
-			resources.add(strategy.resolveURL(testClass));
+	private Map<String, SortedSet<String>> asEntryPaths(Collection<Class<?>> testsClass) throws MalformedURLException {
+		Map<String, SortedSet<String>> paths = new HashMap<String, SortedSet<String>>();
+		for (Class<?> bundleClass : bundleClasses) {
+			String classPath = bundleClass.getName().replace('.', '/') + ".class";
+			StringTokenizer st = new StringTokenizer(classPath, "/");
+			String root = null;
+			if (st.hasMoreTokens()) {
+				root = st.nextToken();
+				if (!root.endsWith(".class")) {
+					root += "/";
+				}
+			}
+			while (st.hasMoreTokens()) {
+				String nextToken = st.nextToken();
+
+				SortedSet<String> segment = paths.get(root);
+				if (segment == null) {
+					paths.put(root, segment = new TreeSet<String>());
+				}
+
+				root = root + nextToken;
+				if (!root.endsWith(".class")) {
+					root += "/";
+				}
+
+				segment.add(root);
+			}
 		}
-		return resources.elements();
+		paths.put("/", new TreeSet<String>(paths.keySet()));
+		return paths;
 	}
 
 }

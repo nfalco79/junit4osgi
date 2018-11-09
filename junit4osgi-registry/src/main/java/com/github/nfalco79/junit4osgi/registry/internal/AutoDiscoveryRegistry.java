@@ -15,7 +15,6 @@
  */
 package com.github.nfalco79.junit4osgi.registry.internal;
 
-import java.net.URL;
 import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -33,6 +32,12 @@ import com.j256.simplejmx.common.JmxResource;
 
 @JmxResource(domainName = "org.osgi.junit4osgi", folderNames = "type=registry", beanName = "AutoDiscoveryRegistry", description = "The JUnit4 registry that discovers test using the same maven surefure test naming convention")
 public final class AutoDiscoveryRegistry extends AbstractTestRegistry {
+
+	private interface EntryPathsVisitor {
+		void visit(String entryPath);
+		boolean accept(String entryPath);
+	}
+
 	private static final int EXT_LENGHT = ".class".length();
 
 	@JmxOperation(description = "Dispose the registry")
@@ -60,37 +65,55 @@ public final class AutoDiscoveryRegistry extends AbstractTestRegistry {
 	 * org.osgi.framework.Bundle)
 	 */
 	@Override
-	public void registerTests(Bundle bundle) {
+	public void registerTests(final Bundle bundle) {
 		if (tests.containsKey(bundle)) {
 			return;
 		}
 
-		Set<TestBean> bundleTest = new LinkedHashSet<TestBean>();
+		final Set<TestBean> bundleTest = new LinkedHashSet<TestBean>();
 		tests.put(bundle, bundleTest);
 
+		navigate(bundle, "/", new EntryPathsVisitor() {
+			@Override
+			public void visit(String entryPath) {
+				String className = toClassName(entryPath);
+				String simpleClassName = toClassSimpleName(className);
+				if (isTestCase(simpleClassName) || isIntegrationTest(simpleClassName)) {
+					TestBean bean = new TestBean(bundle, className);
 
-		Enumeration<URL> entries = bundle.findEntries("/", "*.class", true);
-		while (entries != null && entries.hasMoreElements()) {
-			URL entry = entries.nextElement();
-			String className = toClassName(entry);
-			String simpleClassName = toClassSimpleName(className);
-			if (isTestCase(simpleClassName) || isIntegrationTest(simpleClassName)) {
-				TestBean bean = new TestBean(bundle, className);
+					BundleTestClassVisitor visitor = new BundleTestClassVisitor(bundle);
+					visitor.setLog(getLog());
 
-				BundleTestClassVisitor visitor = new BundleTestClassVisitor(bundle);
-				visitor.setLog(getLog());
+					if (isTestClass(bundle, bean, visitor)) {
+						bundleTest.add(bean);
 
-				if (isTestClass(bundle, bean, visitor)) {
-					bundleTest.add(bean);
-
-					fireEvent(new TestRegistryEvent(TestRegistryEventType.ADD, bean));
+						fireEvent(new TestRegistryEvent(TestRegistryEventType.ADD, bean));
+					}
 				}
 			}
-		}
+
+			@Override
+			public boolean accept(String entryPath) {
+				return entryPath.endsWith(".class");
+			}
+		});
 	}
 
-	private String toClassName(URL entry) {
-		String className = entry.getPath();
+	private void navigate(Bundle bundle, String path, EntryPathsVisitor visitor) {
+		Enumeration<String> entries = bundle.getEntryPaths(path);
+		while (entries != null && entries.hasMoreElements()) {
+			String entry = entries.nextElement();
+			if (visitor.accept(entry)) {
+				visitor.visit(entry);
+			} else {
+				navigate(bundle, entry, visitor);
+			}
+		}
+
+	}
+
+	private String toClassName(final String entry) {
+		String className = entry;
 		if (className.startsWith("/")) {
 			className = className.substring(1);
 		}

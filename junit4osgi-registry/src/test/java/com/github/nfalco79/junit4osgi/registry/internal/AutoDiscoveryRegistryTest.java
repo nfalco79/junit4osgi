@@ -184,7 +184,7 @@ public class AutoDiscoveryRegistryTest {
 		assertThat(registry.getTests(), Matchers.hasItems(new TestBean(bundle, SimpleTestCase.class.getName()),
 				new TestBean(bundle, JUnit3Test.class.getName())));
 
-		verify(bundle).findEntries("/", "*.class", true);
+		verify(bundle).getEntryPaths("/");
 	}
 
 	@Test
