@@ -15,7 +15,7 @@
  */
 package com.github.nfalco79.junit4osgi.runner.test.report;
 
-import static com.github.nfalco79.junit4osgi.runner.internal.SurefireConstants.DEFAULT_NAME;
+import static com.github.nfalco79.junit4osgi.runner.internal.SurefireConstants.*;
 import static org.junit.Assert.*;
 
 import java.io.File;
@@ -61,8 +61,8 @@ public class XMLReportTest {
 		SurefireHelper helper = new SurefireHelper(xml);
 		helper.verifySuite(testName, 3l, 0l, 0l, 0l);
 
-		assertNotNull("No testcase element found", helper.hasTestCase());
-		assertEquals("Unexpected testcase element found", 3, helper.countTestCase());
+		assertNotNull("No testcase elements found", helper.hasTestCase());
+		assertEquals("Unexpected testcase elements found", 3, helper.countTestCase());
 
 		helper.verifyTestCase(testName, "test_stdout", 0);
 		helper.verifyTestCase(testName, "test_stderr", 0);
@@ -82,10 +82,10 @@ public class XMLReportTest {
 		// checks the content
 		File xml = getReport(testFolder);
 		SurefireHelper helper = new SurefireHelper(xml);
-		helper.verifySuite(testName, 5, 1, 1, 3);
+		helper.verifySuite(testName, 6, 1, 1, 4);
 
-		assertNotNull("No testcase element found", helper.hasTestCase());
-		assertEquals("Unexpected testcase element found", 5, helper.countTestCase());
+		assertNotNull("No testcase elements found", helper.hasTestCase());
+		assertEquals("Unexpected testcase elements found", 6, helper.countTestCase());
 
 		helper.verifySkipedTestCase(testName, "ignoreTest");
 		helper.verifySkipedTestCase(testName, "ignoreTest2");
@@ -105,10 +105,10 @@ public class XMLReportTest {
 		// checks the content
 		File xml = getReport(testFolder);
 		SurefireHelper helper = new SurefireHelper(xml);
-		helper.verifySuite(testName, 5, 1, 1, 3);
+		helper.verifySuite(testName, 6, 1, 1, 4);
 
-		assertNotNull("No testcase element found", helper.hasTestCase());
-		assertEquals("Unexpected testcase element found", 5, helper.countTestCase());
+		assertNotNull("No testcase elements found", helper.hasTestCase());
+		assertEquals("Unexpected testcase elements found", 6, helper.countTestCase());
 
 		Xpp3Dom testcase = helper.verifyTestCase(testName, "failureTest", 0d);
 		helper.verifyFailure(testcase, AssertionError.class, "expected true");
@@ -129,12 +129,31 @@ public class XMLReportTest {
 		// checks the content
 		File xml = getReport(testFolder);
 		SurefireHelper helper = new SurefireHelper(xml);
-		helper.verifySuite(testName, 5, 1, 1, 3);
+		helper.verifySuite(testName, 6, 1, 1, 4);
 
 		Xpp3Dom testcase = helper.verifyTestCase(testName, "errorTest", 0d);
 		helper.verifyError(testcase, IllegalStateException.class, "message");
 		helper.verifyStdOutMessage(testcase, "test sysout errorTest");
 		helper.verifyStdErrMessage(testcase, "test syserr errorTest");
+	}
+
+	@Test
+	public void assume() throws Exception {
+		Report report = runTest(ErrorTest.class);
+
+		String testName = ErrorTest.class.getName();
+
+		// write test result
+		File testFolder = folder.newFolder();
+		new XMLReport(testFolder).generateReport(report);
+
+		// checks the content
+		File xml = getReport(testFolder);
+		SurefireHelper helper = new SurefireHelper(xml);
+		helper.verifySuite(testName, 6, 1, 1, 4);
+
+		helper.verifyTestCase(testName, "assumeTest", 0d);
+		helper.verifySkipedTestCase(testName, "assumeTest", "got: <false>, expected: is <true>");
 	}
 
 	@Test
@@ -172,10 +191,10 @@ public class XMLReportTest {
 		// checks the content
 		File xml = getReport(testFolder);
 		SurefireHelper helper = new SurefireHelper(xml);
-		helper.verifySuite(testName, 8, 1, 1, 3, 0.5d);
+		helper.verifySuite(testName, 9, 1, 1, 4, 0.5d);
 
-		assertNotNull("No testcase element found", helper.hasTestCase());
-		assertEquals("Unexpected testcase element found", 8, helper.countTestCase());
+		assertNotNull("No testcase elements found", helper.hasTestCase());
+		assertEquals("Unexpected testcase elements found", 9, helper.countTestCase());
 
 		testName = ErrorTest.class.getName();
 		Xpp3Dom testcase = helper.verifyTestCase(testName, "failureTest", 0d);
@@ -215,8 +234,8 @@ public class XMLReportTest {
 		SurefireHelper helper = new SurefireHelper(xml);
 		helper.verifySuite(testName, 2, 0, 0, 0);
 
-		assertNotNull("No testcase element found", helper.hasTestCase());
-		assertEquals("Unexpected testcase element found", 2, helper.countTestCase());
+		assertNotNull("No testcase elements found", helper.hasTestCase());
+		assertEquals("Unexpected testcase elements found", 2, helper.countTestCase());
 
 		Xpp3Dom testcase = helper.verifyTestCase(testName, "test1", 0d);
 		Xpp3Dom[] failures = helper.verifyFlakyFailure(testcase, AssertionError.class, 3, "test 1 failures 3", "test 1 failures 2", "test 1 failures 1", "test 1 failures 0");
@@ -242,8 +261,8 @@ public class XMLReportTest {
 		SurefireHelper helper = new SurefireHelper(xml);
 		helper.verifySuite(testName, 2, 0, 0, 0);
 
-		assertNotNull("No testcase element found", helper.hasTestCase());
-		assertEquals("Unexpected testcase element found", 2, helper.countTestCase());
+		assertNotNull("No testcase elements found", helper.hasTestCase());
+		assertEquals("Unexpected testcase elements found", 2, helper.countTestCase());
 
 		Xpp3Dom testcase = helper.verifyTestCase(testName, "test2", 0d);
 		Xpp3Dom[] failures = helper.verifyFlakyError(testcase, NullPointerException.class, 2);

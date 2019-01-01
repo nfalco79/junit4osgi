@@ -1,6 +1,7 @@
 package org.example;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -39,4 +40,11 @@ public class ErrorTest {
 	public void ignoreTest3() {
 		// do nothing
 	}
+
+	@Test
+	public void assumeTest() {
+		boolean isLinux = false;
+		Assume.assumeTrue(isLinux);
+	}
+
 }

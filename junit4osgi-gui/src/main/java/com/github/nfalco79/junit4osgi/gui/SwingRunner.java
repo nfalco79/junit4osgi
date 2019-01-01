@@ -44,6 +44,7 @@ import javax.swing.JTable;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.table.TableColumn;
 
+import org.junit.Ignore;
 import org.junit.runner.Description;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Request;
@@ -607,7 +608,7 @@ public class SwingRunner extends JFrame {
 			}
 		};
 
-		new Thread(thread).start();
+		new Thread(thread, "Test Run").start();
 	}
 
 	/**
@@ -711,13 +712,14 @@ public class SwingRunner extends JFrame {
 
 		@Override
 		public void testIgnored(Description description) throws Exception {
-			tblModel.addSkippedTest(description);
+			Ignore ignore = description.getAnnotation(Ignore.class);
+			tblModel.addSkippedTest(description, ignore.value());
 			adjustScroll();
 		}
 
 		@Override
 		public void testAssumptionFailure(Failure failure) {
-			tblModel.addFailedTest(failure.getDescription(), (Error) failure.getException());
+			tblModel.addSkippedTest(failure.getDescription(), failure.getMessage());
 			adjustScroll();
 		}
 

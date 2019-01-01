@@ -89,9 +89,9 @@ public class ResultTableModel extends AbstractTableModel {
 	 * @param t
 	 *            the test description
 	 */
-	public void addSkippedTest(Description t) {
+	public void addSkippedTest(Description t, String reason) {
 		if (!contains(t)) {
-			TestRecord rec = new SkippedTestRecord(t);
+			TestRecord rec = new SkippedTestRecord(t, reason);
 			results.add(rec);
 			fireTableDataChanged();
 		}
@@ -255,7 +255,8 @@ public class ResultTableModel extends AbstractTableModel {
 		if (rec.isSucess()) {
 			return "The test " + rec.getTest() + " was executed sucessfully.";
 		} else if (rec.isSkipped()) {
-			return "The test " + rec.getTest() + " was ignored.";
+		    String reason = ((SkippedTestRecord) rec).getReason();
+			return "The test " + rec.getTest() + " was ignored" + (reason != null ? " with reason: " + reason : ".");
 		} else if (rec.isFailed()) {
 			Error failure = ((FailureTestRecord) rec).getFailure();
 			return "The test " + rec.getTest() + " has failed : \n" + failure.getMessage();
@@ -361,14 +362,23 @@ public class ResultTableModel extends AbstractTableModel {
 	}
 
 	private class SkippedTestRecord extends TestRecord {
-		/**
-		 * Creates a TestRecord.
-		 *
-		 * @param description
-		 *            the test description
-		 */
-		public SkippedTestRecord(Description description) {
+        private String reason;
+
+        /**
+         * Creates a TestRecord.
+         *
+         * @param description
+         *            the test description
+         * @param reason
+         *            the reason of the skip
+         */
+		public SkippedTestRecord(Description description, String reason) {
 			super(description);
+			this.reason = reason;
+		}
+
+		public String getReason() {
+		    return reason;
 		}
 
 		/*

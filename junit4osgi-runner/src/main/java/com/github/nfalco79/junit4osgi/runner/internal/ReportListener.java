@@ -104,7 +104,7 @@ public class ReportListener extends RunListener {
 	 * @see org.junit.runner.notification.RunListener#testIgnored(org.junit.runner.Description)
 	 */
 	@Override
-	public void testIgnored(Description description) throws Exception {
+	public void testIgnored(Description description) {
 		Report info = new Report(description);
 		info.setElapsedTime(0d);
 		info.markAsIgnored();
@@ -135,7 +135,13 @@ public class ReportListener extends RunListener {
 	 */
 	@Override
 	public void testAssumptionFailure(Failure failure) {
-		testFailure(failure);
+		Description description = failure.getDescription();
+		Report info = new Report(description);
+		info.setElapsedTime(0d);
+		info.markAsIgnored();
+		info.setMessage(failure.getMessage());
+
+		executions.push(description, info);
 	}
 
 	/*
