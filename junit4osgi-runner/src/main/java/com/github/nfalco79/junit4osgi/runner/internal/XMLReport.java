@@ -34,6 +34,7 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 
+import com.github.nfalco79.junit4osgi.runner.internal.xml.util.XMLChar;
 import com.github.nfalco79.junit4osgi.runner.internal.xml.util.Xpp3DomWriter;
 
 /**
@@ -78,7 +79,7 @@ public class XMLReport {
 	private void writeTestError(Xpp3Dom element, Failure failure) {
 		Throwable exception = failure.getException();
 		if (exception != null) {
-			String message = failure.getMessage();
+			String message = escape(failure.getMessage());
 			if (message != null) {
 				element.setAttribute(TEST_ERROR_MESSAGE_ATTRIBUTE, message);
 			}
@@ -102,7 +103,7 @@ public class XMLReport {
 	private void writeTestFailure(Xpp3Dom element, Failure failure) {
 		Throwable exception = failure.getException();
 		if (exception != null) {
-			String message = failure.getMessage();
+			String message = escape(failure.getMessage());
 			if (message != null) {
 				element.setAttribute(TEST_FAILURE_MESSAGE_ATTRIBUTE, message);
 			}
@@ -113,6 +114,20 @@ public class XMLReport {
 		if (stackTrace != null) {
 			element.setValue(stackTrace);
 		}
+	}
+
+	private String escape(final String message) {
+		if (message == null) {
+			return message;
+		}
+
+		char[] escapedMessage = message.toCharArray();
+		for (int i = 0; i < escapedMessage.length; i++) {
+			if (XMLChar.isInvalid(escapedMessage[i])) {
+				escapedMessage[i] = '?';
+			}
+		}
+		return new String(escapedMessage);
 	}
 
 	/**

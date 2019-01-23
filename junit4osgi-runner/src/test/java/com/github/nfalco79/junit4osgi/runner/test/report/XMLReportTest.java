@@ -23,11 +23,13 @@ import java.io.FilenameFilter;
 import java.text.MessageFormat;
 
 import org.codehaus.plexus.util.xml.Xpp3Dom;
+import org.example.BinaryTest;
 import org.example.ErrorTest;
 import org.example.FlakyJUnit4Test;
 import org.example.PropertyTest;
 import org.example.SimpleSuiteTest;
 import org.example.SimpleTestCase;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -37,6 +39,7 @@ import com.github.nfalco79.junit4osgi.runner.internal.JUnitRunner;
 import com.github.nfalco79.junit4osgi.runner.internal.Report;
 import com.github.nfalco79.junit4osgi.runner.internal.ReportListener;
 import com.github.nfalco79.junit4osgi.runner.internal.XMLReport;
+import com.github.nfalco79.junit4osgi.runner.internal.xml.util.XMLChar;
 
 public class XMLReportTest {
 
@@ -268,6 +271,28 @@ public class XMLReportTest {
 		Xpp3Dom[] failures = helper.verifyFlakyError(testcase, NullPointerException.class, 2);
 		for (Xpp3Dom failure : failures) {
 			helper.verifyStdOutMessage(failure, "test2");
+		}
+	}
+
+	@Test
+	public void test_binary_chars_on_failure_message() throws Exception {
+		Report report = runTest(BinaryTest.class);
+
+		String testName = BinaryTest.class.getName();
+
+		// write test result
+		File testFolder = folder.newFolder();
+		new XMLReport(testFolder).generateReport(report);
+
+		// checks the content
+		File xml = getReport(testFolder);
+		SurefireHelper helper = new SurefireHelper(xml);
+
+		Xpp3Dom testcase = helper.verifyTestCase(testName, "illegal_chars_on_error_message", 0d);
+		Xpp3Dom[] failures = testcase.getChildren(TEST_FAILURE_ELEMENT);
+		Xpp3Dom failure = failures[0];
+		for (char c : failure.getAttribute(TEST_FAILURE_MESSAGE_ATTRIBUTE).toCharArray()) {
+			Assert.assertFalse("Invalid character found in the attribute", XMLChar.isInvalid(c));
 		}
 	}
 
