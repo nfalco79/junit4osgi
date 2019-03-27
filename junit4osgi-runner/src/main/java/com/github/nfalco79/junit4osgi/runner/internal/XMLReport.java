@@ -158,13 +158,11 @@ public class XMLReport {
 			return;
 		}
 
-		FileUtils.forceMkdir(reportsDirectory);
+		if (!reportsDirectory.isDirectory()) {
+			FileUtils.forceMkdir(reportsDirectory);
+		}
 
 		Xpp3Dom dom = createDOM(null, report);
-		dom.setAttribute(SUITE_TESTS_ATTRIBUTE, String.valueOf(report.getRunCount()));
-		dom.setAttribute(SUITE_FAILURES_ATTRIBUTE, String.valueOf(failuresCount));
-		dom.setAttribute(SUITE_ERRORS_ATTRIBUTE, String.valueOf(errorsCount));
-		dom.setAttribute(SUITE_SKIPPED_ATTRIBUTE, String.valueOf(ignoredCount));
 
 		File reportFile = new File(reportsDirectory, MessageFormat.format(DEFAULT_NAME, dom.getAttribute(SUITE_NAME_ATTRIBUTE).replace(' ', '_')));
 
@@ -200,6 +198,19 @@ public class XMLReport {
 			// class container
 			dom = createTestSuiteElement(null, report);
 			addProperties(dom);
+
+			for (Report child : report.getChildren()) {
+				createDOM(dom, child);
+			}
+
+			// different than maven surefire this does not report failure in
+			// test class rule or before/after class as single testcase because
+			// the junit org.junit.runner.Result does not keep track about those runs
+			int runCount = report.getRunCount();
+			dom.setAttribute(SUITE_TESTS_ATTRIBUTE, String.valueOf(runCount));
+			dom.setAttribute(SUITE_FAILURES_ATTRIBUTE, String.valueOf(failuresCount));
+			dom.setAttribute(SUITE_ERRORS_ATTRIBUTE, String.valueOf(errorsCount));
+			dom.setAttribute(SUITE_SKIPPED_ATTRIBUTE, String.valueOf(ignoredCount));
 		} else if (description.isEmpty()) {
 			dom = createTestSuiteElement(dom, report);
 		} else if (description.isTest()) {
@@ -221,10 +232,6 @@ public class XMLReport {
 				dom = createTestSuccessElement(dom, report);
 				break;
 			}
-		}
-
-		for (Report child : report.getChildren()) {
-			createDOM(dom, child);
 		}
 
 		return dom;
