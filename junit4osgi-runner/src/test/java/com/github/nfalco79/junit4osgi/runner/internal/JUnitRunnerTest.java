@@ -15,9 +15,9 @@
  */
 package com.github.nfalco79.junit4osgi.runner.internal;
 
-import static java.util.Arrays.*;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.io.File;
@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.example.AbstractTest;
 import org.example.ErrorTest;
+import org.example.ExceptionOnClassMethodsTest;
 import org.example.FlakyJUnit4Test;
 import org.example.JUnit3Test;
 import org.example.MainClassTest;
@@ -42,8 +43,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.Description;
+import org.junit.runner.JUnitCore;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
+import org.mockito.Mockito;
 import org.mockito.internal.util.collections.Sets;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -303,6 +306,23 @@ public class JUnitRunnerTest {
 		assertTrue(runner.accept(ErrorTest.class));
 		assertTrue(runner.accept(JUnit3Test.class));
 		assertTrue(runner.accept(SimpleSuiteTest.class));
+	}
+
+	@Test
+	public void verify_rerun() throws Exception {
+		final ReportListener listener = spy(new ReportListener());
+
+		JUnitCore core = new JUnitCore();
+		core.addListener(listener);
+		core.run(ExceptionOnClassMethodsTest.class);
+
+		JUnitRunner runner = new JUnitRunnerNoJMXServer();
+		int rerunCount = 5;
+		runner.setRerunFailingTests(rerunCount);
+		runner.rerunTests(core, listener);
+
+		assertEquals(1, listener.getFailures().size());
+		verify(listener, times(1)).testStarted(Mockito.<Description> any());
 	}
 
 	private Set<TestBean> getMockTests() {

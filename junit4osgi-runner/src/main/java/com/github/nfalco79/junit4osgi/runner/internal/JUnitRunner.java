@@ -323,7 +323,21 @@ public class JUnitRunner implements TestRunner {
 
 			Collection<Description> failedTests = listener.getFailures();
 			for (Description test : failedTests) {
-				final Class<?> testClass = test.getTestClass();
+				/*
+				 * a suite descriptor does not have a class valued, the
+				 * method getTestClass does not work in OSGi and JUnit does
+				 * not provide a way to specify the classloader to use so
+				 * the lookup for a valid test class in child descriptors
+				 */
+				if (!test.isTest()) {
+					continue;
+				}
+				Class<?> testClass = test.getTestClass();
+				if (testClass == null) {
+					logger.log(LogService.LOG_INFO, "Skip rerun of test : " + test.getClassName() + "." + test.getMethodName());
+					continue;
+				}
+
 				int runCount = reRunCount;
 				Result rerunResult = null;
 				while (runCount > 0 && (rerunResult == null || !rerunResult.wasSuccessful())) {
@@ -334,6 +348,7 @@ public class JUnitRunner implements TestRunner {
 			}
 		} finally {
 			core.removeListener(reportListener);
+			core.addListener(listener);
 		}
 	}
 
