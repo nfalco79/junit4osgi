@@ -31,6 +31,19 @@ public class Report {
 		this.description = description;
 	}
 
+	public Report(Report report) {
+		this.description = report.description;
+		this.message = report.message;
+		this.elapsedTime = report.elapsedTime;
+		this.failure = report.failure;
+		this.err = report.err;
+		this.out = report.out;
+		this.type = report.type;
+		this.runCount = report.runCount;
+		this.runs.addAll(report.runs);
+		this.children.addAll(report.children);
+	}
+
 	public Description getDescription() {
 		return description;
 	}

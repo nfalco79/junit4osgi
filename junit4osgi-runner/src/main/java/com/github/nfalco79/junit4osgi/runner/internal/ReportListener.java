@@ -288,22 +288,23 @@ public class ReportListener extends RunListener {
 			Report report = null;
 			// check if last run was success
 			if (runs.peekLast().isSuccess()) {
-				report = runs.pollLast();
+				report = new Report(runs.pollLast());
 			} else {
 				// otherwise take the first failure
-				report = runs.poll();
+				report = new Report(runs.poll());
 			}
 			executionMap.put(test.getKey(), report);
 			while (!runs.isEmpty()) {
-				report.addRun(runs.poll());
+				report.addRun(new Report(runs.poll()));
 			}
 		}
 
 		buildExecutionTree(executionMap, root.getDescription());
 
-		root.setElapsedTime(totalTime / 1000d);
-		root.setRunCount(runCount);
-		return root;
+		Report report = executionMap.get(root.getDescription());
+		report.setElapsedTime(totalTime / 1000d);
+		report.setRunCount(runCount);
+		return report;
 	}
 
 	private void buildExecutionTree(Map<Description, Report> executionMap, Description parent) {

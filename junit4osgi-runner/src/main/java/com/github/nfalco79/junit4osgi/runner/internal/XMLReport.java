@@ -232,8 +232,11 @@ public class XMLReport {
 				dom = createTestSuccessElement(dom, report);
 				break;
 			}
+		} else if (description.isSuite()) {
+			for (Report child : report.getChildren()) {
+				createDOM(dom, child);
+			}
 		}
-
 		return dom;
 	}
 
