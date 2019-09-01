@@ -168,6 +168,9 @@ public class JUnitRunner implements TestRunner {
 	/* (non-Javadoc)
 	 * @see com.github.nfalco79.junit4osgi.runner.internal.TestRunner#start()
 	 */
+	@JmxOperation(description = "Start the runner that execute all test cases in the JUnit registry. " //
+			+ "If a new bundle that contains test cases is installed in the system, tests are executed immedialty.", //
+			operationAction = OperationAction.ACTION)
 	@Override
 	public void start() {
 		start(null, null, null);
