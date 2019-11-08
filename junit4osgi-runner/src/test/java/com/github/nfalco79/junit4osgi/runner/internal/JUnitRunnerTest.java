@@ -301,6 +301,20 @@ public class JUnitRunnerTest {
 	}
 
 	@Test
+	public void test_include_separator() {
+		System.setProperty(JUnitRunner.PATH_INCLUDES, "org.example.ErrorTest,org.example.Foo org.example.JUnit3Test");
+		try {
+			JUnitRunner runner = new JUnitRunner();
+			runner.setLog(mock(LogService.class));
+			assertTrue(runner.accept(ErrorTest.class));
+			assertTrue(runner.accept(JUnit3Test.class));
+			assertFalse(runner.accept(SimpleSuiteTest.class));
+		} finally {
+			System.clearProperty(JUnitRunner.PATH_INCLUDES);
+		}
+	}
+
+	@Test
 	public void by_default_includes_all() {
 		JUnitRunner runner = new JUnitRunner();
 		assertTrue(runner.accept(ErrorTest.class));
