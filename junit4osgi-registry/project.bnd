@@ -1,0 +1,5 @@
+Service-Component: OSGI-INF/*.xml
+Import-Package: \
+ com.j256.simplejmx*;resolution:=optional,\
+ javax.management;resolution:=optional,\
+ *

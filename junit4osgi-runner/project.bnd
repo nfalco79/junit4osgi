@@ -1,0 +1,7 @@
+Service-Component: OSGI-INF/*.xml
+Conditional-Package: org.codehaus.plexus.util*
+Import-Package: \
+ com.j256.simplejmx*;resolution:=optional,\
+ javax.management;resolution:=optional,\
+ *
+-exportcontents: ${packages;NAMED;!*internal*|org.codehaus*}

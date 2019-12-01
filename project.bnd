@@ -1,0 +1,2 @@
+Bundle-SymbolicName: ${project.groupId}.${project.artifactId};singleton:=true
+-exportcontents: ${packages;NAMED;!*internal*}

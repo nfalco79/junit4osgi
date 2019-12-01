@@ -6,6 +6,7 @@
 		<version>1.2.15-SNAPSHOT</version>
 	</parent>
 	<artifactId>junit4osgi-gui</artifactId>
+	<name>JUnit4 for OSGi Swing GUI</name>
 	<properties>
 		<findbugs.failOnError>false</findbugs.failOnError>
 		<coveralls.skip>true</coveralls.skip>
@@ -17,21 +18,4 @@
 			<version>${project.version}</version>
 		</dependency>
 	</dependencies>
-	<build>
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<groupId>org.apache.felix</groupId>
-					<artifactId>maven-bundle-plugin</artifactId>
-					<configuration>
-						<instructions>
-							<Bundle-SymbolicName>${maven-symbolicname};singleton:=true</Bundle-SymbolicName>
-							<Service-Component>OSGI-INF/*.xml</Service-Component>
-						</instructions>
-					</configuration>
-				</plugin>
-			</plugins>
-		</pluginManagement>
-	</build>
-	<name>JUnit4 for OSGi Swing GUI</name>
 </project>
