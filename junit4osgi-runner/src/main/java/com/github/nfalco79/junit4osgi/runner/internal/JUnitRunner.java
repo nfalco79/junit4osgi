@@ -17,16 +17,15 @@ package com.github.nfalco79.junit4osgi.runner.internal;
 
 import java.io.File;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.runner.Description;
 import org.junit.runner.JUnitCore;
@@ -40,7 +39,6 @@ import com.github.nfalco79.junit4osgi.registry.spi.TestBean;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistry;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryChangeListener;
 import com.github.nfalco79.junit4osgi.registry.spi.TestRegistryEvent;
-import com.github.nfalco79.junit4osgi.runner.internal.AntGlobPattern.IncludeExcludePattern;
 import com.github.nfalco79.junit4osgi.runner.internal.jmx.JMXServer;
 import com.github.nfalco79.junit4osgi.runner.spi.TestRunner;
 import com.github.nfalco79.junit4osgi.runner.spi.TestRunnerNotifier;
@@ -66,7 +64,7 @@ public class JUnitRunner implements TestRunner {
 			}
 			switch (event.getType()) {
 			case ADD:
-				tests.add(testBean);
+		        tests.add(testBean);
 				break;
 			case REMOVE:
 				tests.remove(testBean);
@@ -78,43 +76,58 @@ public class JUnitRunner implements TestRunner {
 		}
 	}
 
+	/**
+	 * Guide which kind of JUnit registry this runner have to use. Default is auto(discovery).
+	 */
 	public static final String RUNNER_REGISTY = "org.osgi.junit.runner.registry";
+	/**
+	 * This property when set to true start this runner continually. This bundle
+	 * listen every time a bundle is started and new tests are found than those test
+	 * are executed.
+	 */
 	public static final String RUNNER_AUTOSTART = "org.osgi.junit.runner.autostart";
+	/**
+	 * The path on disk where same the Surefire XML reports.
+	 */
 	public static final String REPORT_PATH = "org.osgi.junit.reportsPath";
+	/**
+	 * When a test case fails will be re run n-times how many are specified by this property.
+	 */
 	public static final String RERUN_COUNT = "org.osgi.junit.rerunFailingTestsCount";
+	/**
+	 * A space or comma separate list of ant glob include patterns against each test
+	 * suite name have to matches.
+	 */
 	public static final String PATH_INCLUDES = "org.osgi.junit.include";
+	/**
+	 * A space or comma separate list of ant glob exclude patterns against each test
+	 * suite name have to matches.
+	 */
 	public static final String PATH_EXCLUDE = "org.osgi.junit.exclude";
+
+	private static final String DEFAULT_PATH_EXCLUDE = "junit.extensions.*";
 
 	private TestRegistry registry;
 	private boolean stop;
 	private boolean running;
-	private LogService logger;
-	private Set<IncludeExcludePattern> includes;
-	private Set<IncludeExcludePattern> excludes;
+	LogService logger;
 	private TestRegistryChangeListener testListener;
 	private ScheduledThreadPoolExecutor executor;
 	private Integer reRunCount;
 	private final File defaultReportsDirectory;
+	private final TestFilter testFilter;
+	private final AtomicInteger testCount = new AtomicInteger(0);
 
 	public JUnitRunner() {
 		defaultReportsDirectory = new File(System.getProperty(REPORT_PATH, "surefire-reports"));
 		reRunCount = Integer.getInteger(RERUN_COUNT, 0);
 		stop = true;
 
-		setIncludes(getPatterns(PATH_INCLUDES));
-		setExcludes(getPatterns(PATH_EXCLUDE));
-	}
-
-	private Set<String> getPatterns(final String property) {
-		Set<String> patterns = new LinkedHashSet<String>();
-		String propertyValue = System.getProperty(property, "");
-		if (!"".equals(propertyValue)) {
-			String[] pattern = propertyValue.split(",| ");
-			if (pattern.length > 0) {
-				patterns.addAll(Arrays.asList(pattern));
-			}
+		String excludes = System.getProperty(PATH_EXCLUDE, DEFAULT_PATH_EXCLUDE).trim();
+		if (!DEFAULT_PATH_EXCLUDE.equals(excludes)) {
+		    excludes += "," + DEFAULT_PATH_EXCLUDE;
 		}
-		return patterns;
+        testFilter = new TestFilter(System.getProperty(PATH_INCLUDES), excludes);
 	}
 
 	/* (non-Javadoc)
@@ -173,11 +186,29 @@ public class JUnitRunner implements TestRunner {
 			operationAction = OperationAction.ACTION)
 	@Override
 	public void start() {
-		start(null, null, null);
+		start((String[]) null, null, null);
 	}
 
-	@JmxOperation(description = "Start the runner that execute tests with the specified id collected by the JUnit registry", //
+	@JmxOperation(description = "Start all tests that matches the given patterns", //
+	        operationAction = OperationAction.ACTION, //
+	        parameterNames = { "includePatterns", "excludePatterns", "reportsPath" }, //
+	        parameterDescriptions = { "includePatterns", "excludePatterns", "reportsPath" })
+    public void start(String includePatterns, String excludePatterns, String reportsPath) {
+        // collect all tests in the registry that matches patterns
+        TestFilter filter = new TestFilter(includePatterns, excludePatterns);
+
+        Set<String> filteredTests = new LinkedHashSet<String>();
+        for (TestBean test : registry.getTests()) {
+            if (filter.accept(test.getName())) {
+                filteredTests.add(test.getId());
+            }
+        }
+        start(filteredTests.toArray(new String[0]), reportsPath, null);
+    }
+
+	@JmxOperation(description = "Executes tests with the specified id collected by the JUnit registry", //
 			operationAction = OperationAction.ACTION, //
+	        parameterNames = { "testIds", "reportsPath" }, //
 			parameterDescriptions = { //
 					"an array of test ids to execute, a test id is composed by <bundle symbolic name>@<FQN of test class>", //
 					"path on disk where save surefire reports" })
@@ -202,7 +233,7 @@ public class JUnitRunner implements TestRunner {
 			final Queue<TestBean> tests;
 			if (testIds == null) {
 				// create a queue collecting all registry tests
-				tests = new ConcurrentLinkedQueue<TestBean>();
+				tests = new FilteredTestQueue(testFilter);
 				testListener = new QueeueTestListener(tests);
 				registry.addTestRegistryListener(testListener);
 
@@ -214,13 +245,18 @@ public class JUnitRunner implements TestRunner {
 
 			stop = false;
 			running = true;
-			executor = new ScheduledThreadPoolExecutor(1);
+			executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+				@Override
+				public Thread newThread(Runnable runnable) {
+					return new Thread(runnable, "JUnitRunner-executor");
+				}
+			});
 
 			if (testIds != null) {
 				Runnable testRunnable = getSingleRunnable(reportsDirectory, tests, notifier);
 				executor.schedule(testRunnable, 0l, TimeUnit.MILLISECONDS);
 			} else {
-				Runnable testRunnable = getInfiniteRunnable(reportsDirectory, tests);
+			    Runnable testRunnable = getInfiniteRunnable(reportsDirectory, tests);
 				executor.scheduleAtFixedRate(testRunnable, 0l, getRepeatTime(), TimeUnit.MILLISECONDS);
 			}
 		}
@@ -240,7 +276,7 @@ public class JUnitRunner implements TestRunner {
 	}
 
 	protected Runnable getInfiniteRunnable(final File reportsDirectory, final Queue<TestBean> tests) {
-		return getTestRunnable(reportsDirectory, tests, null, false);
+        return getTestRunnable(reportsDirectory, tests, null, false);
 	}
 
 	private Runnable getTestRunnable(final File reportsDirectory, final Queue<TestBean> tests, final TestRunnerNotifier notifier, final boolean singleRun) {
@@ -249,12 +285,18 @@ public class JUnitRunner implements TestRunner {
 		return new Runnable() {
 			@Override
 			public void run() {
+				if (tests.isEmpty()) {
+				    testCount.set(0);
+					return;
+				}
+
 				try {
 					safeNotifier.start();
 					runTests(tests, reportsDirectory, safeNotifier);
 				} finally {
 					if (singleRun) {
 						running = false;
+						stop = true;
 					}
 					safeNotifier.stop();
 				}
@@ -270,10 +312,11 @@ public class JUnitRunner implements TestRunner {
 			JUnitCore core = new JUnitCore();
 
 			while (!isStopped() && (testBean = tests.poll()) != null) {
+                testCount.set(tests.size());
 				try {
 					Class<?> testClass = testBean.getTestClass();
-					if (!TestRegistryUtils.isValidTestClass(testClass) || !accept(testClass)) {
-					    logger.log(LogService.LOG_DEBUG, "Skip test class " + testBean.getName());
+					if (!TestRegistryUtils.isValidTestClass(testClass)) {
+					    logger.log(LogService.LOG_DEBUG, "Skip class " + testBean.getName());
 						continue;
 					}
 
@@ -310,6 +353,8 @@ public class JUnitRunner implements TestRunner {
 					}
 				}
 			}
+
+			logger.log(LogService.LOG_INFO, "All tests in the queue has been processed");
 		} catch (Exception e) {
 			logger.log(LogService.LOG_ERROR, null, e);
 		}
@@ -389,37 +434,13 @@ public class JUnitRunner implements TestRunner {
 		return running;
 	}
 
-	public void setIncludes(Set<String> includes) {
-		this.includes = new LinkedHashSet<IncludeExcludePattern>(includes.size());
-		for (String include : includes) {
-			this.includes.add(AntGlobPattern.include(include));
-		}
-	}
-
-	public void setExcludes(Set<String> excludes) {
-		this.excludes = new LinkedHashSet<IncludeExcludePattern>(excludes.size());
-		for (String exclude : excludes) {
-			this.excludes.add(AntGlobPattern.exclude(exclude));
-		}
+	@JmxAttributeMethod(description = "Returns the not filtered count of tests case ready to be executed")
+	public int getTestCount() {
+	    return testCount.get();
 	}
 
 	public boolean accept(Class<?> testClass) {
-		boolean matches = includes.isEmpty(); // by default accepts all
-		String suiteName = testClass.getName();
-
-		Iterator<IncludeExcludePattern> include = includes.iterator();
-		while (include.hasNext() && !matches) {
-			matches = include.next().matches(suiteName);
-		}
-
-		Iterator<IncludeExcludePattern> exclude = excludes.iterator();
-		while (exclude.hasNext() && matches) {
-			if (exclude.next().matches(suiteName)) {
-				matches = false;
-				logger.log(LogService.LOG_DEBUG, "Test class: " + testClass.getName() + " excluded by exclude pattern");
-			}
-		}
-		return matches;
+	    return testFilter.accept(testClass.getName());
 	}
 
 	public void setRerunFailingTests(Integer count) {

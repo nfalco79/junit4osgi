@@ -201,7 +201,7 @@ public class JUnitRunnerTest {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
-	public void verify_that_runner_does_not_start_invalid_test_cases() throws Exception {
+	public void verify_that_runner_does_not_starts_invalid_test_cases() throws Exception {
 		final TestBean test1ToRun = mock(TestBean.class);
 		when(test1ToRun.getId()).thenReturn("id1");
 		when(test1ToRun.getTestClass()).thenReturn((Class) AbstractTest.class);
@@ -215,12 +215,11 @@ public class JUnitRunnerTest {
 		when(test3ToRun.getTestClass()).thenReturn((Class) MainClassTest.class);
 
 		JUnitRunner runner = new StartAndStopJUnitRunner();
-		runner.setExcludes(asSet("*Simple*"));
 
 		File tmpFolder = folder.newFolder();
 		runTest(runner, tmpFolder, test1ToRun, test2ToRun, test3ToRun);
 
-		assertThat("Tests has run", tmpFolder.list(), Matchers.arrayWithSize(0));
+		assertThat("Tests has run", tmpFolder.list(), Matchers.arrayWithSize(1));
 	}
 
 	private <T> Set<T> asSet(final T... testsToRun) {
@@ -263,46 +262,8 @@ public class JUnitRunnerTest {
 	}
 
 	@Test
-	public void test_includes() {
-		Set<String> includes = new LinkedHashSet<String>();
-		includes.add("*Test");
-
-		JUnitRunner runner = new JUnitRunner();
-		runner.setIncludes(includes);
-		assertTrue(runner.accept(JUnit3Test.class));
-	}
-
-	@Test
-	public void test_excludes() {
-		Set<String> excludes = new LinkedHashSet<String>();
-		excludes.add("*.?Unit*");
-
-		JUnitRunner runner = new JUnitRunner();
-		runner.setLog(mock(LogService.class));
-		runner.setExcludes(excludes);
-		assertFalse(runner.accept(JUnit3Test.class));
-	}
-
-	@Test
-	public void test_includes_and_excludes() {
-		Set<String> includes = new LinkedHashSet<String>();
-		includes.add("*Test");
-		Set<String> excludes = new LinkedHashSet<String>();
-		excludes.add("*3*");
-		excludes.add("*Simple*");
-
-		JUnitRunner runner = new JUnitRunner();
-		runner.setLog(mock(LogService.class));
-		runner.setIncludes(includes);
-		runner.setExcludes(excludes);
-		assertTrue(runner.accept(ErrorTest.class));
-		assertFalse(runner.accept(JUnit3Test.class));
-		assertFalse(runner.accept(SimpleSuiteTest.class));
-	}
-
-	@Test
-	public void test_include_separator() {
-		System.setProperty(JUnitRunner.PATH_INCLUDES, "org.example.ErrorTest,org.example.Foo org.example.JUnit3Test");
+	public void test_include_properties() {
+		System.setProperty(JUnitRunner.PATH_INCLUDES, "org.example.ErrorTest,org.example.Foo  org.example.JUnit3Test");
 		try {
 			JUnitRunner runner = new JUnitRunner();
 			runner.setLog(mock(LogService.class));
@@ -312,14 +273,6 @@ public class JUnitRunnerTest {
 		} finally {
 			System.clearProperty(JUnitRunner.PATH_INCLUDES);
 		}
-	}
-
-	@Test
-	public void by_default_includes_all() {
-		JUnitRunner runner = new JUnitRunner();
-		assertTrue(runner.accept(ErrorTest.class));
-		assertTrue(runner.accept(JUnit3Test.class));
-		assertTrue(runner.accept(SimpleSuiteTest.class));
 	}
 
 	@Test
@@ -342,9 +295,11 @@ public class JUnitRunnerTest {
 	private Set<TestBean> getMockTests() {
 		TestBean test1 = mock(TestBean.class);
 		when(test1.getId()).thenReturn("id1");
+		when(test1.getName()).thenReturn("org.id1");
 
 		TestBean test2 = mock(TestBean.class);
 		when(test2.getId()).thenReturn("id2");
+		when(test2.getName()).thenReturn("com.id2");
 
 		Set<TestBean> tests = new HashSet<TestBean>();
 		tests.add(test1);

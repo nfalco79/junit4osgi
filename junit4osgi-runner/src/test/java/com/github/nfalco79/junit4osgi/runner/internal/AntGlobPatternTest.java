@@ -25,19 +25,19 @@ public class AntGlobPatternTest {
 
     @Test
     public void test_single_wildcard_pattern() {
-        IncludeExcludePattern p = AntGlobPattern.include("*Constants");
+        IncludeExcludePattern p = AntGlobPattern.parse("*Constants");
         assertTrue("the glob pattern does not matches", p.matches("com.acme.MyConstants"));
     }
 
     @Test
     public void test_wildcard_at_the_end() {
-        IncludeExcludePattern p = AntGlobPattern.include("com.acme*");
+        IncludeExcludePattern p = AntGlobPattern.parse("com.acme*");
         assertTrue("the glob pattern does not matches", p.matches("com.acme.MyConstants"));
     }
 
     @Test
     public void test_question_mark_pattern() {
-        IncludeExcludePattern p = AntGlobPattern.exclude("*.??Constants");
+        IncludeExcludePattern p = AntGlobPattern.parse("*.??Constants");
         assertTrue("the glob pattern does not matches", p.matches("com.acme.MyConstants"));
     }
 

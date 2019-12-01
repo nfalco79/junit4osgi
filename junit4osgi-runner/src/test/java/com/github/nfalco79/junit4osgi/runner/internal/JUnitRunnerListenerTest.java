@@ -15,7 +15,7 @@
  */
 package com.github.nfalco79.junit4osgi.runner.internal;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.io.File;
@@ -170,9 +170,11 @@ public class JUnitRunnerListenerTest {
 	private TestBean[] getMockTests() {
 		TestBean test1 = mock(TestBean.class);
 		when(test1.getId()).thenReturn("id1");
+		when(test1.getName()).thenReturn("org.id1");
 
 		TestBean test2 = mock(TestBean.class);
 		when(test2.getId()).thenReturn("id2");
+		when(test2.getName()).thenReturn("com.id2");
 
 		return new TestBean[] { test1, test2 };
 	}

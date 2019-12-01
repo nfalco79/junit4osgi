@@ -77,11 +77,7 @@ public class AntGlobPattern {
 		return Pattern.compile(regexp.toString());
 	}
 
-	public static IncludeExcludePattern exclude(String pattern) {
-		return new IncludeExcludePattern(translate(pattern));
-	}
-
-	public static IncludeExcludePattern include(String pattern) {
+	public static IncludeExcludePattern parse(String pattern) {
 		return new IncludeExcludePattern(translate(pattern));
 	}
 

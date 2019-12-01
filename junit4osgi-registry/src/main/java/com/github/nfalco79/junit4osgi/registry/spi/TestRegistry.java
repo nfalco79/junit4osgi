@@ -49,7 +49,7 @@ public interface TestRegistry {
 	 * Returns a set of {@link TestBean} to provides all the JUnit class in the
 	 * registry.
 	 *
-	 * @return a set of all registered {@link TestBean}
+	 * @return a copy of a set of all registered {@link TestBean}
 	 */
 	Set<TestBean> getTests();
 
