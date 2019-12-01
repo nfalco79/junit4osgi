@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>com.github.nfalco79</groupId>
 		<artifactId>junit4osgi-parent</artifactId>
-		<version>1.2.15</version>
+		<version>1.2.16-SNAPSHOT</version>
 	</parent>
 	<artifactId>junit4osgi-gui</artifactId>
 	<name>JUnit4 for OSGi Swing GUI</name>
