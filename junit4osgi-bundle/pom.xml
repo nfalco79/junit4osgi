@@ -25,6 +25,7 @@
         <hamcrest.version>1.3</hamcrest.version>
         <maven.source.skip>true</maven.source.skip>
         <bnd.skip>true</bnd.skip>
+        <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
     </properties>
     <dependencies>
         <dependency>
