@@ -9,6 +9,9 @@
     <inceptionYear>2016</inceptionYear>
     <url>https://github.com/nfalco79/junit4osgi</url>
     <properties>
+        <sonar.organization>nfalco79</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
