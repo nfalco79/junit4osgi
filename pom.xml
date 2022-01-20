@@ -265,6 +265,14 @@
                             <configuration>
                                 <repoToken>${env.COVERALLS_REPO_TOKEN}</repoToken>
                             </configuration>
+                            <dependencies>
+                                <!-- required on JDK 11 -->
+                                <dependency>
+                                    <groupId>com.sun.xml.bind</groupId>
+                                    <artifactId>jaxb-impl</artifactId>
+                                    <version>2.3.5</version>
+                                </dependency>
+                            </dependencies>
                         </plugin>
                     </plugins>
                 </pluginManagement>
