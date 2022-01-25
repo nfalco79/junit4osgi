@@ -17,7 +17,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- dependencies -->
-        <simplejmx.version>1.15</simplejmx.version>
+        <simplejmx.version>1.19</simplejmx.version>
 
         <!-- plugins version -->
         <maven-bundle-plugin.version>4.2.1</maven-bundle-plugin.version>
@@ -270,7 +270,7 @@
                                 <dependency>
                                     <groupId>com.sun.xml.bind</groupId>
                                     <artifactId>jaxb-impl</artifactId>
-                                    <version>2.3.5</version>
+                                    <version>3.0.2</version>
                                 </dependency>
                             </dependencies>
                         </plugin>
