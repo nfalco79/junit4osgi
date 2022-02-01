@@ -20,7 +20,7 @@
         <simplejmx.version>1.19</simplejmx.version>
 
         <!-- plugins version -->
-        <maven-bundle-plugin.version>4.2.1</maven-bundle-plugin.version>
+        <maven-bundle-plugin.version>5.1.4</maven-bundle-plugin.version>
         <maven-compiler-plugin.version>3.9.0</maven-compiler-plugin.version>
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
