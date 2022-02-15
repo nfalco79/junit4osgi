@@ -83,12 +83,12 @@ public class ResultTableModel extends AbstractTableModel {
 		}
 	}
 
-	/**
-	 * Adds a skipped test.
-	 *
-	 * @param t
-	 *            the test description
-	 */
+    /**
+     * Adds a skipped test.
+     *
+     * @param t the test description
+     * @param reason of skip
+     */
 	public void addSkippedTest(Description t, String reason) {
 		if (!contains(t)) {
 			TestRecord rec = new SkippedTestRecord(t, reason);

@@ -1,6 +1,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.github.nfalco79</groupId>
+    <parent>
+        <groupId>com.github.nfalco79</groupId>
+        <artifactId>parent</artifactId>
+        <version>1.0.0-beta1</version>
+    </parent>
     <artifactId>junit4osgi-parent</artifactId>
     <version>1.2.16-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -9,53 +13,21 @@
     <inceptionYear>2016</inceptionYear>
     <url>https://github.com/nfalco79/junit4osgi</url>
     <properties>
-        <sonar.organization>nfalco79</sonar.organization>
-        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-
-        <maven.compiler.source>1.6</maven.compiler.source>
-        <maven.compiler.target>1.6</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.level>6</java.level>
 
         <!-- dependencies -->
         <simplejmx.version>1.19</simplejmx.version>
 
         <!-- plugins version -->
-        <maven-bundle-plugin.version>5.1.4</maven-bundle-plugin.version>
-        <maven-compiler-plugin.version>3.9.0</maven-compiler-plugin.version>
-        <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
-        <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
-        <maven-javadoc-plugin.version>3.3.1</maven-javadoc-plugin.version>
-        <maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
-        <maven-shade-plugin.version>3.2.4</maven-shade-plugin.version>
-        <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
-        <maven-deploy-plugin.version>3.0.0-M2</maven-deploy-plugin.version>
-        <maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
-        <maven-dependency-plugin.version>3.2.0</maven-dependency-plugin.version>
         <bnd-maven-plugin.version>6.1.0</bnd-maven-plugin.version>
-        <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
+        <maven-bundle-plugin.version>5.1.4</maven-bundle-plugin.version>
     </properties>
-    <licenses>
-        <license>
-            <name>Apache License 2.0</name>
-            <url>http://www.spdx.org/licenses/Apache-2.0</url>
-        </license>
-    </licenses>
-    <developers>
-        <developer>
-            <id>nfalco79</id>
-            <name>Nikolas Falco</name>
-        </developer>
-    </developers>
     <scm>
         <url>https://github.com/nfalco79/junit4osgi</url>
         <connection>scm:git:git@github.com:nfalco79/junit4osgi.git</connection>
         <developerConnection>scm:git:git@github.com:nfalco79/junit4osgi.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
-    <ciManagement>
-        <system>Travis CI</system>
-        <url>https://travis-ci.org/nfalco79/junit4osgi</url>
-    </ciManagement>
     <issueManagement>
         <system>github</system>
         <url>https://github.com/nfalco79/junit4osgi/issues</url>
@@ -101,19 +73,12 @@
             <version>1.5.4</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <version>4.3.1</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
     <build>
         <pluginManagement>
             <plugins>
                 <plugin>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>${maven-jar-plugin.version}</version>
                     <configuration>
                         <archive>
                             <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
@@ -122,7 +87,6 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>${maven-compiler-plugin.version}</version>
                     <configuration>
                         <compilerId>eclipse</compilerId>
                         <optimize>true</optimize>
@@ -137,32 +101,7 @@
                     </dependencies>
                 </plugin>
                 <plugin>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <version>${maven-source-plugin.version}</version>
-                    <executions>
-                        <execution>
-                            <id>attach-sources</id>
-                            <goals>
-                                <goal>jar-no-fork</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>${maven-javadoc-plugin.version}</version>
-                    <executions>
-                        <execution>
-                            <id>attach-javadoc</id>
-                            <goals>
-                                <goal>jar</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${maven-surefire-plugin.version}</version>
                     <configuration>
                         <excludes>
                             <exclude>org/example/**</exclude>
@@ -171,7 +110,6 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-shade-plugin</artifactId>
-                    <version>${maven-shade-plugin.version}</version>
                     <configuration>
                         <createDependencyReducedPom>true</createDependencyReducedPom>
                         <createSourcesJar>true</createSourcesJar>
@@ -185,33 +123,7 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <artifactId>maven-release-plugin</artifactId>
-                    <version>${maven-release-plugin.version}</version>
-                    <configuration>
-                        <releaseProfiles>release</releaseProfiles>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-deploy-plugin</artifactId>
-                    <version>${maven-deploy-plugin.version}</version>
-                    <configuration>
-                        <deployAtEnd>true</deployAtEnd>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-gpg-plugin</artifactId>
-                    <version>${maven-gpg-plugin.version}</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>sign</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>${maven-dependency-plugin.version}</version>
                     <configuration>
                         <outputDirectory>${project.build.outputDirectory}/lib</outputDirectory>
                     </configuration>
@@ -252,86 +164,4 @@
             </plugin>
         </plugins>
     </build>
-    <profiles>
-        <profile>
-            <id>enable-jacoco</id>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.eluder.coveralls</groupId>
-                            <artifactId>coveralls-maven-plugin</artifactId>
-                            <version>4.3.0</version>
-                            <configuration>
-                                <repoToken>${env.COVERALLS_REPO_TOKEN}</repoToken>
-                            </configuration>
-                            <dependencies>
-                                <!-- required on JDK 11 -->
-                                <dependency>
-                                    <groupId>com.sun.xml.bind</groupId>
-                                    <artifactId>jaxb-impl</artifactId>
-                                    <version>2.3.5</version>
-                                </dependency>
-                            </dependencies>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-                <plugins>
-                    <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>${jacoco-maven-plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>prepare-agent</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>report</id>
-                                <phase>test</phase>
-                                <goals>
-                                    <goal>report</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <includes>
-                                <include>com/github/nfalco79/junit4osgi/**</include>
-                            </includes>
-                            <excludes>
-                                <exclude>**/*Constants.class</exclude>
-                            </excludes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>release</id>
-            <distributionManagement>
-                <snapshotRepository>
-                    <id>ossrh</id>
-                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-                </snapshotRepository>
-                <repository>
-                    <id>ossrh</id>
-                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-                </repository>
-            </distributionManagement>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-source-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>
